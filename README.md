@@ -12,6 +12,16 @@ curl -fsSLO https://raw.githubusercontent.com/iyaki/ralph/main/ralph.sh
 chmod +x ralph.sh
 ```
 
+### Devcontainer feature
+
+Devcontainer users install ralph by adding the [opencode-ralph feature](https://github.com/iyaki/devcontainer-features/blob/main/src/opencode-ralph/README.md) to their `devcontainer.json`:
+
+```json
+"features": {
+    "ghcr.io/iyaki/devcontainer-features/opencode-ralph:1": {}
+}
+```
+
 ### Spec Creator skill
 
 This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for usage in the first phase of the Ralph Wiggum methodology (see [below](#about-the-ralph-wiggum-methodology)).
