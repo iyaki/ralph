@@ -26,7 +26,6 @@
 set -eu
 
 ralph() ( # Subshell function used to give a scope to code
-	pwd
 	# shellcheck disable=SC2034
 	OPENCODE_EXPERIMENTAL_PLAN_MODE=0 # Disabled because the opencode experimental plan mode causes hangs on non interactive sessions
 
