@@ -24,7 +24,7 @@ NoLog                  bool
 LogTruncate            bool
 CustomPrompt           string
 PromptsDir             string
-
+AgentName              string
 // Internal state
 configLoaded bool
 }
@@ -42,18 +42,25 @@ origEnv := map[string]string{
 "RALPH_LOG_ENABLED":               os.Getenv("RALPH_LOG_ENABLED"),
 "RALPH_LOG_APPEND":                os.Getenv("RALPH_LOG_APPEND"),
 "RALPH_PROMPTS_DIR":               os.Getenv("RALPH_PROMPTS_DIR"),
+"RALPH_AGENT":                     os.Getenv("RALPH_AGENT"),
 }
 
-// Find and load config file
-configFile := c.ConfigFile
-if configFile == "" {
-configFile = getEnvWithDefault("RALPH_CONFIG_FILE", ".ralphrc")
+// Load config file if specified
+if c.ConfigFile != "" {
+configPath := c.ConfigFile
+if !filepath.IsAbs(configPath) {
+cwd, _ := os.Getwd()
+configPath = filepath.Join(cwd, configPath)
 }
-
-configPath := findFileUpwards(configFile)
-if configPath != "" {
 if err := c.loadConfigFile(configPath); err != nil {
 return fmt.Errorf("failed to load config file %s: %w", configPath, err)
+}
+} else {
+// Try default .ralphrc in current directory
+cwd, _ := os.Getwd()
+defaultConfig := filepath.Join(cwd, ".ralphrc")
+if _, err := os.Stat(defaultConfig); err == nil {
+_ = c.loadConfigFile(defaultConfig)
 }
 }
 
@@ -89,14 +96,12 @@ c.SpecsDir = getEnvWithDefault("RALPH_SPECS_DIR", "specs")
 }
 
 // Specs Index File
-if c.NoSpecsIndex {
-c.SpecsIndexFile = ""
-} else if c.SpecsIndexFile == "" {
+if c.SpecsIndexFile == "" {
 if origEnv["RALPH_SPECS_INDEX_FILE"] != "" {
 c.SpecsIndexFile = origEnv["RALPH_SPECS_INDEX_FILE"]
 }
 }
-if c.SpecsIndexFile == "" && !c.NoSpecsIndex {
+if c.SpecsIndexFile == "" {
 c.SpecsIndexFile = getEnvWithDefault("RALPH_SPECS_INDEX_FILE", "README.md")
 }
 
@@ -120,6 +125,16 @@ if c.CustomPrompt == "" {
 c.CustomPrompt = os.Getenv("RALPH_CUSTOM_PROMPT")
 }
 
+// Prompts Dir
+if c.PromptsDir == "" {
+if origEnv["RALPH_PROMPTS_DIR"] != "" {
+c.PromptsDir = origEnv["RALPH_PROMPTS_DIR"]
+}
+}
+if c.PromptsDir == "" {
+c.PromptsDir = getEnvWithDefault("RALPH_PROMPTS_DIR", filepath.Join(os.Getenv("HOME"), ".ralph"))
+}
+
 // Log File
 if c.LogFile == "" {
 if origEnv["RALPH_LOG_FILE"] != "" {
@@ -127,19 +142,39 @@ c.LogFile = origEnv["RALPH_LOG_FILE"]
 }
 }
 if c.LogFile == "" {
-c.LogFile = os.Getenv("RALPH_LOG_FILE")
+cwd, _ := os.Getwd()
+c.LogFile = getEnvWithDefault("RALPH_LOG_FILE", filepath.Join(cwd, "ralph.log"))
 }
 
-// Prompts Dir
-if c.PromptsDir == "" {
-c.PromptsDir = getEnvWithDefault("RALPH_PROMPTS_DIR", "prompts")
+// Log Enabled
+if !c.NoLog {
+if origEnv["RALPH_LOG_ENABLED"] == "0" || os.Getenv("RALPH_LOG_ENABLED") == "0" {
+c.NoLog = true
+}
+}
+
+// Log Truncate (append by default)
+if !c.LogTruncate {
+if origEnv["RALPH_LOG_APPEND"] == "0" || os.Getenv("RALPH_LOG_APPEND") == "0" {
+c.LogTruncate = true
+}
+}
+
+// Agent Name
+if c.AgentName == "" {
+if origEnv["RALPH_AGENT"] != "" {
+c.AgentName = origEnv["RALPH_AGENT"]
+}
+}
+if c.AgentName == "" {
+c.AgentName = getEnvWithDefault("RALPH_AGENT", "opencode")
 }
 
 c.configLoaded = true
 return nil
 }
 
-// loadConfigFile sources a config file (simple key=value format)
+// loadConfigFile reads a shell-style config file and sets environment variables
 func (c *Config) loadConfigFile(path string) error {
 file, err := os.Open(path)
 if err != nil {
@@ -156,7 +191,8 @@ if line == "" || strings.HasPrefix(line, "#") {
 continue
 }
 
-// Parse key=value (simple shell variable format)
+// Parse KEY=VALUE or export KEY=VALUE
+line = strings.TrimPrefix(line, "export ")
 parts := strings.SplitN(line, "=", 2)
 if len(parts) != 2 {
 continue
@@ -168,46 +204,13 @@ value := strings.TrimSpace(parts[1])
 // Remove quotes if present
 value = strings.Trim(value, "\"'")
 
-// Set environment variable
+// Set environment variable (only if not already set by original env)
+if os.Getenv(key) == "" {
 os.Setenv(key, value)
+}
 }
 
 return scanner.Err()
-}
-
-// findFileUpwards searches for a file recursively upwards from current directory
-func findFileUpwards(filename string) string {
-// If it's an absolute path, return as-is
-if filepath.IsAbs(filename) {
-if _, err := os.Stat(filename); err == nil {
-return filename
-}
-return ""
-}
-
-// Get current working directory
-currentDir, err := os.Getwd()
-if err != nil {
-return ""
-}
-
-// Search upwards
-for {
-testPath := filepath.Join(currentDir, filename)
-if _, err := os.Stat(testPath); err == nil {
-return testPath
-}
-
-// Move up one directory
-parentDir := filepath.Dir(currentDir)
-if parentDir == currentDir {
-// Reached root
-break
-}
-currentDir = parentDir
-}
-
-return ""
 }
 
 // getEnvWithDefault returns environment variable value or default

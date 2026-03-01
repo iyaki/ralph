@@ -207,3 +207,39 @@ prompt += "`<COMPLETION_SIGNAL>`\n\n"
 
 return prompt
 }
+
+// findFileUpwards searches for a file starting from the current directory
+// and moving up through parent directories until found or root is reached
+func findFileUpwards(path string) string {
+	// Check if the path is absolute and exists
+	if filepath.IsAbs(path) {
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+		return ""
+	}
+
+	// Start from current directory and search upwards
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ""
+	}
+
+	dir := cwd
+	for {
+		testPath := filepath.Join(dir, path)
+		if _, err := os.Stat(testPath); err == nil {
+			return testPath
+		}
+
+		// Move up one directory
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			// Reached root
+			break
+		}
+		dir = parent
+	}
+
+	return ""
+}

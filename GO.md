@@ -76,9 +76,49 @@ The Go implementation provides identical command-line interface as the shell scr
 # Read prompt from stdin
 echo "prompt from stdin" | ./ralph -
 
+# Use Claude Code CLI agent instead of opencode
+./ralph --agent claude
+
 # Show help
 ./ralph --help
 ```
+
+## AI Agent Support
+
+Ralph supports multiple AI CLI agents. Each agent has its own implementation in a separate file:
+
+- **opencode** (default): Uses the `opencode` CLI tool
+- **claude**: Uses the `claude` CLI tool (Claude Code CLI)
+
+### Selecting an Agent
+
+You can select the agent in three ways:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent claude
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_AGENT=claude
+   ralph
+   ```
+
+3. **Config file** (`.ralphrc`):
+   ```bash
+   RALPH_AGENT=claude
+   ```
+
+### Agent Files
+
+Each agent implementation is in its own file:
+
+- `agent.go`: Agent interface definition and factory function
+- `agent_opencode.go`: Opencode CLI agent implementation
+- `agent_claude.go`: Claude Code CLI agent implementation
+
+This modular design makes it easy to add support for additional AI CLI tools in the future.
 
 ## Configuration
 
@@ -101,6 +141,7 @@ Configuration works identically to the shell script:
 - `RALPH_LOG_APPEND`: Append to log file (`1` or `0`)
 - `RALPH_PROMPTS_DIR`: Prompts directory (default: `prompts`)
 - `RALPH_CONFIG_FILE`: Config file path (default: `.ralphrc`)
+- `RALPH_AGENT`: AI agent to use: `opencode` or `claude` (default: `opencode`)
 
 ### Config File Format
 
@@ -118,15 +159,18 @@ RALPH_LOG_FILE=logs/ralph.log
 
 ```
 .
-├── main.go         # Entry point
-├── cmd.go          # Cobra command setup and main loop
-├── config.go       # Configuration management
-├── prompts.go      # Prompt generation and handling
-├── logger.go       # Logging functionality
-├── executor.go     # Command execution
-├── go.mod          # Go module definition
-├── go.sum          # Dependency checksums
-└── Makefile        # Build automation
+├── main.go              # Entry point
+├── cmd.go               # Cobra command setup and main loop
+├── config.go            # Configuration management
+├── prompts.go           # Prompt generation and handling
+├── logger.go            # Logging functionality
+├── executor.go          # Command execution
+├── agent.go             # Agent interface and factory
+├── agent_opencode.go    # Opencode CLI agent implementation
+├── agent_claude.go      # Claude Code CLI agent implementation
+├── go.mod               # Go module definition
+├── go.sum               # Dependency checksums
+└── Makefile             # Build automation
 ```
 
 ### Adding Dependencies
