@@ -563,9 +563,9 @@ EOF
 		echo " [${_PROMPT_NAME}] Iteration $i of $MAX_ITERATIONS ($(date))"
 		echo "==============================================================="
 
-		if [ -z "$DEBUG" ]; then
+		if [ -z "${DEBUG:-}" ]; then
 			# For usage with any other agent, just change this line to call the appropriate command with the prompt as input
-			OUTPUT="$(opencode run "$PROMPT" 2>&1)" || true
+			OUTPUT="$(opencode run "$PROMPT" 2>&1 | tee /dev/tty)" || true
 		else
 			echo "$PROMPT"
 			OUTPUT="$COMPLETION_SIGNAL"
