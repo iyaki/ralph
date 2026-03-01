@@ -86,6 +86,7 @@ flags.BoolVar(&cfg.NoLog, "no-log", false, "Disable logs")
 flags.BoolVar(&cfg.LogTruncate, "log-truncate", false, "Truncate log file before writing")
 flags.StringVar(&cfg.CustomPrompt, "prompt", "", "Inline custom prompt (overrides prompt files)")
 flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude (default: opencode)")
+flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
 
 return cmd
 }
@@ -98,7 +99,7 @@ completionSignal := "<promise>COMPLETE</promise>"
 prompt = strings.ReplaceAll(prompt, "<COMPLETION_SIGNAL>", completionSignal)
 
 // Get the configured agent
-agent := GetAgent(cfg.AgentName)
+	agent := GetAgent(cfg.AgentName, cfg.Model)
 
 // Check if agent is available
 if !agent.IsAvailable() {
