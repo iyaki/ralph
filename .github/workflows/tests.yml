@@ -18,3 +18,9 @@ jobs:
       - name: Run ralph test suite
         shell: bash
         run: ./test_ralph.sh
+
+      - name: Run shellcheck with reviewdog
+        uses: reviewdog/action-shellcheck@v1.32.0
+
+      - name: Run shfmt with reviewdog
+        uses: reviewdog/action-shfmt@v1.0.4
