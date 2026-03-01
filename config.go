@@ -1,12 +1,12 @@
 package main
 
 import (
-"fmt"
-"os"
-"path/filepath"
-"strconv"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 
-"github.com/BurntSushi/toml"
+	"github.com/BurntSushi/toml"
 )
 
 // Config holds all Ralph configuration
@@ -34,17 +34,17 @@ type Config struct {
 func (c *Config) LoadConfig() error {
 	// Save original environment variables
 	origEnv := map[string]string{
-		"RALPH_MAX_ITERATIONS":            os.Getenv("RALPH_MAX_ITERATIONS"),
-		"RALPH_SPECS_DIR":                 os.Getenv("RALPH_SPECS_DIR"),
-		"RALPH_SPECS_INDEX_FILE":          os.Getenv("RALPH_SPECS_INDEX_FILE"),
-		"RALPH_IMPLEMENTATION_PLAN_NAME":  os.Getenv("RALPH_IMPLEMENTATION_PLAN_NAME"),
-		"RALPH_CUSTOM_PROMPT":             os.Getenv("RALPH_CUSTOM_PROMPT"),
-		"RALPH_LOG_FILE":                  os.Getenv("RALPH_LOG_FILE"),
-		"RALPH_LOG_ENABLED":               os.Getenv("RALPH_LOG_ENABLED"),
-		"RALPH_LOG_APPEND":                os.Getenv("RALPH_LOG_APPEND"),
-		"RALPH_PROMPTS_DIR":               os.Getenv("RALPH_PROMPTS_DIR"),
-		"RALPH_AGENT":                     os.Getenv("RALPH_AGENT"),
-		"RALPH_MODEL":                     os.Getenv("RALPH_MODEL"),
+		"RALPH_MAX_ITERATIONS":           os.Getenv("RALPH_MAX_ITERATIONS"),
+		"RALPH_SPECS_DIR":                os.Getenv("RALPH_SPECS_DIR"),
+		"RALPH_SPECS_INDEX_FILE":         os.Getenv("RALPH_SPECS_INDEX_FILE"),
+		"RALPH_IMPLEMENTATION_PLAN_NAME": os.Getenv("RALPH_IMPLEMENTATION_PLAN_NAME"),
+		"RALPH_CUSTOM_PROMPT":            os.Getenv("RALPH_CUSTOM_PROMPT"),
+		"RALPH_LOG_FILE":                 os.Getenv("RALPH_LOG_FILE"),
+		"RALPH_LOG_ENABLED":              os.Getenv("RALPH_LOG_ENABLED"),
+		"RALPH_LOG_APPEND":               os.Getenv("RALPH_LOG_APPEND"),
+		"RALPH_PROMPTS_DIR":              os.Getenv("RALPH_PROMPTS_DIR"),
+		"RALPH_AGENT":                    os.Getenv("RALPH_AGENT"),
+		"RALPH_MODEL":                    os.Getenv("RALPH_MODEL"),
 	}
 
 	// Load config file if specified

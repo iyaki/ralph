@@ -1,10 +1,10 @@
 package main
 
 import (
-"bytes"
-"fmt"
-"io"
-"os/exec"
+	"bytes"
+	"fmt"
+	"io"
+	"os/exec"
 )
 
 // OpencodeAgent implements the Agent interface for the opencode CLI
@@ -26,29 +26,29 @@ func (a *OpencodeAgent) Execute(prompt string, output io.Writer) (string, error)
 	var outBuf, errBuf bytes.Buffer
 
 	// Use MultiWriter to write to both buffer and output
-cmd.Stdout = io.MultiWriter(&outBuf, output)
-cmd.Stderr = io.MultiWriter(&errBuf, output)
+	cmd.Stdout = io.MultiWriter(&outBuf, output)
+	cmd.Stderr = io.MultiWriter(&errBuf, output)
 
-// Run the command
-err := cmd.Run()
+	// Run the command
+	err := cmd.Run()
 
-// Combine stdout and stderr for result
-result := outBuf.String() + errBuf.String()
+	// Combine stdout and stderr for result
+	result := outBuf.String() + errBuf.String()
 
-if err != nil {
-return result, fmt.Errorf("opencode execution failed: %w", err)
-}
+	if err != nil {
+		return result, fmt.Errorf("opencode execution failed: %w", err)
+	}
 
-return result, nil
+	return result, nil
 }
 
 // Name returns the name of the agent
 func (a *OpencodeAgent) Name() string {
-return "opencode"
+	return "opencode"
 }
 
 // IsAvailable checks if opencode is available in PATH
 func (a *OpencodeAgent) IsAvailable() bool {
-_, err := exec.LookPath("opencode")
-return err == nil
+	_, err := exec.LookPath("opencode")
+	return err == nil
 }
