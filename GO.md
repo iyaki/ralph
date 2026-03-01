@@ -79,6 +79,9 @@ echo "prompt from stdin" | ./ralph -
 # Use Claude Code CLI agent instead of opencode
 ./ralph --agent claude
 
+# Use a specific model with Claude
+./ralph --agent claude --model claude-sonnet-4
+
 # Show help
 ./ralph --help
 ```
@@ -109,6 +112,30 @@ You can select the agent in three ways:
    ```bash
    RALPH_AGENT=claude
    ```
+
+### Selecting a Model
+
+You can optionally specify which AI model to use with the `--model` flag or `RALPH_MODEL` environment variable:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent claude --model claude-sonnet-4
+   ralph --agent opencode --model gpt-4
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_MODEL=claude-sonnet-4
+   ralph --agent claude
+   ```
+
+3. **Config file** (`.ralphrc`):
+   ```bash
+   RALPH_AGENT=claude
+   RALPH_MODEL=claude-sonnet-4
+   ```
+
+If no model is specified, the agent will use its default model.
 
 ### Agent Files
 
@@ -142,6 +169,7 @@ Configuration works identically to the shell script:
 - `RALPH_PROMPTS_DIR`: Prompts directory (default: `prompts`)
 - `RALPH_CONFIG_FILE`: Config file path (default: `.ralphrc`)
 - `RALPH_AGENT`: AI agent to use: `opencode` or `claude` (default: `opencode`)
+- `RALPH_MODEL`: AI model to use (optional, e.g., `claude-sonnet-4`, `gpt-4`)
 
 ### Config File Format
 

@@ -25,6 +25,7 @@ LogTruncate            bool
 CustomPrompt           string
 PromptsDir             string
 AgentName              string
+Model                  string
 // Internal state
 configLoaded bool
 }
@@ -43,6 +44,7 @@ origEnv := map[string]string{
 "RALPH_LOG_APPEND":                os.Getenv("RALPH_LOG_APPEND"),
 "RALPH_PROMPTS_DIR":               os.Getenv("RALPH_PROMPTS_DIR"),
 "RALPH_AGENT":                     os.Getenv("RALPH_AGENT"),
+"RALPH_MODEL":                     os.Getenv("RALPH_MODEL"),
 }
 
 // Load config file if specified
@@ -169,6 +171,17 @@ c.AgentName = origEnv["RALPH_AGENT"]
 if c.AgentName == "" {
 c.AgentName = getEnvWithDefault("RALPH_AGENT", "opencode")
 }
+
+// Model
+if c.Model == "" {
+if origEnv["RALPH_MODEL"] != "" {
+c.Model = origEnv["RALPH_MODEL"]
+}
+}
+if c.Model == "" {
+c.Model = getEnvWithDefault("RALPH_MODEL", "")
+}
+// Note: Model is optional, so we don't set a default
 
 c.configLoaded = true
 return nil

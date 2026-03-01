@@ -15,14 +15,14 @@ IsAvailable() bool
 }
 
 // GetAgent returns the appropriate agent based on configuration
-func GetAgent(agentName string) Agent {
-switch agentName {
-case "claude":
-return &ClaudeAgent{}
-case "opencode":
-return &OpencodeAgent{}
-default:
-// Default to opencode for backward compatibility
-return &OpencodeAgent{}
-}
+func GetAgent(agentName, model string) Agent {
+	switch agentName {
+	case "claude":
+		return &ClaudeAgent{Model: model}
+	case "opencode":
+		return &OpencodeAgent{Model: model}
+	default:
+		// Default to opencode for backward compatibility
+		return &OpencodeAgent{Model: model}
+	}
 }
