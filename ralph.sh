@@ -1,31 +1,33 @@
 #!/bin/sh
 
-# Usage: ./ralph.sh [prompt] [scope]
-# Params:
-#    prompt: Name of the markdown prompt file or one of the pre-bundled prompts: build|plan. Defaults to "build".
+# Usage: ./ralph.sh [options] [prompt] [scope]
+#
+# Options:
+#    -c, --config FILE                 Config file to source
+#    -m, --max-iterations N            Maximum iterations (default: 25)
+#    -p, --prompt-file FILE            Prompt file path
+#    -s, --specs-dir DIR               Specs directory (default: specs)
+#    -i, --specs-index FILE            Specs index file (default: README.md)
+#    --no-specs-index                  Disable specs index file
+#    -n, --implementation-plan-name N  Implementation plan file name
+#    --stop-condition CONDITION        Custom stop condition text
+#    --prompt PROMPT                   Inline custom prompt (overrides prompt files)
+#    -h, --help                        Show this help message
+#
+# Positional Args:
+#    prompt: Name of the markdown prompt file or pre-bundled prompts: build|plan. Defaults to "build".
 #    scope: Scope of the work to be done (optional)
+#
+# For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralph.
 
 set -eu
 
 ralph() ( # Subshell function used to give a scope to code
-	CONFIG_FILE=""
-	if [ -f "$CONFIG_FILE" ]; then
-		# shellcheck disable=SC1090
-		. "$CONFIG_FILE"
-	fi
-
-	MAX_ITERATIONS=${RALPH_MAX_ITERATIONS:-25}
-	PROMPTS_DIR=${RALPH_PROMPTS_DIR:-prompts}
 	# shellcheck disable=SC2034
 	OPENCODE_EXPERIMENTAL_PLAN_MODE=0 # Disabled because the opencode experimental plan mode causes hangs on non interactive sessions
-	SPECS_DIR=${RALPH_SPECS_DIR:-specs}
-	SPECS_INDEX_FILE=${RALPH_SPECS_INDEX_FILE:-README.md}
-	IMPLEMENTATION_PLAN_FILE=${RALPH_IMPLEMENTATION_PLAN_FILE:-IMPLEMENTATION_PLAN.md}
-	STOP_CONDITION="${RALPH_STOP_CONDITION:-}"
-	STOP_CONDITION_SIGNAL="<promise>COMPLETE</promise>"
 
-	# Function to search for prompt file recursively upwards
-	find_prompt_file() {
+	# Function to search for file recursively upwards
+	find_file() {
 		_file_path="$1"
 		_current_dir="$PWD"
 
@@ -50,6 +52,173 @@ ralph() ( # Subshell function used to give a scope to code
 		echo ""
 	}
 
+	# ============================================================================
+	# Flag parsing - POSIX compliant
+	# ============================================================================
+
+	# Save original environment variables (for precedence: flags > env vars > config > defaults)
+	_ORIG_RALPH_MAX_ITERATIONS="${RALPH_MAX_ITERATIONS:-}"
+	_ORIG_RALPH_SPECS_DIR="${RALPH_SPECS_DIR:-}"
+	_ORIG_RALPH_SPECS_INDEX_FILE="${RALPH_SPECS_INDEX_FILE:-}"
+	_ORIG_RALPH_IMPLEMENTATION_PLAN_NAME="${RALPH_IMPLEMENTATION_PLAN_NAME:-}"
+	_ORIG_RALPH_CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
+
+	# Initialize flag variables (empty means not set via flag)
+	_PROMPT_FILE=""
+	_CUSTOM_PROMPT=""
+	_CONFIG_FILE=""
+	_MAX_ITERATIONS=""
+	_SPECS_DIR=""
+	_SPECS_INDEX_FILE=""
+	_SPECS_INDEX_FILE_DISABLED=""
+	_IMPLEMENTATION_PLAN_NAME=""
+	PROMPTS_DIR="${RALPH_PROMPTS_DIR:-prompts}"
+
+	# Parse command-line flags
+	_args=""
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-c | --config)
+			if [ $# -lt 2 ]; then
+				echo "Error: -c/--config requires an argument" >&2
+				exit 1
+			fi
+			_CONFIG_FILE="$2"
+			shift 2
+			;;
+		-m | --max-iterations)
+			if [ $# -lt 2 ]; then
+				echo "Error: -m/--max-iterations requires an argument" >&2
+				exit 1
+			fi
+			_MAX_ITERATIONS="$2"
+			shift 2
+			;;
+		-p | --prompt-file)
+			if [ $# -lt 2 ]; then
+				echo "Error: -p/--prompt-file requires an argument" >&2
+				exit 1
+			fi
+			_PROMPT_FILE="$2"
+			shift 2
+			;;
+		-s | --specs-dir)
+			if [ $# -lt 2 ]; then
+				echo "Error: -s/--specs-dir requires an argument" >&2
+				exit 1
+			fi
+			_SPECS_DIR="$2"
+			shift 2
+			;;
+		-i | --specs-index)
+			if [ $# -lt 2 ]; then
+				echo "Error: -i/--specs-index requires an argument" >&2
+				exit 1
+			fi
+			_SPECS_INDEX_FILE="$2"
+			shift 2
+			;;
+		--no-specs-index)
+			_SPECS_INDEX_FILE_DISABLED="1"
+			shift
+			;;
+		-n | --implementation-plan-name)
+			if [ $# -lt 2 ]; then
+				echo "Error: -n/--implementation-plan-name requires an argument" >&2
+				exit 1
+			fi
+			_IMPLEMENTATION_PLAN_NAME="$2"
+			shift 2
+			;;
+		--prompt)
+			if [ $# -lt 2 ]; then
+				echo "Error: --prompt requires an argument" >&2
+				exit 1
+			fi
+			_CUSTOM_PROMPT="$2"
+			shift 2
+			;;
+		-h | --help)
+			sed -n '3,21p' "$0" | sed 's/^#//' | sed "s%\./ralph\.sh%$0%"
+			exit 0
+			;;
+		--)
+			shift
+			_args="$_args $*"
+			break
+			;;
+		-*)
+			echo "Error: Unknown option: $1" >&2
+			exit 1
+			;;
+		*)
+			_args="$_args $1"
+			shift
+			;;
+		esac
+	done
+
+	# Find and load config file
+	if [ -n "$_CONFIG_FILE" ]; then
+		CONFIG_FILE="$_CONFIG_FILE"
+	else
+		CONFIG_FILE="${RALPH_CONFIG_FILE:-.ralphrc}"
+	fi
+	CONFIG_FILE="$(find_file "$CONFIG_FILE")"
+	if [ -n "$CONFIG_FILE" ]; then
+		# shellcheck disable=SC1090
+		. "$CONFIG_FILE"
+	fi
+
+	# Set final values: flags > env vars > config env vars > defaults
+	if [ -n "$_MAX_ITERATIONS" ]; then
+		MAX_ITERATIONS="$_MAX_ITERATIONS"
+	elif [ -n "$_ORIG_RALPH_MAX_ITERATIONS" ]; then
+		MAX_ITERATIONS="$_ORIG_RALPH_MAX_ITERATIONS"
+	else
+		MAX_ITERATIONS="${RALPH_MAX_ITERATIONS:-25}"
+	fi
+
+	if [ -n "$_PROMPT_FILE" ]; then
+		PROMPT_FILE="$_PROMPT_FILE"
+	else
+		PROMPT_FILE="${RALPH_PROMPT_FILE:-}"
+	fi
+
+	if [ -n "$_SPECS_DIR" ]; then
+		SPECS_DIR="$_SPECS_DIR"
+	elif [ -n "$_ORIG_RALPH_SPECS_DIR" ]; then
+		SPECS_DIR="$_ORIG_RALPH_SPECS_DIR"
+	else
+		SPECS_DIR="${RALPH_SPECS_DIR:-specs}"
+	fi
+
+	if [ -n "$_SPECS_INDEX_FILE_DISABLED" ]; then
+		SPECS_INDEX_FILE=""
+	elif [ -n "$_SPECS_INDEX_FILE" ]; then
+		SPECS_INDEX_FILE="$_SPECS_INDEX_FILE"
+	elif [ -n "$_ORIG_RALPH_SPECS_INDEX_FILE" ]; then
+		SPECS_INDEX_FILE="$_ORIG_RALPH_SPECS_INDEX_FILE"
+	else
+		SPECS_INDEX_FILE="${RALPH_SPECS_INDEX_FILE:-README.md}"
+	fi
+
+	if [ -n "$_IMPLEMENTATION_PLAN_NAME" ]; then
+		IMPLEMENTATION_PLAN_NAME="$_IMPLEMENTATION_PLAN_NAME"
+	elif [ -n "$_ORIG_RALPH_IMPLEMENTATION_PLAN_NAME" ]; then
+		IMPLEMENTATION_PLAN_NAME="$_ORIG_RALPH_IMPLEMENTATION_PLAN_NAME"
+	else
+		IMPLEMENTATION_PLAN_NAME="${RALPH_IMPLEMENTATION_PLAN_NAME:-IMPLEMENTATION_PLAN.md}"
+	fi
+
+	if [ -n "$_CUSTOM_PROMPT" ]; then
+		CUSTOM_PROMPT="$_CUSTOM_PROMPT"
+	elif [ -n "$_ORIG_RALPH_CUSTOM_PROMPT" ]; then
+		CUSTOM_PROMPT="$_ORIG_RALPH_CUSTOM_PROMPT"
+	else
+		CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
+	fi
+
 	build_prompt() {
 		SPECS_INDEX_FILE_REFERENCE=""
 		if [ "$SPECS_INDEX_FILE" != "" ]; then
@@ -64,7 +233,7 @@ ralph() ( # Subshell function used to give a scope to code
 # Agent Instructions (Build Mode)
 
 - Study \`$SPECS_DIR/*\`$SPECS_INDEX_FILE_REFERENCE.
-- Study \`$IMPLEMENTATION_PLAN_FILE\` and pick the single most important task.
+- Study \`$IMPLEMENTATION_PLAN_NAME\` and pick the single most important task.
 - Implement the task
 - Validate the implementation
 - Update the plan
@@ -75,13 +244,13 @@ ralph() ( # Subshell function used to give a scope to code
 
 - After completing the selected task, stop. Do NOT start another task in the same run.
 - If ALL stories are complete and passing, reply with:
-  \`<STOP_CONDITION_SIGNAL>\`
+  \`<COMPLETION_SIGNAL>\`
 
 ## IMPORTANT
 
 - Before changes, search the codebase. Do NOT assume functionality is missing.
 - Implement ONLY one task. Stop after committing.
-- Update \`$IMPLEMENTATION_PLAN_FILE\` when the task is done.
+- Update \`$IMPLEMENTATION_PLAN_NAME\` when the task is done.
 - Use the verification log format: \`YYYY-MM-DD: <command or URL> - <result>\`.
 - Keep a \`Manual Deployment Tasks\` section in implementation the plan and use \`None\` when there are no tasks.
 - You may implement missing functionality if required, but study relevant \`$SPECS_DIR/*\` first.
@@ -94,9 +263,11 @@ EOF
 		cat <<EOF
 # Agent Instructions (Planning Mode)
 
+Scope: <SCOPE>
+
 ## Objective
 
-Generate or update \`$IMPLEMENTATION_PLAN_FILE\` in a structured, phase-based format with:
+Generate or update \`$IMPLEMENTATION_PLAN_NAME\` in a structured, phase-based format with:
 
 - Clear status metadata
 - Quick reference tables
@@ -109,7 +280,7 @@ Plan only. Do NOT implement anything.
 ## Study and Gap Analysis
 
 - Study \`$SPECS_DIR/*\` to learn application requirements.
-- Study \`$IMPLEMENTATION_PLAN_FILE\` (if present; it may be incorrect).
+- Study \`$IMPLEMENTATION_PLAN_NAME\` (if present; it may be incorrect).
 - Study relevant source code to compare against specs.
 - Use \`git\` to study recent changes on the specs related to the specified current scope.
 
@@ -124,7 +295,7 @@ Rules:
 
 ## Output Format Requirements
 
-Write \`$IMPLEMENTATION_PLAN_FILE\` using this structure and level of detail:
+Write \`$IMPLEMENTATION_PLAN_NAME\` using this structure and level of detail:
 
 Header
 
@@ -182,63 +353,88 @@ Manual Deployment Tasks
 
 ## Stop Condition
 
-**IMPORTANT**: After writing/updating if \`$IMPLEMENTATION_PLAN_FILE\` already reflects the current gaps, reply with:
-\`<STOP_CONDITION_SIGNAL>\`
+**IMPORTANT**: After writing/updating if \`$IMPLEMENTATION_PLAN_NAME\` already reflects the current gaps, reply with:
+\`<COMPLETION_SIGNAL>\`
 
 EOF
 	}
 
 	PROMPT=""
 
-	# Parse arguments
-	PROMPT_NAME=${1:-build}
+	# Parse positional arguments
+	_PROMPT_NAME="build"
+	_SCOPE="Whole system"
+	_idx=1
+	for _arg in $_args; do
+		if [ $_idx -eq 1 ]; then
+			_PROMPT_NAME="$_arg"
+		elif [ $_idx -eq 2 ]; then
+			_SCOPE="$_arg"
+		fi
+		_idx=$((_idx + 1))
+	done
 
-	# Build prompt file path
-	PROMPT_FILE_PROVIDED="${PROMPTS_DIR}/${PROMPT_NAME}.md"
+	# If custom prompt is provided via flag, use it directly
+	if [ -n "$CUSTOM_PROMPT" ]; then
+		PROMPT="$CUSTOM_PROMPT"
+		echo ""
+		echo "==============================================================="
+		echo "               USING INLINE CUSTOM PROMPT"
+		echo "==============================================================="
+		echo ""
+	else
 
-	# Resolve prompt file location
-	PROMPT_FILE="$(find_prompt_file "$PROMPT_FILE_PROVIDED")"
 
-	echo ""
-	echo "==============================================================="
-	if [ "$PROMPT_FILE" = "" ]; then
-		case "$PROMPT_NAME" in
-		build)
-			echo "               USING DEFAULT 'BUILD' PROMPT"
-			PROMPT="$(build_prompt)"
-			;;
-		plan)
-			echo "               USING DEFAULT 'PLAN' PROMPT"
-			PROMPT="$(plan_prompt)"
-			;;
-		*)
-			printf " Error: Prompt file not found for '%s'\n Use a valid prompt file or one of the pre-bundled prompts (build, plan).\n" "$PROMPT_FILE_PROVIDED"
+		if [ -n "$_PROMPT_FILE" ]; then
+			PROMPT_FILE_PROVIDED="$_PROMPT_FILE"
+		else
+			# Build prompt file path
+			PROMPT_FILE_PROVIDED="${PROMPTS_DIR}/${_PROMPT_NAME}.md"
+			# Resolve prompt file location
+			PROMPT_FILE="$(find_file "$PROMPT_FILE_PROVIDED")"
+		fi
+
+		if [ "$PROMPT_FILE" = "" ]; then
+			case "$_PROMPT_NAME" in
+			build)
+				PROMPT="$(build_prompt)"
+				echo ""
+				echo "==============================================================="
+				echo "               USING DEFAULT 'BUILD' PROMPT"
+				echo "==============================================================="
+				echo ""
+				;;
+			plan)
+				PROMPT="$(plan_prompt)"
+				echo ""
+				echo "==============================================================="
+				echo "               USING DEFAULT 'PLAN' PROMPT"
+				echo "==============================================================="
+				echo ""
+				;;
+			*)
+				echo ""
+				echo "==============================================================="
+				printf " Error: Prompt file not found for '%s'\n Use a valid prompt file or one of the pre-bundled prompts (build, plan).\n" "$PROMPT_FILE_PROVIDED"
+				echo "==============================================================="
+				echo ""
+				exit 1
+				;;
+			esac
+		else
+			PROMPT="$(cat "$PROMPT_FILE")"
+			echo ""
+			echo "==============================================================="
+			echo " USING PROMPT FILE: $PROMPT_FILE"
 			echo "==============================================================="
 			echo ""
-			exit 1
-			;;
-		esac
-	else
-		echo " USING PROMPT FILE: $PROMPT_FILE"
-		PROMPT="$(cat "$PROMPT_FILE")"
-	fi
-	echo "==============================================================="
-	echo ""
-
-	if [ -n "$STOP_CONDITION" ]; then
-		PROMPT="$PROMPT
-**IMPORTANT Stop Condition**: $STOP_CONDITION."
+		fi
 	fi
 
-	PROMPT="$(echo "$PROMPT" | sed "s|<STOP_CONDITION_SIGNAL>|$STOP_CONDITION_SIGNAL|g")"
+	COMPLETION_SIGNAL="<promise>COMPLETE</promise>"
 
-	SCOPE="${2:-}"
-	if [ -n "$SCOPE" ]; then
-		PROMPT="${PROMPT}
-**Current Scope**: <CURRENT_SCOPE>."
-	fi
-
-	PROMPT="$(echo "$PROMPT" | sed "s|<CURRENT_SCOPE>|$SCOPE|g")"
+	PROMPT="$(echo "$PROMPT" | sed "s|<COMPLETION_SIGNAL>|$COMPLETION_SIGNAL|g")"
+	PROMPT="$(echo "$PROMPT" | sed "s|<SCOPE>|$_SCOPE|g")"
 
 	echo "Starting Ralph - Max iterations: $MAX_ITERATIONS"
 
@@ -246,15 +442,19 @@ EOF
 	while [ "$i" -le "$MAX_ITERATIONS" ]; do
 		echo ""
 		echo "==============================================================="
-		echo " [${PROMPT_NAME}] Iteration $i of $MAX_ITERATIONS ($(date))"
+		echo " [${_PROMPT_NAME}] Iteration $i of $MAX_ITERATIONS ($(date))"
 		echo "==============================================================="
 
-		# OUTPUT="$(opencode run "$PROMPT" 2>&1 | tee /dev/stderr)" || true
-		echo "$PROMPT"
-		OUTPUT="$STOP_CONDITION_SIGNAL"
+		if [ -z "$DEBUG" ]; then
+			# For usage with any other agent, just change this line to call the appropriate command with the prompt as input
+			OUTPUT="$(opencode run "$PROMPT" 2>&1)" || true
+		else
+			echo "$PROMPT"
+			OUTPUT="$COMPLETION_SIGNAL"
+		fi
 
 		# Check for completion signal
-		if echo "$OUTPUT" | grep -q "$STOP_CONDITION_SIGNAL"; then
+		if echo "$OUTPUT" | grep -q "$COMPLETION_SIGNAL"; then
 
 			echo ""
 			echo "All planned tasks completed!"
