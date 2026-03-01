@@ -20,7 +20,7 @@ This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see 
 To install it using Vercel's skills CLI, run:
 
 ```sh
-npm skills add https://github.com/iyaki/ralph/ --skill spec-creator
+npx skills add https://github.com/iyaki/ralph/ --skill spec-creator
 ```
 
 ## Usage
