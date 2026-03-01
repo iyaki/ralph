@@ -3,7 +3,7 @@
 {
 	"name": "Ralph",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/base:noble",
+	"image": "mcr.microsoft.com/devcontainers/go:1.22",
 	"features": {
 		"ghcr.io/devcontainers/features/git:1": {
 			"ppa": true,
@@ -20,8 +20,8 @@
 		"vscode": {
 			"extensions": [
 				"EditorConfig.EditorConfig",
-				"timonwong.shellcheck",
-				"nhoizey.gremlins"
+				"golang.go",
+				"timonwong.shellcheck"
 			]
 		}
 	}
