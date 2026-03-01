@@ -20,8 +20,10 @@ Short: "POSIX-compliant AI Agentic Loop runner for spec-driven development",
 Long: `Ralph is a POSIX-compliant AI Agentic Loop shell runner aimed for spec-driven development workflows.
 It loads prompts from files (with optional inline overrides) and comes with build/plan presets.
 
-For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralph.`,		SilenceUsage:  true,
-		SilenceErrors: true,Example: `  ralph build
+For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralph.`,
+SilenceUsage:  true,
+SilenceErrors: true,
+Example: `  ralph build
   ralph plan my-feature
   ralph --max-iterations 10 build
   ralph --prompt "Custom prompt text"
@@ -83,6 +85,7 @@ flags.StringVarP(&cfg.LogFile, "log-file", "l", "", "Log file path")
 flags.BoolVar(&cfg.NoLog, "no-log", false, "Disable logs")
 flags.BoolVar(&cfg.LogTruncate, "log-truncate", false, "Truncate log file before writing")
 flags.StringVar(&cfg.CustomPrompt, "prompt", "", "Inline custom prompt (overrides prompt files)")
+flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude (default: opencode)")
 
 return cmd
 }
@@ -94,7 +97,16 @@ completionSignal := "<promise>COMPLETE</promise>"
 // Replace placeholders in prompt
 prompt = strings.ReplaceAll(prompt, "<COMPLETION_SIGNAL>", completionSignal)
 
+// Get the configured agent
+agent := GetAgent(cfg.AgentName)
+
+// Check if agent is available
+if !agent.IsAvailable() {
+fmt.Fprintf(output, "Warning: %s agent not found in PATH, will continue anyway...\n", agent.Name())
+}
+
 fmt.Fprintf(output, "Starting Ralph - Max iterations: %d\n", cfg.MaxIterations)
+fmt.Fprintf(output, "Using agent: %s\n", agent.Name())
 
 for i := 1; i <= cfg.MaxIterations; i++ {
 fmt.Fprintf(output, "\n")
@@ -110,8 +122,8 @@ fmt.Fprintf(output, "Completed at iteration %d of %d\n", i, cfg.MaxIterations)
 return nil
 }
 
-// Execute the command
-result, err := ExecuteCommand("opencode", []string{"run", prompt}, output)
+// Execute the agent
+result, err := agent.Execute(prompt, output)
 if err != nil {
 // Non-fatal error, continue to next iteration
 fmt.Fprintf(output, "Command execution warning: %v\n", err)
