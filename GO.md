@@ -82,6 +82,10 @@ echo "prompt from stdin" | ./ralph -
 # Use a specific model with Claude
 ./ralph --agent claude --model claude-sonnet-4
 
+# Use a sub-agent/agent mode
+./ralph --agent opencode --agent-mode reviewer
+./ralph --agent claude --agent-mode planner
+
 # Show help
 ./ralph --help
 ```
@@ -137,6 +141,30 @@ You can optionally specify which AI model to use with the `--model` flag or `RAL
 
 If no model is specified, the agent will use its default model.
 
+### Selecting a Sub-Agent / Agent Mode
+
+You can optionally select a custom agent mode (sub-agent) for tools that support it:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent opencode --agent-mode reviewer
+   ralph --agent claude --agent-mode planner
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_AGENT_MODE=reviewer
+   ralph --agent opencode
+   ```
+
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
+   agent-mode = "planner"
+   ```
+
+If no agent mode is specified, the tool's default behavior is used.
+
 ### Agent Files
 
 Each agent implementation is in its own file:
@@ -170,6 +198,7 @@ Configuration works identically to the shell script:
 - `RALPH_CONFIG_FILE`: Config file path (default: `ralph.toml`, `.ralphrc.toml`, or `.ralphrc`)
 - `RALPH_AGENT`: AI agent to use: `opencode` or `claude` (default: `opencode`)
 - `RALPH_MODEL`: AI model to use (optional, e.g., `claude-sonnet-4`, `gpt-4`)
+- `RALPH_AGENT_MODE`: Agent mode/sub-agent name (optional, e.g., `reviewer`, `planner`)
 
 ### Config File Format
 
@@ -179,6 +208,7 @@ Create a `ralph.toml` file in your project root or parent directories (legacy `.
 # AI Agent Configuration
 agent = "claude"
 model = "claude-sonnet-4"
+agent-mode = "planner"
 
 # Iteration Settings
 max-iterations = 30
