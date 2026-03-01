@@ -1,0 +1,22 @@
+# Ralph Configuration File (TOML format)
+# This file demonstrates all available configuration options
+
+# AI Agent Configuration
+# - opencode (default): Uses the opencode CLI tool
+# - claude: Uses the Claude Code CLI tool
+agent = "opencode"
+model = "gpt-4"
+
+# Iteration Settings
+max-iterations = 25
+
+# Directory Settings
+specs-dir = "specs"
+specs-index-file = "README.md"
+implementation-plan-name = "IMPLEMENTATION_PLAN.md"
+prompts-dir = ".ralph/prompts"
+
+# Logging Configuration
+log-file = "ralph.log"
+no-log = false
+log-truncate = false

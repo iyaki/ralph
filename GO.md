@@ -108,9 +108,9 @@ You can select the agent in three ways:
    ralph
    ```
 
-3. **Config file** (`.ralphrc`):
-   ```bash
-   RALPH_AGENT=claude
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
    ```
 
 ### Selecting a Model
@@ -129,10 +129,10 @@ You can optionally specify which AI model to use with the `--model` flag or `RAL
    ralph --agent claude
    ```
 
-3. **Config file** (`.ralphrc`):
-   ```bash
-   RALPH_AGENT=claude
-   RALPH_MODEL=claude-sonnet-4
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
+   model = "claude-sonnet-4"
    ```
 
 If no model is specified, the agent will use its default model.
@@ -167,19 +167,37 @@ Configuration works identically to the shell script:
 - `RALPH_LOG_ENABLED`: Enable/disable logging (`1` or `0`)
 - `RALPH_LOG_APPEND`: Append to log file (`1` or `0`)
 - `RALPH_PROMPTS_DIR`: Prompts directory (default: `prompts`)
-- `RALPH_CONFIG_FILE`: Config file path (default: `.ralphrc`)
+- `RALPH_CONFIG_FILE`: Config file path (default: `ralph.toml`, `.ralphrc.toml`, or `.ralphrc`)
 - `RALPH_AGENT`: AI agent to use: `opencode` or `claude` (default: `opencode`)
 - `RALPH_MODEL`: AI model to use (optional, e.g., `claude-sonnet-4`, `gpt-4`)
 
 ### Config File Format
 
-Create a `.ralphrc` file in your project root or parent directories:
+Create a `ralph.toml` file in your project root or parent directories (legacy `.ralphrc.toml` and `.ralphrc` files are also supported):
 
-```bash
-RALPH_MAX_ITERATIONS=30
-RALPH_SPECS_DIR=specifications
-RALPH_LOG_FILE=logs/ralph.log
+```toml
+# AI Agent Configuration
+agent = "claude"
+model = "claude-sonnet-4"
+
+# Iteration Settings
+max-iterations = 30
+
+# Directory Settings
+specs-dir = "specifications"
+specs-index-file = "README.md"
+implementation-plan-name = "IMPLEMENTATION_PLAN.md"
+prompts-dir = ".ralph/prompts"
+
+# Logging Configuration
+log-file = "logs/ralph.log"
+no-log = false
+log-truncate = false
 ```
+
+All configuration keys in the TOML file correspond to their command-line flags (with hyphens instead of underscores).
+
+**Note:** The config file search order is: `ralph.toml` → `.ralphrc.toml` → `.ralphrc`
 
 ## Development
 
