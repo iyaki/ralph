@@ -59,6 +59,8 @@ This Ralph implementation relies on `opencode` to work. You can replace it with 
 ### Positional arguments
 
 - `prompt`: Name of the prompt file (without `.md`), or `build` / `plan`. Defaults to `build`.
+- `prompt`: Name of the prompt file (without `.md`), or `build` / `plan`. Defaults to `build`.
+- `-`: Read the prompt from standard input (stdin).
 - `scope`: Optional scope for plan mode.
 
 ### Options
@@ -106,6 +108,15 @@ Inline prompt override:
 
 ```sh
 ./ralph.sh --prompt "Run a quick audit of the API docs and report issues."
+```
+
+Read prompt from stdin:
+
+```sh
+cat prompts/custom.md | ./ralph.sh --prompt-file -
+
+# Or using positional '-':
+cat prompts/custom.md | ./ralph.sh -
 ```
 
 Enable logs in a file (append mode):

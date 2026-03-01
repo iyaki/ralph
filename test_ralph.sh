@@ -148,12 +148,32 @@ test_inline_prompt_flag() {
 }
 
 # ============================================================================
+# Test: Prompt from stdin via --prompt-file -
+# ============================================================================
+test_prompt_from_stdin_flag() {
+	local output
+	output=$(printf '%s\n' 'STDIN PROMPT FROM FLAG' | DEBUG=1 "$RALPH" --prompt-file - 2>&1)
+	assert_output_contains "$output" "USING PROMPT FROM STDIN" "--prompt-file - reads prompt from stdin"
+	assert_output_contains "$output" "STDIN PROMPT FROM FLAG" "stdin prompt content is used with --prompt-file -"
+}
+
+# ============================================================================
+# Test: Prompt from stdin via positional '-'
+# ============================================================================
+test_prompt_from_stdin_positional() {
+	local output
+	output=$(printf '%s\n' 'STDIN PROMPT FROM POSITIONAL' | DEBUG=1 "$RALPH" - 2>&1)
+	assert_output_contains "$output" "USING PROMPT FROM STDIN" "positional '-' reads prompt from stdin"
+	assert_output_contains "$output" "STDIN PROMPT FROM POSITIONAL" "stdin prompt content is used with positional '-'"
+}
+
+# ============================================================================
 # Test: Log file flag (short form)
 # ============================================================================
 test_log_file_short_flag() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	local logfile
 	logfile="$tmpdir/ralph.log"
@@ -213,7 +233,7 @@ test_env_impl_plan_name() {
 test_env_log_file() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	local logfile
 	logfile="$tmpdir/ralph-env.log"
@@ -237,7 +257,7 @@ test_env_log_file() {
 test_env_prompts_dir() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	mkdir -p "$tmpdir/custom_prompts"
 	cat >"$tmpdir/custom_prompts/build.md" <<EOF
@@ -258,7 +278,7 @@ EOF
 test_config_file_loading() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	# Create a config file
 	cat >"$tmpdir/.ralphrc" <<EOF
@@ -289,7 +309,7 @@ test_flag_overrides_env() {
 test_flag_overrides_config() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	# Create a config file
 	cat >"$tmpdir/.ralphrc" <<EOF
@@ -311,7 +331,7 @@ EOF
 test_env_overrides_config() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	# Create a config file
 	cat >"$tmpdir/.ralphrc" <<EOF
@@ -333,7 +353,7 @@ EOF
 test_custom_config_file() {
 	local tmpdir
 	tmpdir=$(mktemp -d)
-	trap "rm -rf $tmpdir" EXIT
+	trap 'rm -rf $tmpdir' EXIT
 
 	# Create a custom config file
 	cat >"$tmpdir/custom.ralphrc" <<EOF
@@ -403,6 +423,8 @@ test_no_specs_index_flag
 test_impl_plan_short_flag
 test_impl_plan_long_flag
 test_inline_prompt_flag
+test_prompt_from_stdin_flag
+test_prompt_from_stdin_positional
 test_log_file_short_flag
 test_env_max_iterations
 test_env_specs_dir

@@ -5,7 +5,7 @@
 # Options:
 #    -c, --config FILE                 Config file to source
 #    -m, --max-iterations N            Maximum iterations (default: 25)
-#    -p, --prompt-file FILE            Prompt file path
+#    -p, --prompt-file FILE            Prompt file path (use '-' to read from stdin)
 #    -s, --specs-dir DIR               Specs directory (default: specs)
 #    -i, --specs-index FILE            Specs index file (default: README.md)
 #    --no-specs-index                  Disable specs index file
@@ -18,7 +18,7 @@
 #    -h, --help                        Show this help message
 #
 # Positional Args:
-#    prompt: Name of the markdown prompt file or pre-bundled prompts: build|plan. Defaults to "build".
+#    prompt: Name of the markdown prompt file, '-' for stdin, or pre-bundled prompts: build|plan. Defaults to "build".
 #    scope: Scope of the work to be done (optional)
 #
 # For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralph.
@@ -172,6 +172,10 @@ ralph() ( # Subshell function used to give a scope to code
 			_args="$_args $*"
 			break
 			;;
+		-)
+			_args="$_args $1"
+			shift
+			;;
 		-*)
 			echo "Error: Unknown option: $1" >&2
 			exit 1
@@ -290,6 +294,7 @@ ralph() ( # Subshell function used to give a scope to code
 		LOG_TEE_PID=$!
 		exec >"$LOG_FIFO" 2>&1
 
+		# shellcheck disable=SC2329
 		cleanup_logging() {
 			exec 1>&3 2>&4
 			exec 3>&- 4>&-
@@ -464,17 +469,36 @@ EOF
 		echo ""
 	else
 
-
 		if [ -n "$_PROMPT_FILE" ]; then
 			PROMPT_FILE_PROVIDED="$_PROMPT_FILE"
+			if [ "$PROMPT_FILE_PROVIDED" = "-" ]; then
+				PROMPT="$(cat)"
+				echo ""
+				echo "==============================================================="
+				echo "               USING PROMPT FROM STDIN"
+				echo "==============================================================="
+				echo ""
+			fi
 		else
 			# Build prompt file path
-			PROMPT_FILE_PROVIDED="${PROMPTS_DIR}/${_PROMPT_NAME}.md"
-			# Resolve prompt file location
-			PROMPT_FILE="$(find_file "$PROMPT_FILE_PROVIDED")"
+			if [ "$_PROMPT_NAME" = "-" ]; then
+				PROMPT_FILE_PROVIDED="-"
+				PROMPT="$(cat)"
+				echo ""
+				echo "==============================================================="
+				echo "               USING PROMPT FROM STDIN"
+				echo "==============================================================="
+				echo ""
+			else
+				PROMPT_FILE_PROVIDED="${PROMPTS_DIR}/${_PROMPT_NAME}.md"
+				# Resolve prompt file location
+				PROMPT_FILE="$(find_file "$PROMPT_FILE_PROVIDED")"
+			fi
 		fi
 
-		if [ "$PROMPT_FILE" = "" ]; then
+		if [ "$PROMPT_FILE_PROVIDED" = "-" ]; then
+			:
+		elif [ "$PROMPT_FILE" = "" ]; then
 			case "$_PROMPT_NAME" in
 			build)
 				PROMPT="$(build_prompt)"
