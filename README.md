@@ -12,6 +12,17 @@ curl -fsSLO https://raw.githubusercontent.com/iyaki/ralph/main/ralph.sh
 chmod +x ralph.sh
 ```
 
+### Spec Creator skill
+
+This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for usage in the first phase of the Ralph Wiggum methodology (see [below](#about-the-ralph-wiggum-methodology)).
+
+
+To install it using Vercel's skills CLI, run:
+
+```sh
+npm skills add https://github.com/iyaki/ralph/ --skill spec-creator
+```
+
 ## Usage
 
 If you have a `specs/` directory similar to [this one](https://github.com/ghuntley/loom/tree/trunk/specs), using ralph can be as simple as:
