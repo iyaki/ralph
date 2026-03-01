@@ -1,0 +1,20 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+jobs:
+  shell-tests:
+    name: Run shell tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run ralph test suite
+        shell: bash
+        run: ./test_ralph.sh
