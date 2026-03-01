@@ -26,6 +26,7 @@
 set -eu
 
 ralph() ( # Subshell function used to give a scope to code
+	pwd
 	# shellcheck disable=SC2034
 	OPENCODE_EXPERIMENTAL_PLAN_MODE=0 # Disabled because the opencode experimental plan mode causes hangs on non interactive sessions
 
@@ -273,7 +274,11 @@ ralph() ( # Subshell function used to give a scope to code
 	fi
 
 	# Configure logging for all ralph output (stdout + stderr)
-	if [ "$LOG_ENABLED" = "1" ] && [ -n "$LOG_FILE" ]; then
+	if [ "$LOG_ENABLED" = "1" ]; then
+		if [ -z "$LOG_FILE" ]; then
+			LOG_FILE="$(mktemp -t ralph-XXXXXX.log)"
+		fi
+
 		LOG_DIR=$(dirname "$LOG_FILE")
 		if [ ! -d "$LOG_DIR" ]; then
 			mkdir -p "$LOG_DIR"
@@ -281,6 +286,15 @@ ralph() ( # Subshell function used to give a scope to code
 
 		if [ "$LOG_APPEND" != "1" ]; then
 			: >"$LOG_FILE"
+		fi
+
+		printf '===== Ralph run started at %s =====\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" >>"$LOG_FILE"
+
+		if type git > /dev/null 2>&1; then
+			branch_name="$(git symbolic-ref HEAD 2>/dev/null || echo "N/A")"
+			branch_name=${branch_name##refs/heads/}
+			printf 'Git branch: %s\n' "$branch_name" >>"$LOG_FILE"
+			printf 'Git commit: %s\n' "$(git rev-parse HEAD 2>/dev/null || echo "N/A")" >>"$LOG_FILE"
 		fi
 
 		printf '===== Ralph run started at %s =====\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" >>"$LOG_FILE"
