@@ -148,6 +148,30 @@ test_inline_prompt_flag() {
 }
 
 # ============================================================================
+# Test: Log file flag (short form)
+# ============================================================================
+test_log_file_short_flag() {
+	local tmpdir
+	tmpdir=$(mktemp -d)
+	trap "rm -rf $tmpdir" EXIT
+
+	local logfile
+	logfile="$tmpdir/ralph.log"
+
+	DEBUG=1 "$RALPH" -l "$logfile" --prompt "log-flag-test" >/dev/null 2>&1
+
+	if [ -f "$logfile" ] && grep -q "log-flag-test" "$logfile"; then
+		echo "✓ Log file flag (-l) writes output to log file"
+		TESTS_PASSED=$((TESTS_PASSED + 1))
+	else
+		echo "✗ Log file flag (-l) writes output to log file"
+		TESTS_FAILED=$((TESTS_FAILED + 1))
+	fi
+
+	rm -rf "$tmpdir"
+}
+
+# ============================================================================
 # Test: Environment variable - RALPH_MAX_ITERATIONS
 # ============================================================================
 test_env_max_iterations() {
@@ -181,6 +205,30 @@ test_env_impl_plan_name() {
 	local output
 	output=$(DEBUG=1 RALPH_IMPLEMENTATION_PLAN_NAME=ROADMAP.md "$RALPH" 2>&1)
 	assert_output_contains "$output" "ROADMAP.md" "RALPH_IMPLEMENTATION_PLAN_NAME env var sets value"
+}
+
+# ============================================================================
+# Test: Environment variable - RALPH_LOG_FILE
+# ============================================================================
+test_env_log_file() {
+	local tmpdir
+	tmpdir=$(mktemp -d)
+	trap "rm -rf $tmpdir" EXIT
+
+	local logfile
+	logfile="$tmpdir/ralph-env.log"
+
+	DEBUG=1 RALPH_LOG_FILE="$logfile" "$RALPH" --prompt "log-env-test" >/dev/null 2>&1
+
+	if [ -f "$logfile" ] && grep -q "log-env-test" "$logfile"; then
+		echo "✓ RALPH_LOG_FILE env var writes output to log file"
+		TESTS_PASSED=$((TESTS_PASSED + 1))
+	else
+		echo "✗ RALPH_LOG_FILE env var writes output to log file"
+		TESTS_FAILED=$((TESTS_FAILED + 1))
+	fi
+
+	rm -rf "$tmpdir"
 }
 
 # ============================================================================
@@ -355,10 +403,12 @@ test_no_specs_index_flag
 test_impl_plan_short_flag
 test_impl_plan_long_flag
 test_inline_prompt_flag
+test_log_file_short_flag
 test_env_max_iterations
 test_env_specs_dir
 test_env_specs_index_file
 test_env_impl_plan_name
+test_env_log_file
 test_env_prompts_dir
 test_config_file_loading
 test_flag_overrides_env

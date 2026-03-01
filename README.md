@@ -71,6 +71,9 @@ This Ralph implementation relies on `opencode` to work. You can replace it with 
 -i, --specs-index FILE                    Specs index file (default: README.md)
 	--no-specs-index                        Disable specs index file
 -n, --implementation-plan-name FILENAME   Implementation plan file name
+	-l, --log-file FILE                      Log all output to a file
+	--no-log                                 Disable logging
+	--log-truncate                           Truncate log file before writing
 	--stop-condition CONDITION              Custom stop condition text
 	--prompt PROMPT                         Inline custom prompt (overrides prompt files)
 -h, --help                                Show help
@@ -105,6 +108,18 @@ Inline prompt override:
 ./ralph.sh --prompt "Run a quick audit of the API docs and report issues."
 ```
 
+Enable logs in a file (append mode):
+
+```sh
+./ralph.sh --log-file logs/ralph.log
+```
+
+Enable logs via environment variable:
+
+```sh
+RALPH_LOG_FILE=logs/ralph.log ./ralph.sh
+```
+
 Limit iterations and add a stop condition:
 
 ```sh
@@ -123,6 +138,9 @@ Ralph supports environment variables and an optional config file. Flags override
 - `RALPH_SPECS_INDEX_FILE`
 - `RALPH_PROMPTS_DIR`
 - `RALPH_IMPLEMENTATION_PLAN_NAME`
+- `RALPH_LOG_FILE` - Path to a log file where all Ralph output (stdout/stderr) is mirrored.
+- `RALPH_LOG_ENABLED` - Set to `0` to disable logs, `1` to enable (default: `1`).
+- `RALPH_LOG_APPEND` - Set to `0` to truncate before writing, `1` to append (default: `1`).
 - `DEBUG` - Set to any value to print the prompt instead of executing it. Useful for reviewing what would be sent to the agent without actually running it. Example: `DEBUG=1 ./ralph.sh plan "my-feature"`
 
 ### Config file

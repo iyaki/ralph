@@ -10,6 +10,9 @@
 #    -i, --specs-index FILE            Specs index file (default: README.md)
 #    --no-specs-index                  Disable specs index file
 #    -n, --implementation-plan-name N  Implementation plan file name
+#    -l, --log-file FILE               Log file path
+#    --no-log                          Disable logs
+#    --log-truncate                    Truncate log file before writing
 #    --stop-condition CONDITION        Custom stop condition text
 #    --prompt PROMPT                   Inline custom prompt (overrides prompt files)
 #    -h, --help                        Show this help message
@@ -62,6 +65,9 @@ ralph() ( # Subshell function used to give a scope to code
 	_ORIG_RALPH_SPECS_INDEX_FILE="${RALPH_SPECS_INDEX_FILE:-}"
 	_ORIG_RALPH_IMPLEMENTATION_PLAN_NAME="${RALPH_IMPLEMENTATION_PLAN_NAME:-}"
 	_ORIG_RALPH_CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
+	_ORIG_RALPH_LOG_FILE="${RALPH_LOG_FILE:-}"
+	_ORIG_RALPH_LOG_ENABLED="${RALPH_LOG_ENABLED:-}"
+	_ORIG_RALPH_LOG_APPEND="${RALPH_LOG_APPEND:-}"
 
 	# Initialize flag variables (empty means not set via flag)
 	_PROMPT_FILE=""
@@ -72,6 +78,9 @@ ralph() ( # Subshell function used to give a scope to code
 	_SPECS_INDEX_FILE=""
 	_SPECS_INDEX_FILE_DISABLED=""
 	_IMPLEMENTATION_PLAN_NAME=""
+	_LOG_FILE=""
+	_LOG_ENABLED=""
+	_LOG_APPEND=""
 	PROMPTS_DIR="${RALPH_PROMPTS_DIR:-prompts}"
 
 	# Parse command-line flags
@@ -129,6 +138,22 @@ ralph() ( # Subshell function used to give a scope to code
 			fi
 			_IMPLEMENTATION_PLAN_NAME="$2"
 			shift 2
+			;;
+		-l | --log-file)
+			if [ $# -lt 2 ]; then
+				echo "Error: -l/--log-file requires an argument" >&2
+				exit 1
+			fi
+			_LOG_FILE="$2"
+			shift 2
+			;;
+		--no-log)
+			_LOG_ENABLED="0"
+			shift
+			;;
+		--log-truncate)
+			_LOG_APPEND="0"
+			shift
 			;;
 		--prompt)
 			if [ $# -lt 2 ]; then
@@ -217,6 +242,61 @@ ralph() ( # Subshell function used to give a scope to code
 		CUSTOM_PROMPT="$_ORIG_RALPH_CUSTOM_PROMPT"
 	else
 		CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
+	fi
+
+	if [ -n "$_LOG_FILE" ]; then
+		LOG_FILE="$_LOG_FILE"
+	elif [ -n "$_ORIG_RALPH_LOG_FILE" ]; then
+		LOG_FILE="$_ORIG_RALPH_LOG_FILE"
+	else
+		LOG_FILE="${RALPH_LOG_FILE:-}"
+	fi
+
+	if [ -n "$_LOG_ENABLED" ]; then
+		LOG_ENABLED="$_LOG_ENABLED"
+	elif [ -n "$_ORIG_RALPH_LOG_ENABLED" ]; then
+		LOG_ENABLED="$_ORIG_RALPH_LOG_ENABLED"
+	else
+		LOG_ENABLED="${RALPH_LOG_ENABLED:-1}"
+	fi
+
+	if [ -n "$_LOG_APPEND" ]; then
+		LOG_APPEND="$_LOG_APPEND"
+	elif [ -n "$_ORIG_RALPH_LOG_APPEND" ]; then
+		LOG_APPEND="$_ORIG_RALPH_LOG_APPEND"
+	else
+		LOG_APPEND="${RALPH_LOG_APPEND:-1}"
+	fi
+
+	# Configure logging for all ralph output (stdout + stderr)
+	if [ "$LOG_ENABLED" = "1" ] && [ -n "$LOG_FILE" ]; then
+		LOG_DIR=$(dirname "$LOG_FILE")
+		if [ ! -d "$LOG_DIR" ]; then
+			mkdir -p "$LOG_DIR"
+		fi
+
+		if [ "$LOG_APPEND" != "1" ]; then
+			: >"$LOG_FILE"
+		fi
+
+		printf '===== Ralph run started at %s =====\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" >>"$LOG_FILE"
+
+		LOG_FIFO="$(mktemp "${TMPDIR:-/tmp}/ralph-log.XXXXXX")"
+		rm -f "$LOG_FIFO"
+		mkfifo "$LOG_FIFO"
+
+		exec 3>&1 4>&2
+		tee -a "$LOG_FILE" <"$LOG_FIFO" &
+		LOG_TEE_PID=$!
+		exec >"$LOG_FIFO" 2>&1
+
+		cleanup_logging() {
+			exec 1>&3 2>&4
+			exec 3>&- 4>&-
+			wait "$LOG_TEE_PID" 2>/dev/null || true
+			rm -f "$LOG_FIFO"
+		}
+		trap cleanup_logging EXIT
 	fi
 
 	build_prompt() {
