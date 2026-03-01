@@ -26,6 +26,7 @@ type Config struct {
 	PromptsDir             string `toml:"prompts-dir"`
 	AgentName              string `toml:"agent"`
 	Model                  string `toml:"model"`
+	AgentMode              string `toml:"agent-mode"`
 	// Internal state
 	configLoaded bool
 }
@@ -45,6 +46,7 @@ func (c *Config) LoadConfig() error {
 		"RALPH_PROMPTS_DIR":              os.Getenv("RALPH_PROMPTS_DIR"),
 		"RALPH_AGENT":                    os.Getenv("RALPH_AGENT"),
 		"RALPH_MODEL":                    os.Getenv("RALPH_MODEL"),
+		"RALPH_AGENT_MODE":               os.Getenv("RALPH_AGENT_MODE"),
 	}
 
 	// Load config file if specified
@@ -217,6 +219,17 @@ func (c *Config) LoadConfig() error {
 		c.Model = configFromFile.Model
 	}
 	// Note: Model is optional, so we don't set a default
+
+	// Agent Mode
+	if c.AgentMode == "" {
+		if origEnv["RALPH_AGENT_MODE"] != "" {
+			c.AgentMode = origEnv["RALPH_AGENT_MODE"]
+		}
+	}
+	if c.AgentMode == "" && configFromFile.AgentMode != "" {
+		c.AgentMode = configFromFile.AgentMode
+	}
+	// Note: Agent mode is optional, so we don't set a default
 
 	c.configLoaded = true
 	return nil

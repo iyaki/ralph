@@ -9,7 +9,8 @@ import (
 
 // ClaudeAgent implements the Agent interface for the claude CLI
 type ClaudeAgent struct {
-	Model string
+	Model     string
+	AgentMode string
 }
 
 // Execute runs claude with the given prompt
@@ -18,6 +19,9 @@ func (a *ClaudeAgent) Execute(prompt string, output io.Writer) (string, error) {
 	args := []string{"--dangerously-skip-permissions"}
 	if a.Model != "" {
 		args = append(args, "--model", a.Model)
+	}
+	if a.AgentMode != "" {
+		args = append(args, "--agent", a.AgentMode)
 	}
 	args = append(args, prompt)
 	cmd := exec.Command("claude", args...)

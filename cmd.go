@@ -87,6 +87,7 @@ For extended documentation, examples, and configuration options, visit https://g
 	flags.StringVar(&cfg.CustomPrompt, "prompt", "", "Inline custom prompt (overrides prompt files)")
 	flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude (default: opencode)")
 	flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
+	flags.StringVar(&cfg.AgentMode, "agent-mode", "", "Agent mode/sub-agent to use (e.g., reviewer, planner)")
 
 	return cmd
 }
@@ -99,7 +100,7 @@ func RunLoop(cfg *Config, prompt, promptName string, output io.Writer) error {
 	prompt = strings.ReplaceAll(prompt, "<COMPLETION_SIGNAL>", completionSignal)
 
 	// Get the configured agent
-	agent := GetAgent(cfg.AgentName, cfg.Model)
+	agent := GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode)
 
 	// Check if agent is available
 	if !agent.IsAvailable() {
