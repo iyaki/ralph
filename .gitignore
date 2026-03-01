@@ -1,0 +1,25 @@
+# Binaries
+ralph
+ralph-*
+*.exe
+
+# Go build artifacts
+*.test
+*.out
+
+# Dependency directories
+vendor/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
