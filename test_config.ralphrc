@@ -1,3 +1,0 @@
-RALPH_AGENT=claude
-RALPH_MODEL=claude-sonnet-4
-RALPH_MAX_ITERATIONS=5
