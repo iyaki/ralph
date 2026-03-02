@@ -1,0 +1,134 @@
+package logger
+
+import (
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/iyaki/ralph/internal/config"
+)
+
+func TestNewLoggerDisabledByConfig(t *testing.T) {
+	cfg := &config.Config{NoLog: true}
+	l, err := NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l.Enabled() {
+		t.Fatal("expected logger to be disabled")
+	}
+	if l.File() != nil {
+		t.Fatal("expected no file when disabled")
+	}
+}
+
+func TestNewLoggerDisabledByEnv(t *testing.T) {
+	t.Setenv("RALPH_LOG_ENABLED", "0")
+	cfg := &config.Config{NoLog: false}
+	l, err := NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l.Enabled() {
+		t.Fatal("expected logger to be disabled by env")
+	}
+}
+
+func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "logs", "ralph.log")
+	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: false}
+
+	t.Setenv("RALPH_LOG_ENABLED", "")
+	t.Setenv("RALPH_LOG_APPEND", "")
+
+	l, err := NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !l.Enabled() || l.File() == nil {
+		t.Fatal("expected logger to be enabled with file")
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("close failed: %v", err)
+	}
+
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("failed to read log file: %v", err)
+	}
+	if !strings.Contains(string(content), "Ralph run started") {
+		t.Fatalf("expected log header in file, got %q", string(content))
+	}
+	if !strings.Contains(string(content), "Git branch:") {
+		t.Fatalf("expected git branch line, got %q", string(content))
+	}
+}
+
+func TestNewLoggerTruncatesWhenAppendDisabledByEnv(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "ralph.log")
+	if err := os.WriteFile(logPath, []byte("old-content\n"), 0644); err != nil {
+		t.Fatalf("failed to seed log file: %v", err)
+	}
+
+	t.Setenv("RALPH_LOG_APPEND", "0")
+	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: false}
+
+	l, err := NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("close failed: %v", err)
+	}
+
+	content, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("failed to read log file: %v", err)
+	}
+	if strings.Contains(string(content), "old-content") {
+		t.Fatalf("expected old content to be truncated, got %q", string(content))
+	}
+}
+
+func TestGitMetadataHelpersReturnValue(t *testing.T) {
+	branch := getGitBranch()
+	if branch == "" {
+		t.Fatal("expected branch helper to return a non-empty value")
+	}
+
+	commit := getGitCommit()
+	if commit == "" {
+		t.Fatal("expected commit helper to return a non-empty value")
+	}
+}
+
+func TestNewLoggerUsesTempFileWhenLogPathEmpty(t *testing.T) {
+	t.Setenv("RALPH_LOG_ENABLED", "")
+	t.Setenv("RALPH_LOG_APPEND", "")
+	cfg := &config.Config{NoLog: false, LogFile: ""}
+
+	l, err := NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if l.File() == nil {
+		t.Fatal("expected temp log file to be created")
+	}
+	path := l.File().Name()
+	if !strings.Contains(filepath.Base(path), "ralph-") {
+		t.Fatalf("expected temp file naming pattern, got %q", path)
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("close failed: %v", err)
+	}
+}
+
+func TestCloseWithoutFile(t *testing.T) {
+	l := &Logger{}
+	if err := l.Close(); err != nil {
+		t.Fatalf("expected nil error for close without file, got %v", err)
+	}
+}

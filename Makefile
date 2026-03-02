@@ -1,6 +1,6 @@
 # Makefile for Ralph Go CLI
 
-.PHONY: all build clean install test help
+.PHONY: all build clean install test test-coverage deps help
 
 BINARY_NAME=ralph
 GO=go
@@ -25,6 +25,13 @@ install: build
 test:
 	$(GO) test -v ./...
 
+# Run tests with coverage and enforce minimum threshold
+test-coverage:
+	$(GO) test ./... -coverprofile=coverage.out -covermode=atomic
+	@total=`$(GO) tool cover -func=coverage.out | tail -n 1 | awk '{print $$3}' | sed 's/%//'`; \
+	echo "Total coverage: $$total%"; \
+	awk 'BEGIN { exit !('"$$total"' >= 90) }' || (echo "Coverage check failed: require >= 90%" && exit 1)
+
 # Download dependencies
 deps:
 	$(GO) mod download
@@ -39,5 +46,6 @@ help:
 	@echo "  clean       - Remove built artifacts"
 	@echo "  install     - Install ralph to $(INSTALL_PATH)"
 	@echo "  test        - Run tests"
+	@echo "  test-coverage - Run tests with coverage (fails if < 90%)"
 	@echo "  deps        - Download and tidy dependencies"
 	@echo "  help        - Show this help message"
