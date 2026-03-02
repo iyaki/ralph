@@ -1,233 +1,296 @@
-# Ralph Agentic Loop
+# Ralph Go CLI Implementation
 
-POSIX-compliant AI Agentic Loop shell runner aimed for spec-driven development workflows.  
-It loads prompts from files (with optional inline overrides) and comes with build/plan presets.
-
-## Installation
-
-Just download the `ralph.sh` script and make it executable:
-
-```sh
-curl -fsSLO https://raw.githubusercontent.com/iyaki/ralph/main/ralph.sh
-chmod +x ralph.sh
-```
-
-### Devcontainer feature
-
-Devcontainer users install ralph by adding the [opencode-ralph feature](https://github.com/iyaki/devcontainer-features/blob/main/src/opencode-ralph/README.md) to their `devcontainer.json`:
-
-```json
-"features": {
-    "ghcr.io/iyaki/devcontainer-features/opencode-ralph:1": {}
-}
-```
-
-### Spec Creator skill
-
-This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for usage in the first phase of the Ralph Wiggum methodology (see [below](#about-the-ralph-wiggum-methodology)).
-
-
-To install it using Vercel's skills CLI, run:
-
-```sh
-npx skills add https://github.com/iyaki/ralph/ --skill spec-creator
-```
-
-## Usage
-
-If you have a `specs/` directory similar to [this one](https://github.com/ghuntley/loom/tree/trunk/specs), using ralph can be as simple as:
-
-1. Running `./ralph.sh plan my-feature` to generate an implementation plan
-2. Executing `./ralph.sh` (defaults to `build`) to start implementing the feature
-
-## About the Ralph Wiggum Methodology
-
-This Ralph implementation is based on the [Ralph Wiggum methodology](https://ghuntley.com/ralph/) pioneered by [Geoffrey Huntley](https://ghuntley.com/).
-
-**Core Principles:**
-- **Spec-driven development** - Requirements defined upfront in markdown specs
-- **Monolithic operation** - One agent, one task, one loop iteration at a time
-- **Fresh context** - Each iteration starts with a clean context window
-- **Backpressure** - Tests and validation provide immediate feedback (Architectural constraints of [Harness engineering](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html))
-- **Let Ralph Ralph** - Trust the agent to self-correct through iteration
-- **Disposable plans** - Regenerate implementation plans when they go stale
-- **Simple loops** - Minimal bash loops feeding prompts to AI agents
-
-The methodology works in three phases:
-  1. Define requirements through human+LLM conversation to create specs
-  2. Gap analysis to generate/update implementation plans
-  3. Build loops that implement one task at a time, commit, and update the plan
-
-For a comprehensive guide, see the [Ralph Playbook](https://github.com/ClaytonFarr/ralph-playbook).
-
-This script implements what has worked well for me, inspired by the work made by Geoffrey at [Loom](https://github.com/ghuntley/loom).
-
-This script alone is not enough to achieve good results. The quality of the prompts and the specs, and the backpressure you set, will greatly influence the outcomes.
-
-If you don't know where to start to implement backpressure, [lefthook](https://github.com/evilmartians/lefthook) is a great tool for setting pre-commit hooks.
+This is a Go implementation of the Ralph shell script, providing a native binary with identical functionality.
 
 ## Features
 
-- POSIX-compliant script for maximum compatibility
-- Pre-bundled `build` and `plan` prompts
-- Configurable via file (sourced before execution) or environment variables
-- Max-iteration loop control
+- **Native Binary**: Compiled Go application for better performance and portability
+- **Cross-Platform**: Can be built for Linux, macOS, Windows, and other platforms
+- **Feature Parity**: Implements all features from the original `ralph.sh` script
+- **Modern CLI**: Uses cobra framework for robust command-line interface
 
-## Requirements
+## Building
 
-- `opencode` on your `PATH` (or replace with your preferred command-line AI tool, see [Changing the agent implementation](#changing-the-agent-implementation) below)
-- git for usage in pre-bundled prompts
+### Using Make
 
-## Advanced usage
-
-```sh
-./ralph.sh [options] [prompt] [scope]
+```bash
+make build
 ```
 
-### Positional arguments
+### Using Go Directly
 
-- `prompt`: Name of the prompt file (without `.md`), or `build` / `plan`. Defaults to `build`.
-- `-`: Read the prompt from standard input (stdin).
-- `scope`: Optional scope for plan mode.
-
-### Options
-
-```text
--c, --config FILE                 Config file to source
--m, --max-iterations N            Maximum iterations (default: 25)
--p, --prompt-file FILE            Prompt file path (use '-' to read from stdin)
--s, --specs-dir DIR               Specs directory (default: specs)
--i, --specs-index FILE            Specs index file (default: README.md)
---no-specs-index                  Disable specs index file
--n, --implementation-plan-name N  Implementation plan file name
--l, --log-file FILE               Log file path
---no-log                          Disable logs
---log-truncate                    Truncate log file before writing
---stop-condition CONDITION        Custom stop condition text
---prompt PROMPT                   Inline custom prompt (overrides prompt files)
--h, --help                        Show this help message
+```bash
+go build -o ralph .
 ```
 
-### Prompt Sources
+### Cross-Compilation
 
-Ralph resolves prompt content in this order:
+Build for different platforms:
 
-1. `--prompt` (inline prompt)
-2. `--prompt-file FILE`
-3. positional prompt name from `RALPH_PROMPTS_DIR` (default `prompts/`)
-4. built-in `build` / `plan` defaults
+```bash
+# Linux
+GOOS=linux GOARCH=amd64 go build -o ralph-linux .
 
-### Read prompt from stdin
+# macOS
+GOOS=darwin GOARCH=amd64 go build -o ralph-darwin .
 
-```sh
-cat prompts/custom.md | ./ralph.sh --prompt-file -
-cat prompts/custom.md | ./ralph.sh -
+# Windows
+GOOS=windows GOARCH=amd64 go build -o ralph.exe .
 ```
 
-### Prompt Placeholders
+## Installation
 
-Ralph supports placeholders in your prompt files that get automatically substituted:
+### System-Wide Installation
 
-- **`<COMPLETION_SIGNAL>`** - Replaced with the completion signal (`<promise>COMPLETE</promise>`). Use this in your prompts to tell the agent when to stop. Example: "When done, reply with \`<COMPLETION_SIGNAL>\`"
+```bash
+make install
+```
 
-- **`<SCOPE>`** - Replaced with the scope argument passed on the command line (default: "Whole system"). The scope is the second positional argument. Example: `./ralph.sh plan "user authentication"` sets scope to "user authentication". Use this in planning mode to focus the agent on a specific area.
+Or manually:
 
-Both placeholders are automatically substituted before the prompt is sent to the agent. Reference them in your custom prompts.
+```bash
+sudo install -m 0755 ralph /usr/local/bin/ralph
+```
 
-### Changing the agent implementation
+### Local Installation
 
-This Ralph implementation relies on [opencode](https://opencode.ai/) to work. You can replace it with any command-line tool. To change the implementation, simply replace the `opencode` command in the script with your desired tool.
+Simply copy the `ralph` binary to a directory in your PATH.
+
+## Usage
+
+The Go implementation provides identical command-line interface as the shell script:
+
+```bash
+# Run with default build prompt
+./ralph
+
+# Run with plan prompt
+./ralph plan my-feature
+
+# Use custom max iterations
+./ralph --max-iterations 10 build
+
+# Use inline prompt
+./ralph --prompt "Custom prompt text"
+
+# Read prompt from stdin
+echo "prompt from stdin" | ./ralph -
+
+# Use Claude Code CLI agent instead of opencode
+./ralph --agent claude
+
+# Use Cursor CLI agent
+./ralph --agent cursor
+
+# Use a specific model with Claude
+./ralph --agent claude --model claude-sonnet-4
+
+# Use a sub-agent/agent mode
+./ralph --agent opencode --agent-mode reviewer
+./ralph --agent claude --agent-mode planner
+
+# Show help
+./ralph --help
+```
+
+## AI Agent Support
+
+Ralph supports multiple AI CLI agents. Each agent has its own implementation in a separate file:
+
+- **opencode** (default): Uses the `opencode` CLI tool
+- **claude**: Uses the `claude` CLI tool (Claude Code CLI)
+- **cursor**: Uses the `cursor` CLI tool
+
+### Selecting an Agent
+
+You can select the agent in three ways:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent claude
+   ralph --agent cursor
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_AGENT=claude
+   ralph
+   ```
+
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
+   ```
+
+### Selecting a Model
+
+You can optionally specify which AI model to use with the `--model` flag or `RALPH_MODEL` environment variable:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent claude --model claude-sonnet-4
+   ralph --agent opencode --model gpt-4
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_MODEL=claude-sonnet-4
+   ralph --agent claude
+   ```
+
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
+   model = "claude-sonnet-4"
+   ```
+
+If no model is specified, the agent will use its default model.
+
+### Selecting a Sub-Agent / Agent Mode
+
+You can optionally select a custom agent mode (sub-agent) for tools that support it:
+
+1. **Command-line flag** (highest priority):
+   ```bash
+   ralph --agent opencode --agent-mode reviewer
+   ralph --agent claude --agent-mode planner
+   ```
+
+2. **Environment variable**:
+   ```bash
+   export RALPH_AGENT_MODE=reviewer
+   ralph --agent opencode
+   ```
+
+3. **Config file** (`ralph.toml`):
+   ```toml
+   agent = "claude"
+   agent-mode = "planner"
+   ```
+
+If no agent mode is specified, the tool's default behavior is used.
+
+### Agent Files
+
+Each agent implementation is in its own file:
+
+- `agent.go`: Agent interface definition and factory function
+- `agent_opencode.go`: Opencode CLI agent implementation
+- `agent_claude.go`: Claude Code CLI agent implementation
+- `agent_cursor.go`: Cursor CLI agent implementation
+
+This modular design makes it easy to add support for additional AI CLI tools in the future.
 
 ## Configuration
 
-Ralph supports environment variables and an optional config file. Flags override the environment variables.
+Configuration works identically to the shell script:
 
-### Environment variables
+1. **Command-line flags** (highest priority)
+2. **Environment variables** 
+3. **Config file** (`.ralphrc`)
+4. **Defaults** (lowest priority)
 
-- `RALPH_CONFIG_FILE`
-- `RALPH_MAX_ITERATIONS`
-- `RALPH_SPECS_DIR`
-- `RALPH_SPECS_INDEX_FILE`
-- `RALPH_PROMPTS_DIR`
-- `RALPH_IMPLEMENTATION_PLAN_NAME`
-- `RALPH_LOG_FILE` - Path to a log file where all Ralph output (stdout/stderr) is mirrored.
-- `RALPH_LOG_ENABLED` - Set to `0` to disable logs, `1` to enable (default: `1`).
-- `RALPH_LOG_APPEND` - Set to `0` to truncate before writing, `1` to append (default: `1`).
-- `DEBUG` - Set to any value to print the prompt instead of executing it. Useful for reviewing what would be sent to the agent without actually running it. Example: `DEBUG=1 ./ralph.sh plan "my-feature"`
+### Environment Variables
 
-### Config file
+- `RALPH_MAX_ITERATIONS`: Maximum iterations (default: 25)
+- `RALPH_SPECS_DIR`: Specs directory (default: `specs`)
+- `RALPH_SPECS_INDEX_FILE`: Specs index file (default: `README.md`)
+- `RALPH_IMPLEMENTATION_PLAN_NAME`: Implementation plan file name (default: `IMPLEMENTATION_PLAN.md`)
+- `RALPH_CUSTOM_PROMPT`: Custom prompt text
+- `RALPH_LOG_FILE`: Log file path
+- `RALPH_LOG_ENABLED`: Enable/disable logging (`1` or `0`)
+- `RALPH_LOG_APPEND`: Append to log file (`1` or `0`)
+- `RALPH_PROMPTS_DIR`: Prompts directory (default: `prompts`)
+- `RALPH_CONFIG_FILE`: Config file path (default: `ralph.toml`, `.ralphrc.toml`, or `.ralphrc`)
+- `RALPH_AGENT`: AI agent to use: `opencode`, `claude`, or `cursor` (default: `opencode`)
+- `RALPH_MODEL`: AI model to use (optional, e.g., `claude-sonnet-4`, `gpt-4`)
+- `RALPH_AGENT_MODE`: Agent mode/sub-agent name (optional, e.g., `reviewer`, `planner`)
 
-Create a .ralphrc on project root, use `--config FILE` or set `RALPH_CONFIG_FILE`. The config file is sourced by `sh`, so it can set environment variables. Example:
+### Config File Format
 
-```sh
-RALPH_MAX_ITERATIONS=10
-RALPH_PROMPTS_DIR=prompts
-RALPH_SPECS_DIR=specs
-RALPH_SPECS_INDEX_FILE=README.md
-RALPH_IMPLEMENTATION_PLAN_NAME=IMPLEMENTATION_PLAN.md
-RALPH_LOG_FILE=logs/ralph.log
-RALPH_LOG_ENABLED=1
-RALPH_LOG_APPEND=1
+Create a `ralph.toml` file in your project root or parent directories (legacy `.ralphrc.toml` and `.ralphrc` files are also supported):
+
+```toml
+# AI Agent Configuration
+agent = "claude"
+model = "claude-sonnet-4"
+agent-mode = "planner"
+
+# Iteration Settings
+max-iterations = 30
+
+# Directory Settings
+specs-dir = "specifications"
+specs-index-file = "README.md"
+implementation-plan-name = "IMPLEMENTATION_PLAN.md"
+prompts-dir = ".ralph/prompts"
+
+# Logging Configuration
+log-file = "logs/ralph.log"
+no-log = false
+log-truncate = false
 ```
 
-## Examples
+All configuration keys in the TOML file correspond to their command-line flags (with hyphens instead of underscores).
 
-Using a custom prompt file located at `prompts/my_prompt.md`:
+**Note:** The config file search order is: `ralph.toml` → `.ralphrc.toml` → `.ralphrc`
 
-```sh
-./ralph.sh my_prompt
+## Development
+
+### Project Structure
+
+```
+.
+├── main.go              # Entry point
+├── cmd.go               # Cobra command setup and main loop
+├── config.go            # Configuration management
+├── prompts.go           # Prompt generation and handling
+├── logger.go            # Logging functionality
+├── executor.go          # Command execution
+├── agent.go             # Agent interface and factory
+├── agent_opencode.go    # Opencode CLI agent implementation
+├── agent_claude.go      # Claude Code CLI agent implementation
+├── go.mod               # Go module definition
+├── go.sum               # Dependency checksums
+└── Makefile             # Build automation
 ```
 
-Custom prompt file at custom prmompts directory:
+### Adding Dependencies
 
-
-```sh
-./ralph.sh --prompt-file custom_dir/prompts/my_prompt.md
-
-# Or with environment variable:
-
-RALPH_PROMPTS_DIR=custom_dir/prompts ./ralph.sh my_prompt
+```bash
+go get package-name
+go mod tidy
 ```
 
-Inline prompt override:
+### Running Tests
 
-```sh
-./ralph.sh --prompt "Run a quick audit of the API docs and report issues."
+```bash
+make test
 ```
 
-Read prompt from stdin:
+Or:
 
-```sh
-cat prompts/custom.md | ./ralph.sh --prompt-file -
-
-# Or using positional '-':
-cat prompts/custom.md | ./ralph.sh -
+```bash
+go test -v ./...
 ```
 
-Enable logs in a file (append mode):
+## Advantages Over Shell Script
 
-```sh
-./ralph.sh --log-file logs/ralph.log
-```
+1. **Performance**: Faster startup and execution
+2. **Portability**: Single binary, no shell dependencies
+3. **Type Safety**: Compile-time error checking
+4. **Maintenance**: Easier to refactor and extend
+5. **Testing**: Better unit testing support
+6. **Cross-Platform**: Native support for Windows, macOS, Linux
 
-Enable logs via environment variable:
+## Compatibility
 
-```sh
-RALPH_LOG_FILE=logs/ralph.log ./ralph.sh
-```
+The Go implementation maintains 100% compatibility with the shell script:
 
-Limit iterations and add a stop condition:
+- All command-line flags work identically
+- Configuration precedence is the same
+- Pre-bundled prompts generate identical output
+- Log format is identical
+- Environment variable handling is the same
 
-```sh
-./ralph.sh -m 5 --specs "my_package/specifications" --no-specs-index custom_build_prompt
-```
-
-## Testing
-
-Run locally:
-
-```sh
-bash test_ralph.sh
-```
-
-CI runs tests on push/PR via GitHub Actions.
+You can switch between the shell script and Go binary without any changes to your workflow.
