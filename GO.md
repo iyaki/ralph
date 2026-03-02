@@ -79,6 +79,9 @@ echo "prompt from stdin" | ./ralph -
 # Use Claude Code CLI agent instead of opencode
 ./ralph --agent claude
 
+# Use Cursor CLI agent
+./ralph --agent cursor
+
 # Use a specific model with Claude
 ./ralph --agent claude --model claude-sonnet-4
 
@@ -96,6 +99,7 @@ Ralph supports multiple AI CLI agents. Each agent has its own implementation in 
 
 - **opencode** (default): Uses the `opencode` CLI tool
 - **claude**: Uses the `claude` CLI tool (Claude Code CLI)
+- **cursor**: Uses the `cursor` CLI tool
 
 ### Selecting an Agent
 
@@ -104,6 +108,7 @@ You can select the agent in three ways:
 1. **Command-line flag** (highest priority):
    ```bash
    ralph --agent claude
+   ralph --agent cursor
    ```
 
 2. **Environment variable**:
@@ -172,6 +177,7 @@ Each agent implementation is in its own file:
 - `agent.go`: Agent interface definition and factory function
 - `agent_opencode.go`: Opencode CLI agent implementation
 - `agent_claude.go`: Claude Code CLI agent implementation
+- `agent_cursor.go`: Cursor CLI agent implementation
 
 This modular design makes it easy to add support for additional AI CLI tools in the future.
 
@@ -196,7 +202,7 @@ Configuration works identically to the shell script:
 - `RALPH_LOG_APPEND`: Append to log file (`1` or `0`)
 - `RALPH_PROMPTS_DIR`: Prompts directory (default: `prompts`)
 - `RALPH_CONFIG_FILE`: Config file path (default: `ralph.toml`, `.ralphrc.toml`, or `.ralphrc`)
-- `RALPH_AGENT`: AI agent to use: `opencode` or `claude` (default: `opencode`)
+- `RALPH_AGENT`: AI agent to use: `opencode`, `claude`, or `cursor` (default: `opencode`)
 - `RALPH_MODEL`: AI model to use (optional, e.g., `claude-sonnet-4`, `gpt-4`)
 - `RALPH_AGENT_MODE`: Agent mode/sub-agent name (optional, e.g., `reviewer`, `planner`)
 

@@ -85,7 +85,7 @@ For extended documentation, examples, and configuration options, visit https://g
 	flags.BoolVar(&cfg.NoLog, "no-log", false, "Disable logs")
 	flags.BoolVar(&cfg.LogTruncate, "log-truncate", false, "Truncate log file before writing")
 	flags.StringVar(&cfg.CustomPrompt, "prompt", "", "Inline custom prompt (overrides prompt files)")
-	flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude (default: opencode)")
+	flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude, cursor (default: opencode)")
 	flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
 	flags.StringVar(&cfg.AgentMode, "agent-mode", "", "Agent mode/sub-agent to use (e.g., reviewer, planner)")
 
