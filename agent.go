@@ -19,6 +19,8 @@ func GetAgent(agentName, model, agentMode string) Agent {
 	switch agentName {
 	case "claude":
 		return &ClaudeAgent{Model: model, AgentMode: agentMode}
+	case "cursor":
+		return &CursorAgent{Model: model, AgentMode: agentMode}
 	case "opencode":
 		return &OpencodeAgent{Model: model, AgentMode: agentMode}
 	default:
