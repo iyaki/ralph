@@ -1,0 +1,244 @@
+package config
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestLoadConfigDefaults(t *testing.T) {
+	t.Setenv("RALPH_MAX_ITERATIONS", "")
+	t.Setenv("RALPH_SPECS_DIR", "")
+	t.Setenv("RALPH_SPECS_INDEX_FILE", "")
+	t.Setenv("RALPH_IMPLEMENTATION_PLAN_NAME", "")
+	t.Setenv("RALPH_CUSTOM_PROMPT", "")
+	t.Setenv("RALPH_LOG_FILE", "")
+	t.Setenv("RALPH_LOG_ENABLED", "")
+	t.Setenv("RALPH_LOG_APPEND", "")
+	t.Setenv("RALPH_PROMPTS_DIR", "")
+	t.Setenv("RALPH_AGENT", "")
+	t.Setenv("RALPH_MODEL", "")
+	t.Setenv("RALPH_AGENT_MODE", "")
+
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	newDir := t.TempDir()
+	if err := os.Chdir(newDir); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+
+	c := &Config{}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.MaxIterations != 25 {
+		t.Fatalf("expected default max iterations 25, got %d", c.MaxIterations)
+	}
+	if c.SpecsDir != "specs" {
+		t.Fatalf("expected default specs dir, got %q", c.SpecsDir)
+	}
+	if c.SpecsIndexFile != "README.md" {
+		t.Fatalf("expected default specs index file, got %q", c.SpecsIndexFile)
+	}
+	if c.ImplementationPlanName != "IMPLEMENTATION_PLAN.md" {
+		t.Fatalf("expected default implementation plan name, got %q", c.ImplementationPlanName)
+	}
+	if c.AgentName != "opencode" {
+		t.Fatalf("expected default agent, got %q", c.AgentName)
+	}
+	if c.PromptsDir != filepath.Join(home, ".ralph") {
+		t.Fatalf("expected default prompts dir in HOME, got %q", c.PromptsDir)
+	}
+	if !c.configLoaded {
+		t.Fatal("expected configLoaded to be true")
+	}
+}
+
+func TestLoadConfigPrecedence(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	content := `max-iterations = 7
+specs-dir = "file-specs"
+custom-prompt = "from-file"
+agent = "cursor"
+model = "file-model"
+agent-mode = "file-mode"
+`
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	t.Setenv("RALPH_MAX_ITERATIONS", "9")
+	t.Setenv("RALPH_SPECS_DIR", "env-specs")
+	t.Setenv("RALPH_CUSTOM_PROMPT", "from-env")
+	t.Setenv("RALPH_AGENT", "claude")
+	t.Setenv("RALPH_MODEL", "env-model")
+	t.Setenv("RALPH_AGENT_MODE", "env-mode")
+
+	c := &Config{
+		ConfigFile:    configFile,
+		MaxIterations: 13,
+		SpecsDir:      "flag-specs",
+		AgentName:     "opencode",
+	}
+
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.MaxIterations != 13 {
+		t.Fatalf("expected flag value for max iterations, got %d", c.MaxIterations)
+	}
+	if c.SpecsDir != "flag-specs" {
+		t.Fatalf("expected flag value for specs dir, got %q", c.SpecsDir)
+	}
+	if c.CustomPrompt != "from-env" {
+		t.Fatalf("expected env override for custom prompt, got %q", c.CustomPrompt)
+	}
+	if c.AgentName != "opencode" {
+		t.Fatalf("expected flag override for agent, got %q", c.AgentName)
+	}
+	if c.Model != "env-model" {
+		t.Fatalf("expected env override for model, got %q", c.Model)
+	}
+	if c.AgentMode != "env-mode" {
+		t.Fatalf("expected env override for agent mode, got %q", c.AgentMode)
+	}
+}
+
+func TestLoadConfigMissingConfigFile(t *testing.T) {
+	c := &Config{ConfigFile: filepath.Join(t.TempDir(), "does-not-exist.toml")}
+	if err := c.LoadConfig(); err == nil {
+		t.Fatal("expected error for missing config file")
+	}
+}
+
+func TestLoadConfigDefaultFileDiscovery(t *testing.T) {
+	dir := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+	t.Setenv("HOME", t.TempDir())
+
+	content := `max-iterations = 44
+specs-dir = "from-default-file"
+`
+	if err := os.WriteFile(filepath.Join(dir, "ralph.toml"), []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write default config: %v", err)
+	}
+
+	c := &Config{}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.MaxIterations != 44 {
+		t.Fatalf("expected max iterations from default file, got %d", c.MaxIterations)
+	}
+	if c.SpecsDir != "from-default-file" {
+		t.Fatalf("expected specs dir from default file, got %q", c.SpecsDir)
+	}
+}
+
+func TestLoadConfigEnvironmentValues(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("RALPH_MAX_ITERATIONS", "31")
+	t.Setenv("RALPH_SPECS_DIR", "env-specs")
+	t.Setenv("RALPH_SPECS_INDEX_FILE", "index.md")
+	t.Setenv("RALPH_IMPLEMENTATION_PLAN_NAME", "IMPL.md")
+	t.Setenv("RALPH_CUSTOM_PROMPT", "prompt-from-env")
+	t.Setenv("RALPH_LOG_FILE", filepath.Join(t.TempDir(), "x.log"))
+	t.Setenv("RALPH_LOG_ENABLED", "0")
+	t.Setenv("RALPH_LOG_APPEND", "0")
+	t.Setenv("RALPH_PROMPTS_DIR", "env-prompts")
+	t.Setenv("RALPH_AGENT", "claude")
+	t.Setenv("RALPH_MODEL", "m-env")
+	t.Setenv("RALPH_AGENT_MODE", "planner")
+
+	c := &Config{}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.MaxIterations != 31 || c.SpecsDir != "env-specs" || c.SpecsIndexFile != "index.md" {
+		t.Fatalf("expected env-derived core fields, got %+v", c)
+	}
+	if c.ImplementationPlanName != "IMPL.md" || c.CustomPrompt != "prompt-from-env" {
+		t.Fatalf("expected env-derived prompt fields, got %+v", c)
+	}
+	if !c.NoLog || !c.LogTruncate {
+		t.Fatalf("expected log flags from env, got NoLog=%v LogTruncate=%v", c.NoLog, c.LogTruncate)
+	}
+	if c.PromptsDir != "env-prompts" || c.AgentName != "claude" || c.Model != "m-env" || c.AgentMode != "planner" {
+		t.Fatalf("expected env-derived agent fields, got %+v", c)
+	}
+}
+
+func TestLoadConfigRelativeConfigPath(t *testing.T) {
+	dir := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+
+	if err := os.WriteFile("myconfig.toml", []byte("max-iterations = 52\n"), 0644); err != nil {
+		t.Fatalf("failed to write relative config: %v", err)
+	}
+
+	c := &Config{ConfigFile: "myconfig.toml"}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if c.MaxIterations != 52 {
+		t.Fatalf("expected max-iterations from relative config path, got %d", c.MaxIterations)
+	}
+}
+
+func TestLoadConfigLegacyFileDiscovery(t *testing.T) {
+	dir := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+	t.Setenv("HOME", t.TempDir())
+
+	if err := os.WriteFile(filepath.Join(dir, ".ralphrc.toml"), []byte("specs-dir = \"legacy\"\n"), 0644); err != nil {
+		t.Fatalf("failed to write legacy config: %v", err)
+	}
+
+	c := &Config{}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if c.SpecsDir != "legacy" {
+		t.Fatalf("expected .ralphrc.toml value, got %q", c.SpecsDir)
+	}
+}

@@ -7,20 +7,19 @@ on:
   pull_request:
 
 jobs:
-  shell-tests:
-    name: Run shell tests
+  go-tests:
+    name: Run Go tests with coverage
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Run ralph test suite
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Run Go coverage checks
         shell: bash
-        run: ./test_ralph.sh
-
-      - name: Run shellcheck with reviewdog
-        uses: reviewdog/action-shellcheck@v1.32.0
-
-      - name: Run shfmt with reviewdog
-        uses: reviewdog/action-shfmt@v1.0.4
+        run: make test-coverage
