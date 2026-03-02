@@ -1,14 +1,16 @@
-package main
+package prompt
 
 import (
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/iyaki/ralph/internal/config"
 )
 
 // GetPrompt returns the prompt to use based on configuration and arguments
-func GetPrompt(cfg *Config, promptName, scope string, output io.Writer) (string, error) {
+func GetPrompt(cfg *config.Config, promptName, scope string, output io.Writer) (string, error) {
 	// If custom prompt is provided via flag, use it directly
 	if cfg.CustomPrompt != "" {
 		fmt.Fprintln(output, "")
@@ -86,7 +88,7 @@ func GetPrompt(cfg *Config, promptName, scope string, output io.Writer) (string,
 }
 
 // BuildPrompt generates the default build prompt
-func BuildPrompt(cfg *Config) string {
+func BuildPrompt(cfg *config.Config) string {
 	specsIndexFileReference := ""
 	if cfg.SpecsIndexFile != "" {
 		specsIndexFileReference = filepath.Join(cfg.SpecsDir, cfg.SpecsIndexFile)
@@ -124,7 +126,7 @@ func BuildPrompt(cfg *Config) string {
 }
 
 // PlanPrompt generates the default plan prompt
-func PlanPrompt(cfg *Config, scope string) string {
+func PlanPrompt(cfg *config.Config, scope string) string {
 	prompt := "# Agent Instructions (Planning Mode)\n\n"
 	prompt += fmt.Sprintf("Scope: %s\n\n", scope)
 

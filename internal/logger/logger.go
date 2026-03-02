@@ -1,4 +1,4 @@
-package main
+package logger
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+
+	"github.com/iyaki/ralph/internal/config"
 )
 
 // Logger handles logging to file
@@ -15,7 +17,7 @@ type Logger struct {
 }
 
 // NewLogger creates a new logger based on configuration
-func NewLogger(cfg *Config) (*Logger, error) {
+func NewLogger(cfg *config.Config) (*Logger, error) {
 	logger := &Logger{
 		enabled: !cfg.NoLog,
 	}
@@ -93,6 +95,16 @@ func (l *Logger) Close() error {
 		return l.file.Close()
 	}
 	return nil
+}
+
+// Enabled returns whether logging is enabled
+func (l *Logger) Enabled() bool {
+	return l.enabled
+}
+
+// File returns the log file
+func (l *Logger) File() *os.File {
+	return l.file
 }
 
 // getGitBranch returns the current git branch name

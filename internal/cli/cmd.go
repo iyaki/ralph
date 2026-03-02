@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -8,11 +8,16 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/iyaki/ralph/internal/agent"
+	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralph/internal/logger"
+	"github.com/iyaki/ralph/internal/prompt"
 )
 
 // NewRalphCommand creates the root command for Ralph
 func NewRalphCommand() *cobra.Command {
-	var cfg Config
+	var cfg config.Config
 
 	cmd := &cobra.Command{
 		Use:   "ralph [options] [prompt] [scope]",
@@ -47,27 +52,27 @@ For extended documentation, examples, and configuration options, visit https://g
 			}
 
 			// Initialize logger
-			logger, err := NewLogger(&cfg)
+			appLogger, err := logger.NewLogger(&cfg)
 			if err != nil {
 				return fmt.Errorf("failed to initialize logger: %w", err)
 			}
-			defer logger.Close()
+			defer appLogger.Close()
 
 			// Write to both logger and stdout
 			writers := []io.Writer{os.Stdout}
-			if logger.enabled {
-				writers = append(writers, logger.file)
+			if appLogger.Enabled() {
+				writers = append(writers, appLogger.File())
 			}
 			output := io.MultiWriter(writers...)
 
 			// Get the prompt
-			prompt, err := GetPrompt(&cfg, promptName, scope, output)
+			promptText, err := prompt.GetPrompt(&cfg, promptName, scope, output)
 			if err != nil {
 				return fmt.Errorf("failed to get prompt: %w", err)
 			}
 
 			// Run the main loop
-			return RunLoop(&cfg, prompt, promptName, output)
+			return runLoop(&cfg, promptText, promptName, output)
 		},
 	}
 
@@ -92,23 +97,23 @@ For extended documentation, examples, and configuration options, visit https://g
 	return cmd
 }
 
-// RunLoop executes the main Ralph iteration loop
-func RunLoop(cfg *Config, prompt, promptName string, output io.Writer) error {
+// runLoop executes the main Ralph iteration loop
+func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer) error {
 	completionSignal := "<promise>COMPLETE</promise>"
 
 	// Replace placeholders in prompt
-	prompt = strings.ReplaceAll(prompt, "<COMPLETION_SIGNAL>", completionSignal)
+	promptText = strings.ReplaceAll(promptText, "<COMPLETION_SIGNAL>", completionSignal)
 
 	// Get the configured agent
-	agent := GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode)
+	agentInstance := agent.GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode)
 
 	// Check if agent is available
-	if !agent.IsAvailable() {
-		fmt.Fprintf(output, "Warning: %s agent not found in PATH, will continue anyway...\n", agent.Name())
+	if !agentInstance.IsAvailable() {
+		fmt.Fprintf(output, "Warning: %s agent not found in PATH, will continue anyway...\n", agentInstance.Name())
 	}
 
 	fmt.Fprintf(output, "Starting Ralph - Max iterations: %d\n", cfg.MaxIterations)
-	fmt.Fprintf(output, "Using agent: %s\n", agent.Name())
+	fmt.Fprintf(output, "Using agent: %s\n", agentInstance.Name())
 
 	for i := 1; i <= cfg.MaxIterations; i++ {
 		fmt.Fprintf(output, "\n")
@@ -118,14 +123,14 @@ func RunLoop(cfg *Config, prompt, promptName string, output io.Writer) error {
 
 		// Check if DEBUG mode (for testing)
 		if os.Getenv("DEBUG") != "" {
-			fmt.Fprintln(output, prompt)
+			fmt.Fprintln(output, promptText)
 			fmt.Fprintf(output, "\nAll planned tasks completed!\n")
 			fmt.Fprintf(output, "Completed at iteration %d of %d\n", i, cfg.MaxIterations)
 			return nil
 		}
 
 		// Execute the agent
-		result, err := agent.Execute(prompt, output)
+		result, err := agentInstance.Execute(promptText, output)
 		if err != nil {
 			// Non-fatal error, continue to next iteration
 			fmt.Fprintf(output, "Command execution warning: %v\n", err)
