@@ -407,8 +407,7 @@ Quick Reference
 - A table mapping systems/subsystems to:
   - Specs
   - Modules/packages
-  - Web packages
-  - Migrations or other artifacts
+  - Artifacts (migrations, spport files, etc)
 - Use \`✅\` to mark items already implemented.
 
 Phased Plan
