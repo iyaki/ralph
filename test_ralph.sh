@@ -16,7 +16,7 @@ assert_output_contains() {
 	local expected=$2
 	local test_name=$3
 
-	if echo "$output" | grep -q "$expected"; then
+	if echo "$output" | grep -Fq -- "$expected"; then
 		echo "✓ $test_name"
 		TESTS_PASSED=$((TESTS_PASSED + 1))
 	else
@@ -30,7 +30,7 @@ assert_output_not_contains() {
 	local expected=$2
 	local test_name=$3
 
-	if ! echo "$output" | grep -q "$expected"; then
+	if ! echo "$output" | grep -Fq -- "$expected"; then
 		echo "✓ $test_name"
 		TESTS_PASSED=$((TESTS_PASSED + 1))
 	else
@@ -145,6 +145,103 @@ test_inline_prompt_flag() {
 	local output
 	output=$(DEBUG=1 "$RALPH" --prompt "Test prompt" 2>&1)
 	assert_output_contains "$output" "Test prompt" "Inline prompt flag passes custom prompt"
+}
+
+run_with_fake_opencode() {
+	local cmd="$1"
+	local output
+	output=$(bash -c "
+		set -e
+		tmpdir=\"\$(mktemp -d)\"
+		args_log=\"\$tmpdir/opencode-args.log\"
+		trap 'rm -rf \"\$tmpdir\"' EXIT
+		cat >\"\$tmpdir/opencode\" <<'EOF'
+#!/bin/sh
+printf '%s\\n' \"\$*\" >>\"\$RALPH_TEST_OPENCODE_ARGS_FILE\"
+printf '%s\\n' '<promise>COMPLETE</promise>'
+EOF
+		chmod +x \"\$tmpdir/opencode\"
+		RALPH_TEST_OPENCODE_ARGS_FILE=\"\$args_log\" PATH=\"\$tmpdir:\$PATH\" $cmd >/dev/null 2>&1
+		cat \"\$args_log\"
+	" 2>&1)
+	printf '%s\\n' "$output"
+}
+
+# ============================================================================
+# Test: Agent flag (short form) passes --agent to opencode
+# ============================================================================
+test_agent_short_flag() {
+	local output
+	output=$(run_with_fake_opencode "\"$RALPH\" -m 1 -a cli-agent --prompt test")
+	assert_output_contains "$output" "run --agent cli-agent" "Agent flag (-a) passes --agent to opencode"
+}
+
+# ============================================================================
+# Test: Agent flag (long form) passes --agent to opencode
+# ============================================================================
+test_agent_long_flag() {
+	local output
+	output=$(run_with_fake_opencode "\"$RALPH\" -m 1 --agent long-agent --prompt test")
+	assert_output_contains "$output" "run --agent long-agent" "Agent flag (--agent) passes --agent to opencode"
+}
+
+# ============================================================================
+# Test: Environment variable - RALPH_AGENT
+# ============================================================================
+test_env_agent() {
+	local output
+	output=$(run_with_fake_opencode "RALPH_AGENT=env-agent \"$RALPH\" -m 1 --prompt test")
+	assert_output_contains "$output" "run --agent env-agent" "RALPH_AGENT env var passes --agent to opencode"
+}
+
+# ============================================================================
+# Test: Config file loading - RALPH_AGENT
+# ============================================================================
+test_config_agent() {
+	local output
+	output=$(bash -c "
+		set -e
+		tmpdir=\"\$(mktemp -d)\"
+		trap 'rm -rf \"\$tmpdir\"' EXIT
+		cat >\"\$tmpdir/.ralphrc\" <<EOF
+RALPH_AGENT=config-agent
+EOF
+		cd \"\$tmpdir\"
+		$(typeset -f run_with_fake_opencode)
+		run_with_fake_opencode '\"$RALPH\" -m 1 --prompt test'
+	" 2>&1)
+	assert_output_contains "$output" "run --agent config-agent" "Config file RALPH_AGENT passes --agent to opencode"
+}
+
+# ============================================================================
+# Test: Agent precedence - flag overrides env and config
+# ============================================================================
+test_agent_precedence() {
+	local output
+	output=$(bash -c "
+		set -e
+		tmpdir=\"\$(mktemp -d)\"
+		trap 'rm -rf \"\$tmpdir\"' EXIT
+		cat >\"\$tmpdir/.ralphrc\" <<EOF
+RALPH_AGENT=config-agent
+EOF
+		cd \"\$tmpdir\"
+		$(typeset -f run_with_fake_opencode)
+		RALPH_AGENT=env-agent run_with_fake_opencode '\"$RALPH\" -m 1 --agent flag-agent --prompt test'
+	" 2>&1)
+	assert_output_contains "$output" "run --agent flag-agent" "Agent flag overrides env/config"
+	assert_output_not_contains "$output" "run --agent env-agent" "Env agent is not used when flag exists"
+	assert_output_not_contains "$output" "run --agent config-agent" "Config agent is not used when flag exists"
+}
+
+# ============================================================================
+# Test: Agent is not passed when unset
+# ============================================================================
+test_agent_not_passed_when_unset() {
+	local output
+	output=$(run_with_fake_opencode "\"$RALPH\" -m 1 --prompt test")
+	assert_output_contains "$output" "run test" "opencode run still executes"
+	assert_output_not_contains "$output" "--agent" "--agent is not passed when no agent is configured"
 }
 
 # ============================================================================
@@ -423,6 +520,8 @@ test_no_specs_index_flag
 test_impl_plan_short_flag
 test_impl_plan_long_flag
 test_inline_prompt_flag
+test_agent_short_flag
+test_agent_long_flag
 test_prompt_from_stdin_flag
 test_prompt_from_stdin_positional
 test_log_file_short_flag
@@ -430,12 +529,16 @@ test_env_max_iterations
 test_env_specs_dir
 test_env_specs_index_file
 test_env_impl_plan_name
+test_env_agent
 test_env_log_file
 test_env_prompts_dir
 test_config_file_loading
+test_config_agent
 test_flag_overrides_env
 test_flag_overrides_config
 test_env_overrides_config
+test_agent_precedence
+test_agent_not_passed_when_unset
 test_custom_config_file
 test_scope_placeholder
 test_unknown_flag_error

@@ -100,6 +100,7 @@ If you don't know where to start to implement backpressure, [lefthook](https://g
 -i, --specs-index FILE            Specs index file (default: README.md)
 --no-specs-index                  Disable specs index file
 -n, --implementation-plan-name N  Implementation plan file name
+-a, --agent NAME                  Agent name passed to opencode via --agent
 -l, --log-file FILE               Log file path
 --no-log                          Disable logs
 --log-truncate                    Truncate log file before writing
@@ -149,6 +150,7 @@ Ralph supports environment variables and an optional config file. Flags override
 - `RALPH_SPECS_INDEX_FILE`
 - `RALPH_PROMPTS_DIR`
 - `RALPH_IMPLEMENTATION_PLAN_NAME`
+- `RALPH_AGENT` - Agent name passed to `opencode` via `--agent`. If unset, `--agent` is not passed.
 - `RALPH_LOG_FILE` - Path to a log file where all Ralph output (stdout/stderr) is mirrored.
 - `RALPH_LOG_ENABLED` - Set to `0` to disable logs, `1` to enable (default: `1`).
 - `RALPH_LOG_APPEND` - Set to `0` to truncate before writing, `1` to append (default: `1`).
@@ -164,6 +166,7 @@ RALPH_PROMPTS_DIR=prompts
 RALPH_SPECS_DIR=specs
 RALPH_SPECS_INDEX_FILE=README.md
 RALPH_IMPLEMENTATION_PLAN_NAME=IMPLEMENTATION_PLAN.md
+RALPH_AGENT=build
 RALPH_LOG_FILE=logs/ralph.log
 RALPH_LOG_ENABLED=1
 RALPH_LOG_APPEND=1

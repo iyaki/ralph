@@ -10,6 +10,7 @@
 #    -i, --specs-index FILE            Specs index file (default: README.md)
 #    --no-specs-index                  Disable specs index file
 #    -n, --implementation-plan-name N  Implementation plan file name
+#    -a, --agent NAME                  Agent name passed to opencode
 #    -l, --log-file FILE               Log file path
 #    --no-log                          Disable logs
 #    --log-truncate                    Truncate log file before writing
@@ -63,6 +64,7 @@ ralph() ( # Subshell function used to give a scope to code
 	_ORIG_RALPH_SPECS_DIR="${RALPH_SPECS_DIR:-}"
 	_ORIG_RALPH_SPECS_INDEX_FILE="${RALPH_SPECS_INDEX_FILE:-}"
 	_ORIG_RALPH_IMPLEMENTATION_PLAN_NAME="${RALPH_IMPLEMENTATION_PLAN_NAME:-}"
+	_ORIG_RALPH_AGENT="${RALPH_AGENT:-}"
 	_ORIG_RALPH_CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
 	_ORIG_RALPH_LOG_FILE="${RALPH_LOG_FILE:-}"
 	_ORIG_RALPH_LOG_ENABLED="${RALPH_LOG_ENABLED:-}"
@@ -77,6 +79,7 @@ ralph() ( # Subshell function used to give a scope to code
 	_SPECS_INDEX_FILE=""
 	_SPECS_INDEX_FILE_DISABLED=""
 	_IMPLEMENTATION_PLAN_NAME=""
+	_AGENT=""
 	_LOG_FILE=""
 	_LOG_ENABLED=""
 	_LOG_APPEND=""
@@ -136,6 +139,14 @@ ralph() ( # Subshell function used to give a scope to code
 				exit 1
 			fi
 			_IMPLEMENTATION_PLAN_NAME="$2"
+			shift 2
+			;;
+		-a | --agent)
+			if [ $# -lt 2 ]; then
+				echo "Error: -a/--agent requires an argument" >&2
+				exit 1
+			fi
+			_AGENT="$2"
 			shift 2
 			;;
 		-l | --log-file)
@@ -245,6 +256,14 @@ ralph() ( # Subshell function used to give a scope to code
 		CUSTOM_PROMPT="$_ORIG_RALPH_CUSTOM_PROMPT"
 	else
 		CUSTOM_PROMPT="${RALPH_CUSTOM_PROMPT:-}"
+	fi
+
+	if [ -n "$_AGENT" ]; then
+		AGENT="$_AGENT"
+	elif [ -n "$_ORIG_RALPH_AGENT" ]; then
+		AGENT="$_ORIG_RALPH_AGENT"
+	else
+		AGENT="${RALPH_AGENT:-}"
 	fi
 
 	if [ -n "$_LOG_FILE" ]; then
@@ -561,8 +580,13 @@ EOF
 		echo "==============================================================="
 
 		if [ -z "${DEBUG:-}" ]; then
+			OPENCODE_ARGS=""
+			if [ -n "$AGENT" ]; then
+				OPENCODE_ARGS="--agent $AGENT"
+			fi
 			# For usage with any other agent, just change this line to call the appropriate command with the prompt as input
-			OUTPUT="$(opencode run "$PROMPT" 2>&1 | tee /dev/tty)" || true
+			# shellcheck disable=SC2086
+			OUTPUT="$(opencode run $OPENCODE_ARGS "$PROMPT" 2>&1 | tee /dev/tty)" || true
 		else
 			echo "$PROMPT"
 			OUTPUT="$COMPLETION_SIGNAL"
