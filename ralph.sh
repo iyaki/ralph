@@ -13,7 +13,6 @@
 #    -l, --log-file FILE               Log file path
 #    --no-log                          Disable logs
 #    --log-truncate                    Truncate log file before writing
-#    --stop-condition CONDITION        Custom stop condition text
 #    --prompt PROMPT                   Inline custom prompt (overrides prompt files)
 #    -h, --help                        Show this help message
 #
@@ -164,7 +163,7 @@ ralph() ( # Subshell function used to give a scope to code
 			shift 2
 			;;
 		-h | --help)
-			sed -n '3,21p' "$0" | sed 's/^#//' | sed "s%\./ralph\.sh%$0%"
+			sed -n '3,23p' "$0" | sed 's/^#//' | sed "s%\./ralph\.sh%$0%"
 			exit 0
 			;;
 		--)

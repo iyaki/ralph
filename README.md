@@ -103,7 +103,6 @@ If you don't know where to start to implement backpressure, [lefthook](https://g
 -l, --log-file FILE               Log file path
 --no-log                          Disable logs
 --log-truncate                    Truncate log file before writing
---stop-condition CONDITION        Custom stop condition text
 --prompt PROMPT                   Inline custom prompt (overrides prompt files)
 -h, --help                        Show this help message
 ```
