@@ -586,7 +586,9 @@ EOF
 			fi
 			# For usage with any other agent, just change this line to call the appropriate command with the prompt as input
 			# shellcheck disable=SC2086
-			OUTPUT="$(opencode run $OPENCODE_ARGS "$PROMPT" 2>&1 | tee /dev/tty)" || true
+			OUTPUT="$(opencode run $OPENCODE_ARGS "$PROMPT" 2>&1)" || true
+			# Mirror command output to stdout so global logging captures it.
+			printf '%s\n' "$OUTPUT"
 		else
 			echo "$PROMPT"
 			OUTPUT="$COMPLETION_SIGNAL"

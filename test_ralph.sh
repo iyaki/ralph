@@ -349,6 +349,37 @@ test_env_log_file() {
 }
 
 # ============================================================================
+# Test: opencode execution output is mirrored to log file
+# ============================================================================
+test_log_captures_opencode_output() {
+	local tmpdir
+	tmpdir=$(mktemp -d)
+	trap 'rm -rf $tmpdir' EXIT
+
+	local logfile
+	logfile="$tmpdir/ralph-opencode.log"
+
+	cat >"$tmpdir/opencode" <<'EOF'
+#!/bin/sh
+printf '%s\n' 'FAKE-OPENCODE-OUTPUT'
+printf '%s\n' '<promise>COMPLETE</promise>'
+EOF
+	chmod +x "$tmpdir/opencode"
+
+	PATH="$tmpdir:$PATH" "$RALPH" -m 1 -l "$logfile" --prompt "log-opencode-test" >/dev/null 2>&1
+
+	if [ -f "$logfile" ] && grep -q "FAKE-OPENCODE-OUTPUT" "$logfile"; then
+		echo "✓ opencode output is written to log file"
+		TESTS_PASSED=$((TESTS_PASSED + 1))
+	else
+		echo "✗ opencode output is written to log file"
+		TESTS_FAILED=$((TESTS_FAILED + 1))
+	fi
+
+	rm -rf "$tmpdir"
+}
+
+# ============================================================================
 # Test: Environment variable - RALPH_PROMPTS_DIR
 # ============================================================================
 test_env_prompts_dir() {
@@ -531,6 +562,7 @@ test_env_specs_index_file
 test_env_impl_plan_name
 test_env_agent
 test_env_log_file
+test_log_captures_opencode_output
 test_env_prompts_dir
 test_config_file_loading
 test_config_agent
