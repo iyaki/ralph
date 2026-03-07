@@ -1,6 +1,7 @@
 # Binaries
-ralph
-ralph-*
+/ralph
+/ralph-*
+!/ralph-*.go
 *.exe
 
 # Go build artifacts
