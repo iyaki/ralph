@@ -20,7 +20,8 @@
 		"vscode": {
 			"extensions": [
 				"EditorConfig.EditorConfig",
-				"timonwong.shellcheck"
+				"timonwong.shellcheck",
+				"nhoizey.gremlins"
 			]
 		}
 	}
