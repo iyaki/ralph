@@ -584,11 +584,12 @@ EOF
 			if [ -n "$AGENT" ]; then
 				OPENCODE_ARGS="--agent $AGENT"
 			fi
+			OPENCODE_OUTPUT_FILE="$(mktemp "${TMPDIR:-/tmp}/ralph-opencode.XXXXXX")"
 			# For usage with any other agent, just change this line to call the appropriate command with the prompt as input
 			# shellcheck disable=SC2086
-			OUTPUT="$(opencode run $OPENCODE_ARGS "$PROMPT" 2>&1)" || true
-			# Mirror command output to stdout so global logging captures it.
-			printf '%s\n' "$OUTPUT"
+			opencode run $OPENCODE_ARGS "$PROMPT" 2>&1 | tee "$OPENCODE_OUTPUT_FILE" || true
+			OUTPUT="$(cat "$OPENCODE_OUTPUT_FILE")"
+			rm -f "$OPENCODE_OUTPUT_FILE"
 		else
 			echo "$PROMPT"
 			OUTPUT="$COMPLETION_SIGNAL"
