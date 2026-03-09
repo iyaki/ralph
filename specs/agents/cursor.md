@@ -1,7 +1,5 @@
 # Cursor Agent
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

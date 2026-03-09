@@ -1,7 +1,5 @@
 # Claude Agent
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

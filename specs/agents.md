@@ -1,7 +1,5 @@
 # Agents
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose
