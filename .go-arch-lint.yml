@@ -40,17 +40,15 @@ deps:
       - executor
       - logger
       - prompt
-    anyProjectDeps: true
+    anyVendorDeps: true
   agent:
     mayDependOn:
       - executor
       - logger
-    anyProjectDeps: true
   executor:
     mayDependOn:
       - logger
       - config
-    anyProjectDeps: true
   logger:
     anyProjectDeps: true
     anyVendorDeps: false

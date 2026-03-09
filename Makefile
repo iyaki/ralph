@@ -19,7 +19,9 @@ help:
 	"  make format       Run gofmt on tracked Go files" \
 	"  make lint         Run golangci-lint" \
 	"  make test         Run tests" \
+	"  make test-race    Run tests with race detection" \
 	"  make coverage     Run coverage gate only" \
+	"  make mutation     Run mutation testing (final stage)" \
 	"  make security     Run govulncheck and gosec" \
 	"  make arch         Run go-arch-lint" \
 	"  make build        Build the ralph binary" \
@@ -29,7 +31,7 @@ help:
 	"  make run ARGS='...' Run CLI from source"
 
 # Full quality checks
-quality: test-coverage security arch lint
+quality: test lint test-race test-coverage test-mutation security arch
 
 # Format with gofmt
 format:
@@ -38,6 +40,32 @@ format:
 # Lint with golangci-lint
 lint:
 	golangci-lint run
+
+# Run tests
+test:
+	$(GO) test -v ./...
+
+# Run coverage gate
+coverage: test-coverage
+
+# Run tests with coverage and enforce minimum threshold
+test-coverage:
+	@coverprofile="$$(mktemp -t quality-cover.XXXXXX)"; \
+	$(GO) test -coverprofile="$$coverprofile" -covermode=atomic ./...; \
+	total="$$($(GO) tool cover -func="$$coverprofile" | awk '/^total:/{gsub(/%/,"",$$3); print $$3}')"; \
+	rm -f "$$coverprofile"; \
+	if ! awk -v total="$$total" -v minimum="90" 'BEGIN {exit !(total >= minimum)}'; then \
+		echo "Coverage $${total}% is below required 90%." >&2; \
+		exit 1; \
+	fi
+
+test-race:
+	$(GO) test -race ./...
+
+test-mutation:
+	gremlins unleash $(ARGS)
+
+mutation: test-mutation
 
 # Security checks
 security:
@@ -60,24 +88,6 @@ clean:
 # Install the binary to system path
 install: build
 	install -m 0755 $(BUILD_OUT) $(INSTALL_PATH)/$(BINARY_NAME)
-
-# Run tests
-test:
-	$(GO) test -v ./...
-
-# Run coverage gate
-coverage: test-coverage
-
-# Run tests with coverage and enforce minimum threshold
-test-coverage:
-	@coverprofile="$$(mktemp -t quality-cover.XXXXXX)"; \
-	$(GO) test -coverprofile="$$coverprofile" -covermode=atomic -coverpkg=./... ./...; \
-	total="$$($(GO) tool cover -func="$$coverprofile" | awk '/^total:/{gsub(/%/,"",$$3); print $$3}')"; \
-	rm -f "$$coverprofile"; \
-	if ! awk -v total="$$total" -v minimum="90" 'BEGIN {exit !(total >= minimum)}'; then \
-		echo "Coverage $${total}% is below required 90%." >&2; \
-		exit 1; \
-	fi
 
 # Download dependencies
 deps:
