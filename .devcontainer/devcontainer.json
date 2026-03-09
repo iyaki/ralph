@@ -48,6 +48,30 @@
 		}
 	],
 
+	"remoteEnv": {
+		// https://opencode.ai/docs/cli/#environment-variables
+		"OPENCODE_EXPERIMENTAL_LSP_TOOL": "true",
+		"OPENCODE_EXPERIMENTAL_LSP_TY": "true",
+		"OPENCODE_ENABLE_EXPERIMENTAL_MODELS": "true",
+		"OPENCODE_DISABLE_AUTOCOMPACT": "true",
+		"OPENCODE_DISABLE_CLAUDE_CODE": "true",
+		"OPENCODE_DISABLE_FILETIME_CHECK": "true",
+		"OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER": "true",
+		"OPENCODE_EXPERIMENTAL_MARKDOWN": "true",
+		"OPENCODE_EXPERIMENTAL_PLAN_MODE": "true",
+		"OPENCODE_EXPERIMENTAL_ICON_DISCOVERY": "true",
+		"OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS": "300000",
+		// "PLAYWRIGHT_DOCKER_IMAGE": "mcr.microsoft.com/playwright:v1.58.2-noble",
+		"PATH": "${containerEnv:PATH}:scripts:bin",
+		// For usage with /editr command from OpenCode - https://opencode.ai/docs/tui/#editor-setup
+		"EDITOR": "code --wait",
+		"VISUAL": "code --wait",
+		"XDG_CONFIG_HOME": "/home/codespace/.config",
+		"XDG_CACHE_HOME": "/home/codespace/.cache",
+		"XDG_DATA_HOME": "/home/codespace/.local/share",
+		"XDG_STATE_HOME": "/home/codespace/.local/state"
+	},
+
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:": {
 			"installZsh": false,
