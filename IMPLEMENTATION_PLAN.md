@@ -1,6 +1,6 @@
 # Implementation Plan (command-init)
 
-**Status:** Planning Complete (1/2)
+**Status:** Implementation In Progress (2/2)
 **Last Updated:** 2026-03-09
 **Primary Spec:** [specs/init-command.md](specs/init-command.md)
 
@@ -9,7 +9,7 @@
 | System            | Spec                                    | Package           | Artifacts   | Implemented? |
 | :---------------- | :-------------------------------------- | :---------------- | :---------- | :----------- | --- | -------------- | ------------------------------------- | -------------- | -------- | --- |
 | **Config Writer** | [Configuration](specs/configuration.md) | `internal/config` | `writer.go` | [x]          |
-| **Init Command**  | [Init Command](specs/init-command.md)   | `internal/cli`    | `init.go`   | [ ]          |     | **CLI Wiring** | [Init Command](specs/init-command.md) | `internal/cli` | `cmd.go` | [ ] |
+| **Init Command**  | [Init Command](specs/init-command.md)   | `internal/cli`    | `init.go`   | [~]          |     | **CLI Wiring** | [Init Command](specs/init-command.md) | `internal/cli` | `cmd.go` | [x] |
 
 ## Phased Plan
 
@@ -37,9 +37,9 @@
 
 #### 2.1 Init Command Structure
 
-- [ ] Create `internal/cli/init.go`
-- [ ] Implement `NewInitCommand() *cobra.Command`
-- [ ] Define `InitSession`, `InitQuestion`, `InitAnswers` structs (internal to `init.go` or private)
+- [x] Create `internal/cli/init.go`
+- [x] Implement `NewInitCommand() *cobra.Command`
+- [x] Define `InitSession`, `InitQuestion`, `InitAnswers` structs (internal to `init.go` or private)
 
 #### 2.2 Interactive Logic & Validation
 
@@ -51,7 +51,7 @@
 
 #### 2.3 CLI Wiring
 
-- [ ] Register `init` subcommand in `internal/cli/cmd.go` (Update `NewRalphCommand`)
+- [x] Register `init` subcommand in `internal/cli/cmd.go` (Update `NewRalphCommand`)
 
 **Definition of Done:**
 
@@ -65,14 +65,15 @@
 | Date       | Verification Step                  | Result |
 | :--------- | :--------------------------------- | :----- |
 | 2026-03-09 | `go test -v ./internal/config/...` | PASS   |
+| 2026-03-09 | `go test -v ./internal/cli/...`    | PASS   |
 
 ## Summary
 
-| Phase                  | Status   | Completion |
-| :--------------------- | :------- | :--------- |
-| Phase 1: Config Writer | Complete | 100%       |
-| Phase 2: Init Command  | Pending  | 0%         |
-| **Remaining Effort**   | **High** | **75%**    |
+| Phase                  | Status      | Completion |
+| :--------------------- | :---------- | :--------- |
+| Phase 1: Config Writer | Complete    | 100%       |
+| Phase 2: Init Command  | In Progress | 50%        |
+| **Remaining Effort**   | **Medium**  | **50%**    |
 
 ## Known Existing Work
 

@@ -16,6 +16,7 @@ func writeExecutable(t *testing.T, dir, name, content string) string {
 	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
 		t.Fatalf("failed to write executable: %v", err)
 	}
+
 	return path
 }
 

@@ -1,3 +1,4 @@
+// Package cli provides CLI commands and execution flow for Ralph.
 package cli
 
 import (
@@ -34,7 +35,7 @@ For extended documentation, examples, and configuration options, visit https://g
   ralph --prompt "Custom prompt text"
   echo "prompt from stdin" | ralph -`,
 		Args: cobra.MaximumNArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			// Parse positional arguments
 			promptName := "build"
 			scope := "Whole system"
@@ -56,7 +57,9 @@ For extended documentation, examples, and configuration options, visit https://g
 			if err != nil {
 				return fmt.Errorf("failed to initialize logger: %w", err)
 			}
-			defer appLogger.Close()
+			defer func() {
+				_ = appLogger.Close()
+			}()
 
 			// Write to both logger and stdout
 			writers := []io.Writer{os.Stdout}
@@ -94,12 +97,21 @@ For extended documentation, examples, and configuration options, visit https://g
 	flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
 	flags.StringVar(&cfg.AgentMode, "agent-mode", "", "Agent mode/sub-agent to use (e.g., reviewer, planner)")
 
+	// Register subcommands
+	cmd.AddCommand(NewInitCommand())
+
 	return cmd
 }
 
 // runLoop executes the main Ralph iteration loop
 func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer) error {
 	completionSignal := "<promise>COMPLETE</promise>"
+	writef := func(format string, args ...any) {
+		_, _ = fmt.Fprintf(output, format, args...)
+	}
+	writeln := func(args ...any) {
+		_, _ = fmt.Fprintln(output, args...)
+	}
 
 	// Replace placeholders in prompt
 	promptText = strings.ReplaceAll(promptText, "<COMPLETION_SIGNAL>", completionSignal)
@@ -109,23 +121,23 @@ func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 
 	// Check if agent is available
 	if !agentInstance.IsAvailable() {
-		fmt.Fprintf(output, "Warning: %s agent not found in PATH, will continue anyway...\n", agentInstance.Name())
+		writef("Warning: %s agent not found in PATH, will continue anyway...\n", agentInstance.Name())
 	}
 
-	fmt.Fprintf(output, "Starting Ralph - Max iterations: %d\n", cfg.MaxIterations)
-	fmt.Fprintf(output, "Using agent: %s\n", agentInstance.Name())
+	writef("Starting Ralph - Max iterations: %d\n", cfg.MaxIterations)
+	writef("Using agent: %s\n", agentInstance.Name())
 
 	for i := 1; i <= cfg.MaxIterations; i++ {
-		fmt.Fprintf(output, "\n")
-		fmt.Fprintf(output, "===============================================================\n")
-		fmt.Fprintf(output, " [%s] Iteration %d of %d (%s)\n", promptName, i, cfg.MaxIterations, time.Now().Format(time.RFC3339))
-		fmt.Fprintf(output, "===============================================================\n")
+		writef("\n")
+		writef("===============================================================\n")
+		writef(" [%s] Iteration %d of %d (%s)\n", promptName, i, cfg.MaxIterations, time.Now().Format(time.RFC3339))
+		writef("===============================================================\n")
 
 		// Check if DEBUG mode (for testing)
 		if os.Getenv("DEBUG") != "" {
-			fmt.Fprintln(output, promptText)
-			fmt.Fprintf(output, "\nAll planned tasks completed!\n")
-			fmt.Fprintf(output, "Completed at iteration %d of %d\n", i, cfg.MaxIterations)
+			writeln(promptText)
+			writef("\nAll planned tasks completed!\n")
+			writef("Completed at iteration %d of %d\n", i, cfg.MaxIterations)
 			return nil
 		}
 
@@ -133,19 +145,19 @@ func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 		result, err := agentInstance.Execute(promptText, output)
 		if err != nil {
 			// Non-fatal error, continue to next iteration
-			fmt.Fprintf(output, "Command execution warning: %v\n", err)
+			writef("Command execution warning: %v\n", err)
 		}
 
 		// Check for completion signal
 		if strings.Contains(result, completionSignal) {
-			fmt.Fprintf(output, "\nAll planned tasks completed!\n")
-			fmt.Fprintf(output, "Completed at iteration %d of %d\n", i, cfg.MaxIterations)
+			writef("\nAll planned tasks completed!\n")
+			writef("Completed at iteration %d of %d\n", i, cfg.MaxIterations)
 			return nil
 		}
 
-		fmt.Fprintf(output, "Iteration %d complete. Continuing...\n", i)
+		writef("Iteration %d complete. Continuing...\n", i)
 	}
 
-	fmt.Fprintf(output, "\nReached max iterations (%d) without completing all planned tasks.\n", cfg.MaxIterations)
+	writef("\nReached max iterations (%d) without completing all planned tasks.\n", cfg.MaxIterations)
 	return fmt.Errorf("max iterations reached")
 }
