@@ -1,51 +1,89 @@
 # Makefile for Ralph Go CLI
 
-.PHONY: all build clean install test test-coverage deps help
+.PHONY: all build clean install test test-coverage deps help quality format lint security arch run analyze
 
 BINARY_NAME=ralph
 GO=go
 INSTALL_PATH=/usr/local/bin
+BUILD_OUT ?= bin/ralph
+ARGS ?=
 
+# Default target
 all: build
+
+# Common targets help
+help:
+	@printf "%s\n" \
+	"Common targets:" \
+	"  make quality      Run full quality checks" \
+	"  make format       Run gofmt on tracked Go files" \
+	"  make lint         Run golangci-lint" \
+	"  make test         Run tests" \
+	"  make coverage     Run coverage gate only" \
+	"  make security     Run govulncheck and gosec" \
+	"  make arch         Run go-arch-lint" \
+	"  make build        Build the ralph binary" \
+	"  make clean        Remove built artifacts" \
+	"  make install      Install ralph to $(INSTALL_PATH)" \
+	"  make deps         Download and tidy dependencies" \
+	"  make run ARGS='...' Run CLI from source"
+
+# Full quality checks
+quality: test-coverage security arch lint
+
+# Format with gofmt
+format:
+	gofmt -w $$(git ls-files '*.go')
+
+# Lint with golangci-lint
+lint:
+	golangci-lint run
+
+# Security checks
+security:
+	govulncheck ./...
+	gosec ./...
+
+# Architecture checks
+arch:
+	go-arch-lint check
 
 # Build the binary
 build:
-	$(GO) build -o $(BINARY_NAME) ./cmd/ralph
+	$(GO) build -o $(BUILD_OUT) ./cmd/ralph
 
 # Clean build artifacts
 clean:
-	rm -f $(BINARY_NAME)
+	rm -f $(BINARY_NAME) $(BUILD_OUT)
 	$(GO) clean
 
 # Install the binary to system path
 install: build
-	install -m 0755 $(BINARY_NAME) $(INSTALL_PATH)/$(BINARY_NAME)
+	install -m 0755 $(BUILD_OUT) $(INSTALL_PATH)/$(BINARY_NAME)
 
-# Run tests (if any)
+# Run tests
 test:
 	$(GO) test -v ./...
 
+# Run coverage gate
+coverage: test-coverage
+
 # Run tests with coverage and enforce minimum threshold
 test-coverage:
-	$(GO) test ./... -coverprofile=coverage.out -covermode=atomic
-	@total=`$(GO) tool cover -func=coverage.out | tail -n 1 | awk '{print $$3}' | sed 's/%//'`; \
-	echo "Total coverage: $$total%"; \
-	awk 'BEGIN { exit !('"$$total"' >= 90) }' || (echo "Coverage check failed: require >= 90%" && exit 1)
+	@coverprofile="$$(mktemp -t quality-cover.XXXXXX)"; \
+	$(GO) test -coverprofile="$$coverprofile" -covermode=atomic -coverpkg=./... ./...; \
+	total="$$($(GO) tool cover -func="$$coverprofile" | awk '/^total:/{gsub(/%/,"",$$3); print $$3}')"; \
+	rm -f "$$coverprofile"; \
+	if ! awk -v total="$$total" -v minimum="90" 'BEGIN {exit !(total >= minimum)}'; then \
+		echo "Coverage $${total}% is below required 90%." >&2; \
+		exit 1; \
+	fi
 
 # Download dependencies
 deps:
 	$(GO) mod download
 	$(GO) mod tidy
 
-# Show help
-help:
-	@echo "Ralph Go CLI Makefile"
-	@echo ""
-	@echo "Targets:"
-	@echo "  build       - Build the ralph binary"
-	@echo "  clean       - Remove built artifacts"
-	@echo "  install     - Install ralph to $(INSTALL_PATH)"
-	@echo "  test        - Run tests"
-	@echo "  test-coverage - Run tests with coverage (fails if < 90%)"
-	@echo "  deps        - Download and tidy dependencies"
-	@echo "  help        - Show this help message"
+# Run from source
+run:
+	$(GO) run ./cmd/ralph $(ARGS)

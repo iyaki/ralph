@@ -1,0 +1,62 @@
+version: 3
+workdir: .
+allow:
+  ignoreNotFoundComponents: true
+
+components:
+  cmd:
+    in:
+      - cmd/**
+  cli:
+    in:
+      - internal/cli/**
+  config:
+    in:
+      - internal/config/**
+  agent:
+    in:
+      - internal/agent/**
+  executor:
+    in:
+      - internal/executor/**
+  logger:
+    in:
+      - internal/logger/**
+  prompt:
+    in:
+      - internal/prompt/**
+
+commonComponents:
+  - config
+  - logger
+
+deps:
+  cmd:
+    anyProjectDeps: true
+  cli:
+    mayDependOn:
+      - agent
+      - config
+      - executor
+      - logger
+      - prompt
+    anyProjectDeps: true
+  agent:
+    mayDependOn:
+      - executor
+      - logger
+    anyProjectDeps: true
+  executor:
+    mayDependOn:
+      - logger
+      - config
+    anyProjectDeps: true
+  logger:
+    anyProjectDeps: true
+    anyVendorDeps: false
+  prompt:
+    mayDependOn:
+      - config
+    anyVendorDeps: true
+  config:
+    anyVendorDeps: true
