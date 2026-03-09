@@ -352,8 +352,9 @@ ralph() ( # Subshell function used to give a scope to code
 - Study \`$IMPLEMENTATION_PLAN_NAME\` and pick the single most important task.
 - Implement the task
 - Validate the implementation
-- Update the plan
 - Commit the changes
+- Update the plan
+- Commit the updated plan
 - Stop after the commit
 
 ## Stop Condition
