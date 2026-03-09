@@ -1,14 +1,16 @@
-package executor
+package executor_test
 
 import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/iyaki/ralph/internal/executor"
 )
 
 func TestExecuteCommandSuccess(t *testing.T) {
 	var out bytes.Buffer
-	result, err := ExecuteCommand("sh", []string{"-c", "echo out && echo err 1>&2"}, &out)
+	result, err := executor.ExecuteCommand("sh", []string{"-c", "echo out && echo err 1>&2"}, &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -22,7 +24,7 @@ func TestExecuteCommandSuccess(t *testing.T) {
 }
 
 func TestExecuteCommandFailureReturnsOutputAndError(t *testing.T) {
-	result, err := ExecuteCommand("sh", []string{"-c", "echo partial && exit 2"}, &bytes.Buffer{})
+	result, err := executor.ExecuteCommand("sh", []string{"-c", "echo partial && exit 2"}, &bytes.Buffer{})
 	if err == nil {
 		t.Fatal("expected error")
 	}

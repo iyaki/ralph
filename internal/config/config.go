@@ -1,3 +1,4 @@
+// Package config handles loading and resolving Ralph configuration.
 package config
 
 import (
@@ -9,9 +10,31 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-// Config holds all Ralph configuration
+const (
+	defaultMaxIterations          = 25
+	defaultSpecsDir               = "specs"
+	defaultSpecsIndexFile         = "README.md"
+	defaultImplementationPlanName = "IMPLEMENTATION_PLAN.md"
+	defaultAgentName              = "opencode"
+)
+
+type envValues struct {
+	maxIterations          string
+	specsDir               string
+	specsIndexFile         string
+	implementationPlanName string
+	customPrompt           string
+	logFile                string
+	logEnabled             string
+	logAppend              string
+	promptsDir             string
+	agentName              string
+	model                  string
+	agentMode              string
+}
+
+// Config holds all Ralph configuration.
 type Config struct {
-	// Command-line flags
 	ConfigFile             string `toml:"config-file"`
 	MaxIterations          int    `toml:"max-iterations"`
 	PromptFile             string `toml:"prompt-file"`
@@ -27,29 +50,25 @@ type Config struct {
 	AgentName              string `toml:"agent"`
 	Model                  string `toml:"model"`
 	AgentMode              string `toml:"agent-mode"`
-	// Internal state
+
 	configLoaded bool
 }
 
-// LoadConfig loads configuration with proper precedence: flags > env vars > config file > defaults
+// LoadConfig loads configuration with proper precedence: flags > env vars > config file > defaults.
 func (c *Config) LoadConfig() error {
-	// Save original environment variables
-	origEnv := map[string]string{
-		"RALPH_MAX_ITERATIONS":           os.Getenv("RALPH_MAX_ITERATIONS"),
-		"RALPH_SPECS_DIR":                os.Getenv("RALPH_SPECS_DIR"),
-		"RALPH_SPECS_INDEX_FILE":         os.Getenv("RALPH_SPECS_INDEX_FILE"),
-		"RALPH_IMPLEMENTATION_PLAN_NAME": os.Getenv("RALPH_IMPLEMENTATION_PLAN_NAME"),
-		"RALPH_CUSTOM_PROMPT":            os.Getenv("RALPH_CUSTOM_PROMPT"),
-		"RALPH_LOG_FILE":                 os.Getenv("RALPH_LOG_FILE"),
-		"RALPH_LOG_ENABLED":              os.Getenv("RALPH_LOG_ENABLED"),
-		"RALPH_LOG_APPEND":               os.Getenv("RALPH_LOG_APPEND"),
-		"RALPH_PROMPTS_DIR":              os.Getenv("RALPH_PROMPTS_DIR"),
-		"RALPH_AGENT":                    os.Getenv("RALPH_AGENT"),
-		"RALPH_MODEL":                    os.Getenv("RALPH_MODEL"),
-		"RALPH_AGENT_MODE":               os.Getenv("RALPH_AGENT_MODE"),
+	configFromFile, err := c.resolveFileConfig()
+	if err != nil {
+		return err
 	}
 
-	// Load config file if specified
+	env := readEnv()
+	c.applyConfigValues(configFromFile, env)
+	c.configLoaded = true
+
+	return nil
+}
+
+func (c *Config) resolveFileConfig() (*Config, error) {
 	configFromFile := &Config{}
 	if c.ConfigFile != "" {
 		configPath := c.ConfigFile
@@ -57,186 +76,131 @@ func (c *Config) LoadConfig() error {
 			cwd, _ := os.Getwd()
 			configPath = filepath.Join(cwd, configPath)
 		}
+
 		if err := c.loadConfigFile(configPath, configFromFile); err != nil {
-			return fmt.Errorf("failed to load config file %s: %w", configPath, err)
+			return nil, fmt.Errorf("failed to load config file %s: %w", configPath, err)
 		}
-	} else {
-		// Try default config files in current directory (in order of preference)
-		cwd, _ := os.Getwd()
 
-		// Primary: ralph.toml
-		defaultConfig := filepath.Join(cwd, "ralph.toml")
-		if _, err := os.Stat(defaultConfig); err == nil {
-			_ = c.loadConfigFile(defaultConfig, configFromFile)
-		} else {
-			// Secondary: .ralphrc.toml (backward compatibility)
-			oldDefault := filepath.Join(cwd, ".ralphrc.toml")
-			if _, err := os.Stat(oldDefault); err == nil {
-				_ = c.loadConfigFile(oldDefault, configFromFile)
-			} else {
-				// Tertiary: .ralphrc (old shell format, for legacy compatibility)
-				legacyDefault := filepath.Join(cwd, ".ralphrc")
-				if _, err := os.Stat(legacyDefault); err == nil {
-					_ = c.loadConfigFile(legacyDefault, configFromFile)
-				}
-			}
-		}
+		return configFromFile, nil
 	}
 
-	// Apply precedence: flags > original env vars > config file values > defaults
+	loadDefaultConfig(c, configFromFile)
 
-	// Max Iterations
-	if c.MaxIterations == 0 { // Flag not set
-		if origEnv["RALPH_MAX_ITERATIONS"] != "" {
-			if val, err := strconv.Atoi(origEnv["RALPH_MAX_ITERATIONS"]); err == nil {
-				c.MaxIterations = val
-			}
-		}
-	}
-	if c.MaxIterations == 0 && configFromFile.MaxIterations != 0 {
-		c.MaxIterations = configFromFile.MaxIterations
-	}
-	if c.MaxIterations == 0 {
-		c.MaxIterations = 25
-	}
-
-	// Specs Dir
-	if c.SpecsDir == "" {
-		if origEnv["RALPH_SPECS_DIR"] != "" {
-			c.SpecsDir = origEnv["RALPH_SPECS_DIR"]
-		}
-	}
-	if c.SpecsDir == "" && configFromFile.SpecsDir != "" {
-		c.SpecsDir = configFromFile.SpecsDir
-	}
-	if c.SpecsDir == "" {
-		c.SpecsDir = "specs"
-	}
-
-	// Specs Index File
-	if c.SpecsIndexFile == "" {
-		if origEnv["RALPH_SPECS_INDEX_FILE"] != "" {
-			c.SpecsIndexFile = origEnv["RALPH_SPECS_INDEX_FILE"]
-		}
-	}
-	if c.SpecsIndexFile == "" && configFromFile.SpecsIndexFile != "" {
-		c.SpecsIndexFile = configFromFile.SpecsIndexFile
-	}
-	if c.SpecsIndexFile == "" {
-		c.SpecsIndexFile = "README.md"
-	}
-
-	// Implementation Plan Name
-	if c.ImplementationPlanName == "" {
-		if origEnv["RALPH_IMPLEMENTATION_PLAN_NAME"] != "" {
-			c.ImplementationPlanName = origEnv["RALPH_IMPLEMENTATION_PLAN_NAME"]
-		}
-	}
-	if c.ImplementationPlanName == "" && configFromFile.ImplementationPlanName != "" {
-		c.ImplementationPlanName = configFromFile.ImplementationPlanName
-	}
-	if c.ImplementationPlanName == "" {
-		c.ImplementationPlanName = "IMPLEMENTATION_PLAN.md"
-	}
-
-	// Custom Prompt
-	if c.CustomPrompt == "" {
-		if origEnv["RALPH_CUSTOM_PROMPT"] != "" {
-			c.CustomPrompt = origEnv["RALPH_CUSTOM_PROMPT"]
-		}
-	}
-	if c.CustomPrompt == "" && configFromFile.CustomPrompt != "" {
-		c.CustomPrompt = configFromFile.CustomPrompt
-	}
-
-	// Prompts Dir
-	if c.PromptsDir == "" {
-		if origEnv["RALPH_PROMPTS_DIR"] != "" {
-			c.PromptsDir = origEnv["RALPH_PROMPTS_DIR"]
-		}
-	}
-	if c.PromptsDir == "" && configFromFile.PromptsDir != "" {
-		c.PromptsDir = configFromFile.PromptsDir
-	}
-	if c.PromptsDir == "" {
-		c.PromptsDir = filepath.Join(os.Getenv("HOME"), ".ralph")
-	}
-
-	// Log File
-	if c.LogFile == "" {
-		if origEnv["RALPH_LOG_FILE"] != "" {
-			c.LogFile = origEnv["RALPH_LOG_FILE"]
-		}
-	}
-	if c.LogFile == "" && configFromFile.LogFile != "" {
-		c.LogFile = configFromFile.LogFile
-	}
-	if c.LogFile == "" {
-		cwd, _ := os.Getwd()
-		c.LogFile = filepath.Join(cwd, "ralph.log")
-	}
-
-	// Log Enabled
-	if !c.NoLog {
-		if origEnv["RALPH_LOG_ENABLED"] == "0" || os.Getenv("RALPH_LOG_ENABLED") == "0" {
-			c.NoLog = true
-		}
-	}
-	if !c.NoLog && configFromFile.NoLog {
-		c.NoLog = configFromFile.NoLog
-	}
-
-	// Log Truncate (append by default)
-	if !c.LogTruncate {
-		if origEnv["RALPH_LOG_APPEND"] == "0" || os.Getenv("RALPH_LOG_APPEND") == "0" {
-			c.LogTruncate = true
-		}
-	}
-	if !c.LogTruncate && configFromFile.LogTruncate {
-		c.LogTruncate = configFromFile.LogTruncate
-	}
-
-	// Agent Name
-	if c.AgentName == "" {
-		if origEnv["RALPH_AGENT"] != "" {
-			c.AgentName = origEnv["RALPH_AGENT"]
-		}
-	}
-	if c.AgentName == "" && configFromFile.AgentName != "" {
-		c.AgentName = configFromFile.AgentName
-	}
-	if c.AgentName == "" {
-		c.AgentName = "opencode"
-	}
-
-	// Model
-	if c.Model == "" {
-		if origEnv["RALPH_MODEL"] != "" {
-			c.Model = origEnv["RALPH_MODEL"]
-		}
-	}
-	if c.Model == "" && configFromFile.Model != "" {
-		c.Model = configFromFile.Model
-	}
-	// Note: Model is optional, so we don't set a default
-
-	// Agent Mode
-	if c.AgentMode == "" {
-		if origEnv["RALPH_AGENT_MODE"] != "" {
-			c.AgentMode = origEnv["RALPH_AGENT_MODE"]
-		}
-	}
-	if c.AgentMode == "" && configFromFile.AgentMode != "" {
-		c.AgentMode = configFromFile.AgentMode
-	}
-	// Note: Agent mode is optional, so we don't set a default
-
-	c.configLoaded = true
-	return nil
+	return configFromFile, nil
 }
 
-// loadConfigFile reads a TOML config file and populates the given Config
+func loadDefaultConfig(c *Config, target *Config) {
+	cwd, _ := os.Getwd()
+	for _, name := range []string{"ralph.toml", ".ralphrc.toml", ".ralphrc"} {
+		path := filepath.Join(cwd, name)
+		if _, err := os.Stat(path); err == nil {
+			_ = c.loadConfigFile(path, target)
+
+			return
+		}
+	}
+}
+
+func readEnv() envValues {
+	return envValues{
+		maxIterations:          os.Getenv("RALPH_MAX_ITERATIONS"),
+		specsDir:               os.Getenv("RALPH_SPECS_DIR"),
+		specsIndexFile:         os.Getenv("RALPH_SPECS_INDEX_FILE"),
+		implementationPlanName: os.Getenv("RALPH_IMPLEMENTATION_PLAN_NAME"),
+		customPrompt:           os.Getenv("RALPH_CUSTOM_PROMPT"),
+		logFile:                os.Getenv("RALPH_LOG_FILE"),
+		logEnabled:             os.Getenv("RALPH_LOG_ENABLED"),
+		logAppend:              os.Getenv("RALPH_LOG_APPEND"),
+		promptsDir:             os.Getenv("RALPH_PROMPTS_DIR"),
+		agentName:              os.Getenv("RALPH_AGENT"),
+		model:                  os.Getenv("RALPH_MODEL"),
+		agentMode:              os.Getenv("RALPH_AGENT_MODE"),
+	}
+}
+
+func (c *Config) applyConfigValues(fileCfg *Config, env envValues) {
+	c.MaxIterations = resolveInt(c.MaxIterations, env.maxIterations, fileCfg.MaxIterations, defaultMaxIterations)
+	c.SpecsDir = resolveString(c.SpecsDir, env.specsDir, fileCfg.SpecsDir, defaultSpecsDir)
+	c.SpecsIndexFile = resolveString(c.SpecsIndexFile, env.specsIndexFile, fileCfg.SpecsIndexFile, defaultSpecsIndexFile)
+	c.ImplementationPlanName = resolveString(
+		c.ImplementationPlanName,
+		env.implementationPlanName,
+		fileCfg.ImplementationPlanName,
+		defaultImplementationPlanName,
+	)
+	c.CustomPrompt = resolveString(c.CustomPrompt, env.customPrompt, fileCfg.CustomPrompt, "")
+	c.PromptsDir = resolveString(c.PromptsDir, env.promptsDir, fileCfg.PromptsDir, defaultPromptsDir())
+	c.LogFile = resolveString(c.LogFile, env.logFile, fileCfg.LogFile, defaultLogFile())
+	c.NoLog = resolveBool(c.NoLog, env.logEnabled, fileCfg.NoLog, true)
+	c.LogTruncate = resolveBool(c.LogTruncate, env.logAppend, fileCfg.LogTruncate, true)
+	c.AgentName = resolveString(c.AgentName, env.agentName, fileCfg.AgentName, defaultAgentName)
+	c.Model = resolveString(c.Model, env.model, fileCfg.Model, "")
+	c.AgentMode = resolveString(c.AgentMode, env.agentMode, fileCfg.AgentMode, "")
+}
+
+func resolveInt(flagValue int, envValue string, fileValue int, defaultValue int) int {
+	if flagValue != 0 {
+		return flagValue
+	}
+
+	if envValue != "" {
+		if parsed, err := strconv.Atoi(envValue); err == nil {
+			return parsed
+		}
+	}
+
+	if fileValue != 0 {
+		return fileValue
+	}
+
+	return defaultValue
+}
+
+func resolveString(flagValue, envValue, fileValue, defaultValue string) string {
+	if flagValue != "" {
+		return flagValue
+	}
+
+	if envValue != "" {
+		return envValue
+	}
+
+	if fileValue != "" {
+		return fileValue
+	}
+
+	return defaultValue
+}
+
+func resolveBool(flagValue bool, envValue string, fileValue bool, envDisableIsZero bool) bool {
+	if flagValue {
+		return true
+	}
+
+	if envDisableIsZero && envValue == "0" {
+		return true
+	}
+
+	if fileValue {
+		return true
+	}
+
+	return false
+}
+
+func defaultPromptsDir() string {
+	return filepath.Join(os.Getenv("HOME"), ".ralph")
+}
+
+func defaultLogFile() string {
+	cwd, _ := os.Getwd()
+
+	return filepath.Join(cwd, "ralph.log")
+}
+
+// loadConfigFile reads a TOML config file and populates the given Config.
 func (c *Config) loadConfigFile(path string, target *Config) error {
 	_, err := toml.DecodeFile(path, target)
+
 	return err
 }

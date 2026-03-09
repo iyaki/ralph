@@ -1,11 +1,13 @@
-package cli
+package cli_test
 
 import (
 	"testing"
+
+	"github.com/iyaki/ralph/internal/cli"
 )
 
 func TestInitCommandStructure(t *testing.T) {
-	cmd := NewInitCommand()
+	cmd := cli.NewInitCommand()
 
 	if cmd.Use != "init" {
 		t.Errorf("expected Use 'init', got %s", cmd.Use)
@@ -34,7 +36,7 @@ func TestInitCommandStructure(t *testing.T) {
 func TestInitCommandExecution_NoTTY(t *testing.T) {
 	// This test is hard to execute reliably without mocking stdout stat
 	// but we can verify that NewInitCommand returns a valid command
-	cmd := NewInitCommand()
+	cmd := cli.NewInitCommand()
 	if cmd == nil {
 		t.Fatal("NewInitCommand returned nil")
 	}

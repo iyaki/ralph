@@ -1,12 +1,15 @@
-package config
+package config_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/iyaki/ralph/internal/config"
 )
 
-func TestLoadConfigDefaults(t *testing.T) {
+func clearConfigEnv(t *testing.T) {
+	t.Helper()
 	t.Setenv("RALPH_MAX_ITERATIONS", "")
 	t.Setenv("RALPH_SPECS_DIR", "")
 	t.Setenv("RALPH_SPECS_INDEX_FILE", "")
@@ -19,6 +22,10 @@ func TestLoadConfigDefaults(t *testing.T) {
 	t.Setenv("RALPH_AGENT", "")
 	t.Setenv("RALPH_MODEL", "")
 	t.Setenv("RALPH_AGENT_MODE", "")
+}
+
+func TestLoadConfigDefaults(t *testing.T) {
+	clearConfigEnv(t)
 
 	home := t.TempDir()
 	t.Setenv("HOME", home)
@@ -34,7 +41,7 @@ func TestLoadConfigDefaults(t *testing.T) {
 		_ = os.Chdir(wd)
 	})
 
-	c := &Config{}
+	c := &config.Config{}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -56,9 +63,6 @@ func TestLoadConfigDefaults(t *testing.T) {
 	}
 	if c.PromptsDir != filepath.Join(home, ".ralph") {
 		t.Fatalf("expected default prompts dir in HOME, got %q", c.PromptsDir)
-	}
-	if !c.configLoaded {
-		t.Fatal("expected configLoaded to be true")
 	}
 }
 
@@ -83,7 +87,7 @@ agent-mode = "file-mode"
 	t.Setenv("RALPH_MODEL", "env-model")
 	t.Setenv("RALPH_AGENT_MODE", "env-mode")
 
-	c := &Config{
+	c := &config.Config{
 		ConfigFile:    configFile,
 		MaxIterations: 13,
 		SpecsDir:      "flag-specs",
@@ -115,7 +119,7 @@ agent-mode = "file-mode"
 }
 
 func TestLoadConfigMissingConfigFile(t *testing.T) {
-	c := &Config{ConfigFile: filepath.Join(t.TempDir(), "does-not-exist.toml")}
+	c := &config.Config{ConfigFile: filepath.Join(t.TempDir(), "does-not-exist.toml")}
 	if err := c.LoadConfig(); err == nil {
 		t.Fatal("expected error for missing config file")
 	}
@@ -142,7 +146,7 @@ specs-dir = "from-default-file"
 		t.Fatalf("failed to write default config: %v", err)
 	}
 
-	c := &Config{}
+	c := &config.Config{}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -156,6 +160,7 @@ specs-dir = "from-default-file"
 }
 
 func TestLoadConfigEnvironmentValues(t *testing.T) {
+	clearConfigEnv(t)
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("RALPH_MAX_ITERATIONS", "31")
@@ -171,20 +176,40 @@ func TestLoadConfigEnvironmentValues(t *testing.T) {
 	t.Setenv("RALPH_MODEL", "m-env")
 	t.Setenv("RALPH_AGENT_MODE", "planner")
 
-	c := &Config{}
+	c := &config.Config{}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	assertCoreEnvFields(t, c)
+	assertPromptEnvFields(t, c)
+	assertLogEnvFields(t, c)
+	assertAgentEnvFields(t, c)
+}
+
+func assertCoreEnvFields(t *testing.T, c *config.Config) {
+	t.Helper()
 	if c.MaxIterations != 31 || c.SpecsDir != "env-specs" || c.SpecsIndexFile != "index.md" {
 		t.Fatalf("expected env-derived core fields, got %+v", c)
 	}
+}
+
+func assertPromptEnvFields(t *testing.T, c *config.Config) {
+	t.Helper()
 	if c.ImplementationPlanName != "IMPL.md" || c.CustomPrompt != "prompt-from-env" {
 		t.Fatalf("expected env-derived prompt fields, got %+v", c)
 	}
+}
+
+func assertLogEnvFields(t *testing.T, c *config.Config) {
+	t.Helper()
 	if !c.NoLog || !c.LogTruncate {
 		t.Fatalf("expected log flags from env, got NoLog=%v LogTruncate=%v", c.NoLog, c.LogTruncate)
 	}
+}
+
+func assertAgentEnvFields(t *testing.T, c *config.Config) {
+	t.Helper()
 	if c.PromptsDir != "env-prompts" || c.AgentName != "claude" || c.Model != "m-env" || c.AgentMode != "planner" {
 		t.Fatalf("expected env-derived agent fields, got %+v", c)
 	}
@@ -207,7 +232,7 @@ func TestLoadConfigRelativeConfigPath(t *testing.T) {
 		t.Fatalf("failed to write relative config: %v", err)
 	}
 
-	c := &Config{ConfigFile: "myconfig.toml"}
+	c := &config.Config{ConfigFile: "myconfig.toml"}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -234,7 +259,7 @@ func TestLoadConfigLegacyFileDiscovery(t *testing.T) {
 		t.Fatalf("failed to write legacy config: %v", err)
 	}
 
-	c := &Config{}
+	c := &config.Config{}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

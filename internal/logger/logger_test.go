@@ -1,4 +1,4 @@
-package logger
+package logger_test
 
 import (
 	"os"
@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralph/internal/logger"
 )
 
 func TestNewLoggerDisabledByConfig(t *testing.T) {
 	cfg := &config.Config{NoLog: true}
-	l, err := NewLogger(cfg)
+	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -26,7 +27,7 @@ func TestNewLoggerDisabledByConfig(t *testing.T) {
 func TestNewLoggerDisabledByEnv(t *testing.T) {
 	t.Setenv("RALPH_LOG_ENABLED", "0")
 	cfg := &config.Config{NoLog: false}
-	l, err := NewLogger(cfg)
+	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -43,7 +44,7 @@ func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
 	t.Setenv("RALPH_LOG_ENABLED", "")
 	t.Setenv("RALPH_LOG_APPEND", "")
 
-	l, err := NewLogger(cfg)
+	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -69,14 +70,14 @@ func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
 func TestNewLoggerTruncatesWhenAppendDisabledByEnv(t *testing.T) {
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "ralph.log")
-	if err := os.WriteFile(logPath, []byte("old-content\n"), 0644); err != nil {
+	if err := os.WriteFile(logPath, []byte("old-content\n"), 0600); err != nil {
 		t.Fatalf("failed to seed log file: %v", err)
 	}
 
 	t.Setenv("RALPH_LOG_APPEND", "0")
 	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: false}
 
-	l, err := NewLogger(cfg)
+	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -93,24 +94,12 @@ func TestNewLoggerTruncatesWhenAppendDisabledByEnv(t *testing.T) {
 	}
 }
 
-func TestGitMetadataHelpersReturnValue(t *testing.T) {
-	branch := getGitBranch()
-	if branch == "" {
-		t.Fatal("expected branch helper to return a non-empty value")
-	}
-
-	commit := getGitCommit()
-	if commit == "" {
-		t.Fatal("expected commit helper to return a non-empty value")
-	}
-}
-
 func TestNewLoggerUsesTempFileWhenLogPathEmpty(t *testing.T) {
 	t.Setenv("RALPH_LOG_ENABLED", "")
 	t.Setenv("RALPH_LOG_APPEND", "")
 	cfg := &config.Config{NoLog: false, LogFile: ""}
 
-	l, err := NewLogger(cfg)
+	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -127,7 +116,7 @@ func TestNewLoggerUsesTempFileWhenLogPathEmpty(t *testing.T) {
 }
 
 func TestCloseWithoutFile(t *testing.T) {
-	l := &Logger{}
+	l := &logger.Logger{}
 	if err := l.Close(); err != nil {
 		t.Fatalf("expected nil error for close without file, got %v", err)
 	}

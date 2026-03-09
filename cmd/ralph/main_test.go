@@ -44,6 +44,8 @@ func TestMainProcessHelpExitCode(t *testing.T) {
 }
 
 func TestMainProcessHelper(t *testing.T) {
+	t.Helper()
+
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
@@ -52,6 +54,7 @@ func TestMainProcessHelper(t *testing.T) {
 	for i, arg := range os.Args {
 		if arg == "--" {
 			args = os.Args[i+1:]
+
 			break
 		}
 	}
