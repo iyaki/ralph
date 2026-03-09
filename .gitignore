@@ -12,8 +12,6 @@
 vendor/
 
 # IDE
-.vscode/
-.idea/
 *.swp
 *.swo
 *~
@@ -24,3 +22,13 @@ vendor/
 # OS
 .DS_Store
 Thumbs.db
+
+
+.env
+/package-lock.json
+/node_modules
+/repomix-output.xml
+report.json
+gremlins-output.json
+*.tmp
+/oom

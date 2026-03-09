@@ -1,54 +1,40 @@
 # Agent Guidelines
 
-## Specifications
+## Spec-First Workflow
 
-**IMPORTANT:** Before implementing any feature, consult the specifications in `specs/README.md`.
+- Read `specs/README.md` before any feature work.
+- Assume specs describe intent, not implementation.
+- Verify reality in the codebase before claiming something exists.
+- Implement to spec patterns and data shapes; update specs only when asked.
+- When Writting specs, **NEVER** follow Test Driven Development practices. Write the spec first and stop.
+- For programming tasks, always load Test Driven Development skill.
 
-- **Assume NOT implemented.** Many specs describe planned features that may not yet exist in the codebase.
-- **Check the codebase first.** Before concluding something is or isn't implemented, search the actual code. Specs describe intent; code describes reality.
-- **Use specs as guidance.** When implementing a feature, follow the design patterns, types, and architecture defined in the relevant spec.
-- **Spec index:** `specs/README.md` lists all specifications organized by category (core, LLM, security, etc.).
+## Testing and Quality Gates
 
-## Commands
+- Follow Test Driven Development practices: write failing tests before implementation.
+- Local suite: `make quality`.
+- Targeted runs:
+  - `make lint|test|test-race|coverage|coverage|mutation|security|arch`.
+- Coverage gate: min 90%.
+- Run core tests with `make test`.
+- Execute mutation testing with `make mutation` ONLY in final stages of the task development. **NEVER** execute mutation testing during the Test Driven Development process.
 
-- Build: `make build` (or `go build -o ralph ./cmd/ralph`).
-- Tests: `make test`.
-- Coverage gate: `make test-coverage` (fails if coverage < 90%).
+## Build and Run
 
-## Local Testing
+- Build the CLI binary: `make build`.
+- Run from source (no build): `make run ARGS='<command> [flags]'`.
+- Example with test data (config + fixture): `make analyze-example`.
+- Example with failing config (failOn): `make analyze-fail`.
 
-- Run the CLI locally with `./ralph` once built.
-- Use `DEBUG=1` to short-circuit the agent loop in `internal/cli` during tests.
+## Tooling Expectations
 
-## Release Process
+- Go version: 1.25 (see `go.mod`).
+- Mutation testing tool: `gremlins`.
+- Lint and security via `golangci-lint`, `govulncheck`, `go-sec`, `go-arch-lint`, `go-fmt`.
 
-- TBD
+## Implementation Guidance
 
-## Local Testing
-
-## Architecture
-
-- Entry point is `cmd/ralph/main.go` which runs `internal/cli.NewRalphCommand`.
-- CLI flow: load config (`internal/config`), init logger (`internal/logger`), load prompt (`internal/prompt`), then `runLoop`.
-- The loop replaces `<COMPLETION_SIGNAL>` with `<promise>COMPLETE</promise>` and iterates until the agent output contains it.
-- Agents are in `internal/agent`; add new ones by implementing the `Agent` interface and wiring `GetAgent`.
-
-## Prompts and Specs
-
-- Prompt sources are prioritized: inline flag, stdin, explicit prompt file, prompts dir lookup (walks upward), then built-in build/plan prompts.
-- Default prompts are generated in `internal/prompt` and reference `specs/` and `IMPLEMENTATION_PLAN.md`.
-
-## Configuration and Logging
-
-- Config precedence: flags > env vars > config file > defaults.
-- Config file search order: `ralph.toml` -> `.ralphrc.toml` -> `.ralphrc` in the current directory.
-- Logging is controlled by config and `RALPH_LOG_ENABLED` / `RALPH_LOG_APPEND`; log files include git branch/commit headers.
-
-## Code Style
-
-gofmt
-
-## Conventions
-
-- When multiple code paths do similar things with slight variations, create a shared service with a request struct capturing the variations rather than duplicating logic.
-- Prefer adding behavior via internal packages (agent, prompt, config, logger) rather than the CLI layer.
+- Keep scans deterministic and reproducible.
+- Skip binary/oversized files per spec; record skipped file stats.
+- Treat match text as sensitive; avoid logging it in console.
+- When multiple code paths do similar work with small variations, consolidate into shared services with request structs.
