@@ -1,16 +1,15 @@
 # Implementation Plan (command-init)
 
-**Status:** Planning Complete (0/2)
+**Status:** Planning Complete (1/2)
 **Last Updated:** 2026-03-09
 **Primary Spec:** [specs/init-command.md](specs/init-command.md)
 
 ## Quick Reference
 
 | System            | Spec                                    | Package           | Artifacts   | Implemented? |
-| :---------------- | :-------------------------------------- | :---------------- | :---------- | :----------- |
-| **Config Writer** | [Configuration](specs/configuration.md) | `internal/config` | `writer.go` | [ ]          |
-| **Init Command**  | [Init Command](specs/init-command.md)   | `internal/cli`    | `init.go`   | [ ]          |
-| **CLI Wiring**    | [Init Command](specs/init-command.md)   | `internal/cli`    | `cmd.go`    | [ ]          |
+| :---------------- | :-------------------------------------- | :---------------- | :---------- | :----------- | --- | -------------- | ------------------------------------- | -------------- | -------- | --- |
+| **Config Writer** | [Configuration](specs/configuration.md) | `internal/config` | `writer.go` | [x]          |
+| **Init Command**  | [Init Command](specs/init-command.md)   | `internal/cli`    | `init.go`   | [ ]          |     | **CLI Wiring** | [Init Command](specs/init-command.md) | `internal/cli` | `cmd.go` | [ ] |
 
 ## Phased Plan
 
@@ -21,10 +20,10 @@
 
 #### 1.1 TOML Writer
 
-- [ ] Create `internal/config/writer.go`
-- [ ] Implement `WriteConfig(path string, cfg *Config) error`
-- [ ] Implement atomic write pattern (write temp -> rename)
-- [ ] Add `internal/config/writer_test.go` for verification
+- [x] Create `internal/config/writer.go`
+- [x] Implement `WriteConfig(path string, cfg *Config) error`
+- [x] Implement atomic write pattern (write temp -> rename)
+- [x] Add `internal/config/writer_test.go` for verification
 
 **Definition of Done:**
 
@@ -63,17 +62,17 @@
 
 ## Verification Log
 
-| Date | Verification Step | Result |
-| :--- | :---------------- | :----- |
-|      |                   |        |
+| Date       | Verification Step                  | Result |
+| :--------- | :--------------------------------- | :----- |
+| 2026-03-09 | `go test -v ./internal/config/...` | PASS   |
 
 ## Summary
 
 | Phase                  | Status   | Completion |
 | :--------------------- | :------- | :--------- |
-| Phase 1: Config Writer | Pending  | 0%         |
+| Phase 1: Config Writer | Complete | 100%       |
 | Phase 2: Init Command  | Pending  | 0%         |
-| **Remaining Effort**   | **High** | **0%**     |
+| **Remaining Effort**   | **High** | **75%**    |
 
 ## Known Existing Work
 
