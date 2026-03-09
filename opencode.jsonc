@@ -14,6 +14,7 @@
 			".go-arch-lint": "ask",
 			".golangci.yml": "ask",
 			"lefthook.yml": "ask",
+			".gremlings": "ask",
 			"opencode.jsonc": "ask",
 			"logs/*": "deny",
 			"/tmp/*": "allow"
@@ -33,6 +34,7 @@
 				"edit": {
 					".go-arch-lint": "deny",
 					".golangci.yml": "deny",
+					".gremlings": "deny",
 					"lefthook.yml": "deny",
 					"opencode.jsonc": "deny",
 					"logs/*": "deny"
