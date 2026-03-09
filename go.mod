@@ -1,10 +1,10 @@
 module github.com/iyaki/ralph
 
-go 1.21
+go 1.25
 
 require (
-	github.com/spf13/cobra v1.8.0
 	github.com/BurntSushi/toml v1.6.0
+	github.com/spf13/cobra v1.8.0
 )
 
 require (
