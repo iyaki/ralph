@@ -1,5 +1,7 @@
 # Cursor Agent
 
+Status: Implemented
+
 ## Overview
 
 ### Purpose

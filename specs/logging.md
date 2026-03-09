@@ -1,5 +1,7 @@
 # Logging
 
+Status: Implemented
+
 ## Overview
 
 ### Purpose
@@ -75,9 +77,9 @@ internal/
 
 - Log output is stored as plain text on disk.
 
-| Store | Format | Location | Notes |
-| --- | --- | --- | --- |
-| Logs | Plain text | `./ralph.log` by default | Header includes timestamp and git metadata when available. |
+| Store | Format     | Location                 | Notes                                                      |
+| ----- | ---------- | ------------------------ | ---------------------------------------------------------- |
+| Logs  | Plain text | `./ralph.log` by default | Header includes timestamp and git metadata when available. |
 
 ## Workflows
 

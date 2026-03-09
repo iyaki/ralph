@@ -165,11 +165,11 @@ specs/
 
 ## Dependencies
 
-| Dependency | Purpose |
-| --- | --- |
-| `github.com/spf13/cobra` | CLI parsing and command wiring |
-| `github.com/BurntSushi/toml` | TOML config decoding |
-| Go `os/exec` | Execute agent CLIs |
+| Dependency                   | Purpose                        |
+| ---------------------------- | ------------------------------ |
+| `github.com/spf13/cobra`     | CLI parsing and command wiring |
+| `github.com/BurntSushi/toml` | TOML config decoding           |
+| Go `os/exec`                 | Execute agent CLIs             |
 
 ## Open Questions / Risks
 

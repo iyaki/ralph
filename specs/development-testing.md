@@ -135,10 +135,10 @@ internal/
 
 ## Dependencies
 
-| Dependency | Purpose |
-| --- | --- |
-| Go 1.21 | Build and test toolchain |
-| Make | Build/test convenience targets |
+| Dependency | Purpose                        |
+| ---------- | ------------------------------ |
+| Go 1.21    | Build and test toolchain       |
+| Make       | Build/test convenience targets |
 
 ## Open Questions / Risks
 

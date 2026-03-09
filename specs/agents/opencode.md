@@ -1,5 +1,7 @@
 # Opencode Agent
 
+Status: Implemented
+
 ## Overview
 
 ### Purpose

@@ -1,5 +1,7 @@
 # Configuration
 
+Status: Implemented
+
 ## Overview
 
 ### Purpose
@@ -77,9 +79,9 @@ internal/
 
 ### Persistence Notes
 
-| Store | Format | Location | Notes |
-| --- | --- | --- | --- |
-| Config | TOML | `ralph.toml`, `.ralphrc.toml`, `.ralphrc` | First existing file in this order is used. |
+| Store  | Format | Location                                  | Notes                                      |
+| ------ | ------ | ----------------------------------------- | ------------------------------------------ |
+| Config | TOML   | `ralph.toml`, `.ralphrc.toml`, `.ralphrc` | First existing file in this order is used. |
 
 ## Workflows
 
@@ -111,73 +113,73 @@ internal/
 
 ### CLI flags
 
-| Flag | Field | Description |
-| --- | --- | --- |
-| `--config`, `-c` | `ConfigFile` | Config file to source |
-| `--max-iterations`, `-m` | `MaxIterations` | Max iterations |
-| `--prompt-file`, `-p` | `PromptFile` | Prompt file path or `-` for stdin |
-| `--specs-dir`, `-s` | `SpecsDir` | Specs directory |
-| `--specs-index`, `-i` | `SpecsIndexFile` | Specs index file name |
-| `--no-specs-index` | `NoSpecsIndex` | Disable specs index file |
-| `--implementation-plan-name`, `-n` | `ImplementationPlanName` | Implementation plan file name |
-| `--log-file`, `-l` | `LogFile` | Log file path |
-| `--no-log` | `NoLog` | Disable logs |
-| `--log-truncate` | `LogTruncate` | Truncate log file before writing |
-| `--prompt` | `CustomPrompt` | Inline custom prompt |
-| `--agent`, `-a` | `AgentName` | Agent name (`opencode`, `claude`, `cursor`) |
-| `--model` | `Model` | Model name passed to the agent CLI |
-| `--agent-mode` | `AgentMode` | Agent mode/sub-agent passed to the agent CLI |
+| Flag                               | Field                    | Description                                  |
+| ---------------------------------- | ------------------------ | -------------------------------------------- |
+| `--config`, `-c`                   | `ConfigFile`             | Config file to source                        |
+| `--max-iterations`, `-m`           | `MaxIterations`          | Max iterations                               |
+| `--prompt-file`, `-p`              | `PromptFile`             | Prompt file path or `-` for stdin            |
+| `--specs-dir`, `-s`                | `SpecsDir`               | Specs directory                              |
+| `--specs-index`, `-i`              | `SpecsIndexFile`         | Specs index file name                        |
+| `--no-specs-index`                 | `NoSpecsIndex`           | Disable specs index file                     |
+| `--implementation-plan-name`, `-n` | `ImplementationPlanName` | Implementation plan file name                |
+| `--log-file`, `-l`                 | `LogFile`                | Log file path                                |
+| `--no-log`                         | `NoLog`                  | Disable logs                                 |
+| `--log-truncate`                   | `LogTruncate`            | Truncate log file before writing             |
+| `--prompt`                         | `CustomPrompt`           | Inline custom prompt                         |
+| `--agent`, `-a`                    | `AgentName`              | Agent name (`opencode`, `claude`, `cursor`)  |
+| `--model`                          | `Model`                  | Model name passed to the agent CLI           |
+| `--agent-mode`                     | `AgentMode`              | Agent mode/sub-agent passed to the agent CLI |
 
 ### Environment variables
 
-| Env var | Field | Notes |
-| --- | --- | --- |
-| `RALPH_MAX_ITERATIONS` | `MaxIterations` | Integer |
-| `RALPH_SPECS_DIR` | `SpecsDir` | String path |
-| `RALPH_SPECS_INDEX_FILE` | `SpecsIndexFile` | String file name |
-| `RALPH_IMPLEMENTATION_PLAN_NAME` | `ImplementationPlanName` | String file name |
-| `RALPH_CUSTOM_PROMPT` | `CustomPrompt` | Inline prompt text |
-| `RALPH_LOG_FILE` | `LogFile` | String path |
-| `RALPH_LOG_ENABLED` | `NoLog` | `0` disables logging |
-| `RALPH_LOG_APPEND` | `LogTruncate` | `0` truncates (disables append) |
-| `RALPH_PROMPTS_DIR` | `PromptsDir` | String path |
-| `RALPH_AGENT` | `AgentName` | Agent name |
-| `RALPH_MODEL` | `Model` | Model name |
-| `RALPH_AGENT_MODE` | `AgentMode` | Agent mode |
+| Env var                          | Field                    | Notes                           |
+| -------------------------------- | ------------------------ | ------------------------------- |
+| `RALPH_MAX_ITERATIONS`           | `MaxIterations`          | Integer                         |
+| `RALPH_SPECS_DIR`                | `SpecsDir`               | String path                     |
+| `RALPH_SPECS_INDEX_FILE`         | `SpecsIndexFile`         | String file name                |
+| `RALPH_IMPLEMENTATION_PLAN_NAME` | `ImplementationPlanName` | String file name                |
+| `RALPH_CUSTOM_PROMPT`            | `CustomPrompt`           | Inline prompt text              |
+| `RALPH_LOG_FILE`                 | `LogFile`                | String path                     |
+| `RALPH_LOG_ENABLED`              | `NoLog`                  | `0` disables logging            |
+| `RALPH_LOG_APPEND`               | `LogTruncate`            | `0` truncates (disables append) |
+| `RALPH_PROMPTS_DIR`              | `PromptsDir`             | String path                     |
+| `RALPH_AGENT`                    | `AgentName`              | Agent name                      |
+| `RALPH_MODEL`                    | `Model`                  | Model name                      |
+| `RALPH_AGENT_MODE`               | `AgentMode`              | Agent mode                      |
 
 ### Config file keys (TOML)
 
-| Key | Field | Example |
-| --- | --- | --- |
-| `config-file` | `ConfigFile` | `config-file = "./ralph.toml"` |
-| `max-iterations` | `MaxIterations` | `max-iterations = 30` |
-| `prompt-file` | `PromptFile` | `prompt-file = "./prompts/plan.md"` |
-| `specs-dir` | `SpecsDir` | `specs-dir = "specs"` |
-| `specs-index-file` | `SpecsIndexFile` | `specs-index-file = "README.md"` |
-| `no-specs-index` | `NoSpecsIndex` | `no-specs-index = true` |
+| Key                        | Field                    | Example                                               |
+| -------------------------- | ------------------------ | ----------------------------------------------------- |
+| `config-file`              | `ConfigFile`             | `config-file = "./ralph.toml"`                        |
+| `max-iterations`           | `MaxIterations`          | `max-iterations = 30`                                 |
+| `prompt-file`              | `PromptFile`             | `prompt-file = "./prompts/plan.md"`                   |
+| `specs-dir`                | `SpecsDir`               | `specs-dir = "specs"`                                 |
+| `specs-index-file`         | `SpecsIndexFile`         | `specs-index-file = "README.md"`                      |
+| `no-specs-index`           | `NoSpecsIndex`           | `no-specs-index = true`                               |
 | `implementation-plan-name` | `ImplementationPlanName` | `implementation-plan-name = "IMPLEMENTATION_PLAN.md"` |
-| `log-file` | `LogFile` | `log-file = "./ralph.log"` |
-| `no-log` | `NoLog` | `no-log = false` |
-| `log-truncate` | `LogTruncate` | `log-truncate = false` |
-| `custom-prompt` | `CustomPrompt` | `custom-prompt = "..."` |
-| `prompts-dir` | `PromptsDir` | `prompts-dir = "./prompts"` |
-| `agent` | `AgentName` | `agent = "opencode"` |
-| `model` | `Model` | `model = "gpt-4"` |
-| `agent-mode` | `AgentMode` | `agent-mode = "planner"` |
+| `log-file`                 | `LogFile`                | `log-file = "./ralph.log"`                            |
+| `no-log`                   | `NoLog`                  | `no-log = false`                                      |
+| `log-truncate`             | `LogTruncate`            | `log-truncate = false`                                |
+| `custom-prompt`            | `CustomPrompt`           | `custom-prompt = "..."`                               |
+| `prompts-dir`              | `PromptsDir`             | `prompts-dir = "./prompts"`                           |
+| `agent`                    | `AgentName`              | `agent = "opencode"`                                  |
+| `model`                    | `Model`                  | `model = "gpt-4"`                                     |
+| `agent-mode`               | `AgentMode`              | `agent-mode = "planner"`                              |
 
 ### Defaults
 
-| Field | Default |
-| --- | --- |
-| `MaxIterations` | `25` |
-| `SpecsDir` | `specs` |
-| `SpecsIndexFile` | `README.md` |
+| Field                    | Default                  |
+| ------------------------ | ------------------------ |
+| `MaxIterations`          | `25`                     |
+| `SpecsDir`               | `specs`                  |
+| `SpecsIndexFile`         | `README.md`              |
 | `ImplementationPlanName` | `IMPLEMENTATION_PLAN.md` |
-| `PromptsDir` | `$HOME/.ralph` |
-| `LogFile` | `./ralph.log` |
-| `AgentName` | `opencode` |
-| `Model` | none (optional) |
-| `AgentMode` | none (optional) |
+| `PromptsDir`             | `$HOME/.ralph`           |
+| `LogFile`                | `./ralph.log`            |
+| `AgentName`              | `opencode`               |
+| `Model`                  | none (optional)          |
+| `AgentMode`              | none (optional)          |
 
 ## Permissions
 
@@ -191,8 +193,8 @@ internal/
 
 ## Dependencies
 
-| Dependency | Purpose |
-| --- | --- |
+| Dependency                   | Purpose              |
+| ---------------------------- | -------------------- |
 | `github.com/BurntSushi/toml` | TOML config decoding |
 
 ## Open Questions / Risks
