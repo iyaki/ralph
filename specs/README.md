@@ -25,3 +25,4 @@ Design docs and technical specifications
 - [agents/claude.md](agents/claude.md)
 - [agents/cursor.md](agents/cursor.md)
 - [init-command.md](init-command.md)
+- [config-by-prompt.md](config-by-prompt.md)
