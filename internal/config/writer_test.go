@@ -1,0 +1,149 @@
+package config_test
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/BurntSushi/toml"
+	"github.com/iyaki/ralph/internal/config"
+)
+
+func createTestConfig() *config.Config {
+	return &config.Config{
+		MaxIterations:          50,
+		SpecsDir:               "custom-specs",
+		SpecsIndexFile:         "INDEX.md",
+		ImplementationPlanName: "PLAN.md",
+		LogFile:                "custom.log",
+		NoLog:                  true,
+		LogTruncate:            true,
+		CustomPrompt:           "You are a helpful assistant.",
+		PromptsDir:             "/tmp/prompts",
+		AgentName:              "claude",
+		Model:                  "claude-3-opus",
+		AgentMode:              "planner",
+	}
+}
+
+func verifyCoreSettings(t *testing.T, expected, actual *config.Config) {
+	t.Helper()
+	if actual.MaxIterations != expected.MaxIterations {
+		t.Errorf("Expected MaxIterations %d, got %d", expected.MaxIterations, actual.MaxIterations)
+	}
+	if actual.SpecsDir != expected.SpecsDir {
+		t.Errorf("Expected SpecsDir %s, got %s", expected.SpecsDir, actual.SpecsDir)
+	}
+	if actual.SpecsIndexFile != expected.SpecsIndexFile {
+		t.Errorf("Expected SpecsIndexFile %s, got %s", expected.SpecsIndexFile, actual.SpecsIndexFile)
+	}
+	if actual.ImplementationPlanName != expected.ImplementationPlanName {
+		t.Errorf("Expected ImplementationPlanName %s, got %s", expected.ImplementationPlanName, actual.ImplementationPlanName)
+	}
+}
+
+func verifyLogSettings(t *testing.T, expected, actual *config.Config) {
+	t.Helper()
+	if actual.LogFile != expected.LogFile {
+		t.Errorf("Expected LogFile %s, got %s", expected.LogFile, actual.LogFile)
+	}
+	if actual.NoLog != expected.NoLog {
+		t.Errorf("Expected NoLog %v, got %v", expected.NoLog, actual.NoLog)
+	}
+	if actual.LogTruncate != expected.LogTruncate {
+		t.Errorf("Expected LogTruncate %v, got %v", expected.LogTruncate, actual.LogTruncate)
+	}
+}
+
+func verifyAgentSettings(t *testing.T, expected, actual *config.Config) {
+	t.Helper()
+	if actual.CustomPrompt != expected.CustomPrompt {
+		t.Errorf("Expected CustomPrompt %s, got %s", expected.CustomPrompt, actual.CustomPrompt)
+	}
+	if actual.PromptsDir != expected.PromptsDir {
+		t.Errorf("Expected PromptsDir %s, got %s", expected.PromptsDir, actual.PromptsDir)
+	}
+	if actual.AgentName != expected.AgentName {
+		t.Errorf("Expected AgentName %s, got %s", expected.AgentName, actual.AgentName)
+	}
+	if actual.Model != expected.Model {
+		t.Errorf("Expected Model %s, got %s", expected.Model, actual.Model)
+	}
+	if actual.AgentMode != expected.AgentMode {
+		t.Errorf("Expected AgentMode %s, got %s", expected.AgentMode, actual.AgentMode)
+	}
+}
+
+func TestWriteConfig(t *testing.T) {
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "ralph-config-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	// Define a sample config
+	cfg := createTestConfig()
+
+	// Define the output path
+	outputPath := filepath.Join(tmpDir, "ralph.toml")
+
+	// Call WriteConfig
+	err = config.WriteConfig(outputPath, cfg)
+	if err != nil {
+		t.Fatalf("WriteConfig failed: %v", err)
+	}
+
+	// Verify the file exists
+	if _, err := os.Stat(outputPath); os.IsNotExist(err) {
+		t.Fatalf("Config file was not created at %s", outputPath)
+	}
+
+	// Read the file back and verify content
+	var loadedCfg config.Config
+	if _, err := toml.DecodeFile(outputPath, &loadedCfg); err != nil {
+		t.Fatalf("Failed to decode generated config: %v", err)
+	}
+
+	// Verify fields
+	verifyCoreSettings(t, cfg, &loadedCfg)
+	verifyLogSettings(t, cfg, &loadedCfg)
+	verifyAgentSettings(t, cfg, &loadedCfg)
+}
+
+func TestWriteConfig_Atomic(t *testing.T) {
+	// Create a temporary directory
+	tmpDir, err := os.MkdirTemp("", "ralph-atomic-test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() { _ = os.RemoveAll(tmpDir) }()
+
+	outputPath := filepath.Join(tmpDir, "ralph.toml")
+
+	// Create an initial file
+	initialContent := []byte("invalid-toml")
+	const filePerm = 0644
+	if err := os.WriteFile(outputPath, initialContent, filePerm); err != nil {
+		t.Fatalf("Failed to create initial file: %v", err)
+	}
+
+	cfg := &config.Config{
+		MaxIterations: 10,
+	}
+
+	// Overwrite it
+	if err := config.WriteConfig(outputPath, cfg); err != nil {
+		t.Fatalf("WriteConfig failed: %v", err)
+	}
+
+	// Verify it's valid TOML now
+	var loadedCfg config.Config
+	if _, err := toml.DecodeFile(outputPath, &loadedCfg); err != nil {
+		t.Fatalf("Failed to decode overwritten config: %v", err)
+	}
+
+	if loadedCfg.MaxIterations != 10 {
+		t.Errorf("Expected MaxIterations 10, got %d", loadedCfg.MaxIterations)
+	}
+}
