@@ -1,7 +1,5 @@
 # Prompts
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

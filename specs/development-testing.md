@@ -1,7 +1,5 @@
 # Development and Testing
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

@@ -1,7 +1,5 @@
 # Opencode Agent
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

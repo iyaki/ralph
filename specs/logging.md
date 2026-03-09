@@ -1,7 +1,5 @@
 # Logging
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose

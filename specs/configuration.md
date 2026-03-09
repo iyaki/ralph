@@ -1,7 +1,5 @@
 # Configuration
 
-Status: Proposed
-
 ## Overview
 
 ### Purpose
