@@ -24,3 +24,4 @@ Design docs and technical specifications
 - [agents/opencode.md](agents/opencode.md)
 - [agents/claude.md](agents/claude.md)
 - [agents/cursor.md](agents/cursor.md)
+- [init-command.md](init-command.md)
