@@ -1,3 +1,4 @@
+// Package logger manages file-based logging for Ralph runs.
 package logger
 
 import (
@@ -5,24 +6,29 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/iyaki/ralph/internal/config"
 )
 
-// Logger handles logging to file
+const (
+	logDirPerm  = 0o750
+	logFilePerm = 0o600
+)
+
+// Logger handles logging to file.
 type Logger struct {
 	file    *os.File
 	enabled bool
 }
 
-// NewLogger creates a new logger based on configuration
+// NewLogger creates a new logger based on configuration.
 func NewLogger(cfg *config.Config) (*Logger, error) {
 	logger := &Logger{
 		enabled: !cfg.NoLog,
 	}
 
-	// Check environment variable for log enabled
 	if logEnabled := os.Getenv("RALPH_LOG_ENABLED"); logEnabled == "0" {
 		logger.enabled = false
 	}
@@ -31,112 +37,98 @@ func NewLogger(cfg *config.Config) (*Logger, error) {
 		return logger, nil
 	}
 
-	// Determine log file path
 	logFile := cfg.LogFile
 	if logFile == "" {
-		// Create temporary log file
 		tmpFile, err := os.CreateTemp("", "ralph-*.log")
 		if err != nil {
 			return nil, fmt.Errorf("failed to create temp log file: %w", err)
 		}
+
 		logFile = tmpFile.Name()
-		tmpFile.Close()
+		_ = tmpFile.Close()
 	}
 
-	// Create log directory if it doesn't exist
 	logDir := filepath.Dir(logFile)
-	if err := os.MkdirAll(logDir, 0755); err != nil {
+	if err := os.MkdirAll(logDir, logDirPerm); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %w", err)
 	}
 
-	// Determine open mode
-	var file *os.File
-	var err error
-
-	logAppend := true
-	if cfg.LogTruncate {
-		logAppend = false
-	}
-	if logAppendEnv := os.Getenv("RALPH_LOG_APPEND"); logAppendEnv == "0" {
-		logAppend = false
-	}
-
-	if logAppend {
-		file, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	} else {
-		file, err = os.Create(logFile)
-	}
-
+	file, err := openLogFile(logFile, cfg.LogTruncate)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open log file %s: %w", logFile, err)
 	}
 
 	logger.file = file
 
-	// Write log header
-	fmt.Fprintf(file, "===== Ralph run started at %s =====\n", time.Now().Format("2006-01-02 15:04:05 -0700"))
+	_, _ = fmt.Fprintf(file, "===== Ralph run started at %s =====\n", time.Now().Format("2006-01-02 15:04:05 -0700"))
 
-	// Add git info if available
 	if gitBranch := getGitBranch(); gitBranch != "" {
-		fmt.Fprintf(file, "Git branch: %s\n", gitBranch)
-	}
-	if gitCommit := getGitCommit(); gitCommit != "" {
-		fmt.Fprintf(file, "Git commit: %s\n", gitCommit)
+		_, _ = fmt.Fprintf(file, "Git branch: %s\n", gitBranch)
 	}
 
-	fmt.Fprintf(file, "===== Ralph run started at %s =====\n", time.Now().Format("2006-01-02 15:04:05 -0700"))
+	if gitCommit := getGitCommit(); gitCommit != "" {
+		_, _ = fmt.Fprintf(file, "Git commit: %s\n", gitCommit)
+	}
 
 	return logger, nil
 }
 
-// Close closes the logger
+func openLogFile(logFile string, truncate bool) (*os.File, error) {
+	logAppend := !truncate
+	if logAppendEnv := os.Getenv("RALPH_LOG_APPEND"); logAppendEnv == "0" {
+		logAppend = false
+	}
+
+	if logAppend {
+		// #nosec G304 -- log path is trusted configuration input
+		return os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, logFilePerm)
+	}
+
+	return os.Create(logFile) // #nosec G304 -- log path is trusted configuration input
+}
+
+// Close closes the logger.
 func (l *Logger) Close() error {
 	if l.file != nil {
 		return l.file.Close()
 	}
+
 	return nil
 }
 
-// Enabled returns whether logging is enabled
+// Enabled returns whether logging is enabled.
 func (l *Logger) Enabled() bool {
 	return l.enabled
 }
 
-// File returns the log file
+// File returns the log file.
 func (l *Logger) File() *os.File {
 	return l.file
 }
 
-// getGitBranch returns the current git branch name
+// getGitBranch returns the current git branch name.
 func getGitBranch() string {
 	cmd := exec.Command("git", "symbolic-ref", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
 		return "N/A"
 	}
-	branch := string(output)
-	// Remove "refs/heads/" prefix
-	if len(branch) > 11 {
-		branch = branch[11:]
-	}
-	// Trim newline
-	if len(branch) > 0 && branch[len(branch)-1] == '\n' {
-		branch = branch[:len(branch)-1]
-	}
+
+	branch := strings.TrimSpace(string(output))
+	branch = strings.TrimPrefix(branch, "refs/heads/")
+
 	return branch
 }
 
-// getGitCommit returns the current git commit hash
+// getGitCommit returns the current git commit hash.
 func getGitCommit() string {
 	cmd := exec.Command("git", "rev-parse", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
 		return "N/A"
 	}
-	commit := string(output)
-	// Trim newline
-	if len(commit) > 0 && commit[len(commit)-1] == '\n' {
-		commit = commit[:len(commit)-1]
-	}
+
+	commit := strings.TrimSpace(string(output))
+
 	return commit
 }

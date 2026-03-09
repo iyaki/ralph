@@ -1,3 +1,4 @@
+// Package main provides the Ralph CLI entrypoint.
 package main
 
 import (
@@ -16,7 +17,8 @@ func run(args []string, stderr io.Writer) int {
 	cmd := cli.NewRalphCommand()
 	cmd.SetArgs(args)
 	if err := cmd.Execute(); err != nil {
-		fmt.Fprintf(stderr, "Error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "Error: %v\n", err)
+
 		return 1
 	}
 

@@ -35,6 +35,7 @@ deps:
     anyProjectDeps: true
   cli:
     mayDependOn:
+      - cli
       - agent
       - config
       - executor
@@ -43,10 +44,12 @@ deps:
     anyVendorDeps: true
   agent:
     mayDependOn:
+      - agent
       - executor
       - logger
   executor:
     mayDependOn:
+      - executor
       - logger
       - config
   logger:
@@ -54,7 +57,10 @@ deps:
     anyVendorDeps: false
   prompt:
     mayDependOn:
+      - prompt
       - config
     anyVendorDeps: true
   config:
+    mayDependOn:
+      - config
     anyVendorDeps: true

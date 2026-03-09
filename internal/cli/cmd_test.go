@@ -1,4 +1,4 @@
-package cli
+package cli_test
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/iyaki/ralph/internal/cli"
 	"github.com/iyaki/ralph/internal/config"
 )
 
@@ -21,7 +22,7 @@ func writeExecutable(t *testing.T, dir, name, content string) string {
 }
 
 func TestNewRalphCommandBasicProperties(t *testing.T) {
-	cmd := NewRalphCommand()
+	cmd := cli.NewRalphCommand()
 	if !strings.Contains(cmd.Use, "ralph") {
 		t.Fatalf("unexpected use string: %q", cmd.Use)
 	}
@@ -55,7 +56,7 @@ func TestNewRalphCommandExecuteDebugHappyPath(t *testing.T) {
 	writeExecutable(t, binDir, "opencode", "#!/bin/sh\necho \"ok\"\n")
 	t.Setenv("PATH", binDir)
 
-	cmd := NewRalphCommand()
+	cmd := cli.NewRalphCommand()
 	cmd.SetArgs([]string{"build"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected execute success in debug mode, got: %v", err)
@@ -63,7 +64,7 @@ func TestNewRalphCommandExecuteDebugHappyPath(t *testing.T) {
 }
 
 func TestNewRalphCommandExecuteConfigError(t *testing.T) {
-	cmd := NewRalphCommand()
+	cmd := cli.NewRalphCommand()
 	cmd.SetArgs([]string{"--config", "missing-config.toml", "build"})
 	err := cmd.Execute()
 	if err == nil {
@@ -75,7 +76,7 @@ func TestNewRalphCommandExecuteConfigError(t *testing.T) {
 }
 
 func TestNewRalphCommandExecutePromptError(t *testing.T) {
-	cmd := NewRalphCommand()
+	cmd := cli.NewRalphCommand()
 	cmd.SetArgs([]string{"--prompt-file", "missing-prompt.md", "build"})
 	err := cmd.Execute()
 	if err == nil {
@@ -94,7 +95,7 @@ func TestRunLoopCompletesOnSignal(t *testing.T) {
 
 	cfg := &config.Config{MaxIterations: 3, AgentName: "opencode"}
 	var out bytes.Buffer
-	err := runLoop(cfg, "task <COMPLETION_SIGNAL>", "build", &out)
+	err := cli.RunLoop(cfg, "task <COMPLETION_SIGNAL>", "build", &out)
 	if err != nil {
 		t.Fatalf("expected completion success, got %v", err)
 	}
@@ -116,7 +117,7 @@ func TestRunLoopDebugMode(t *testing.T) {
 
 	cfg := &config.Config{MaxIterations: 2, AgentName: "opencode"}
 	var out bytes.Buffer
-	err := runLoop(cfg, "hello <COMPLETION_SIGNAL>", "plan", &out)
+	err := cli.RunLoop(cfg, "hello <COMPLETION_SIGNAL>", "plan", &out)
 	if err != nil {
 		t.Fatalf("expected debug mode to finish without error, got %v", err)
 	}
@@ -133,7 +134,7 @@ func TestRunLoopWarnsWhenAgentUnavailable(t *testing.T) {
 
 	cfg := &config.Config{MaxIterations: 1, AgentName: "opencode"}
 	var out bytes.Buffer
-	err := runLoop(cfg, "debug", "build", &out)
+	err := cli.RunLoop(cfg, "debug", "build", &out)
 	if err != nil {
 		t.Fatalf("expected debug mode success, got %v", err)
 	}
@@ -151,7 +152,7 @@ func TestRunLoopHandlesExecutionWarningAndMaxIterations(t *testing.T) {
 
 	cfg := &config.Config{MaxIterations: 1, AgentName: "opencode"}
 	var out bytes.Buffer
-	err := runLoop(cfg, "task", "build", &out)
+	err := cli.RunLoop(cfg, "task", "build", &out)
 	if err == nil {
 		t.Fatal("expected max iterations error")
 	}
@@ -175,7 +176,7 @@ func TestRunLoopMaxIterationsWithoutCompletion(t *testing.T) {
 	t.Setenv("DEBUG", "")
 
 	cfg := &config.Config{MaxIterations: 2, AgentName: "opencode"}
-	err := runLoop(cfg, "task", "build", &bytes.Buffer{})
+	err := cli.RunLoop(cfg, "task", "build", &bytes.Buffer{})
 	if err == nil {
 		t.Fatal("expected max iterations error")
 	}

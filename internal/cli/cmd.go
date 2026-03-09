@@ -16,7 +16,9 @@ import (
 	"github.com/iyaki/ralph/internal/prompt"
 )
 
-// NewRalphCommand creates the root command for Ralph
+const maxPositionalArgs = 2
+
+// NewRalphCommand creates the root command for Ralph.
 func NewRalphCommand() *cobra.Command {
 	var cfg config.Config
 
@@ -34,18 +36,9 @@ For extended documentation, examples, and configuration options, visit https://g
   ralph --max-iterations 10 build
   ralph --prompt "Custom prompt text"
   echo "prompt from stdin" | ralph -`,
-		Args: cobra.MaximumNArgs(2),
+		Args: cobra.MaximumNArgs(maxPositionalArgs),
 		RunE: func(_ *cobra.Command, args []string) error {
-			// Parse positional arguments
-			promptName := "build"
-			scope := "Whole system"
-
-			if len(args) > 0 {
-				promptName = args[0]
-			}
-			if len(args) > 1 {
-				scope = args[1]
-			}
+			promptName, scope := parsePositionalArgs(args)
 
 			// Load configuration with proper precedence
 			if err := cfg.LoadConfig(); err != nil {
@@ -75,13 +68,34 @@ For extended documentation, examples, and configuration options, visit https://g
 			}
 
 			// Run the main loop
-			return runLoop(&cfg, promptText, promptName, output)
+			return RunLoop(&cfg, promptText, promptName, output)
 		},
 	}
 
-	// Setup flags
-	flags := cmd.Flags()
+	setupRootFlags(cmd, &cfg)
 
+	// Register subcommands
+	cmd.AddCommand(NewInitCommand())
+
+	return cmd
+}
+
+func parsePositionalArgs(args []string) (string, string) {
+	promptName := "build"
+	scope := "Whole system"
+
+	if len(args) > 0 {
+		promptName = args[0]
+	}
+	if len(args) > 1 {
+		scope = args[1]
+	}
+
+	return promptName, scope
+}
+
+func setupRootFlags(cmd *cobra.Command, cfg *config.Config) {
+	flags := cmd.Flags()
 	flags.StringVarP(&cfg.ConfigFile, "config", "c", "", "Config file to source")
 	flags.IntVarP(&cfg.MaxIterations, "max-iterations", "m", 0, "Maximum iterations (default: 25)")
 	flags.StringVarP(&cfg.PromptFile, "prompt-file", "p", "", "Prompt file path (use '-' to read from stdin)")
@@ -96,15 +110,10 @@ For extended documentation, examples, and configuration options, visit https://g
 	flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude, cursor (default: opencode)")
 	flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
 	flags.StringVar(&cfg.AgentMode, "agent-mode", "", "Agent mode/sub-agent to use (e.g., reviewer, planner)")
-
-	// Register subcommands
-	cmd.AddCommand(NewInitCommand())
-
-	return cmd
 }
 
-// runLoop executes the main Ralph iteration loop
-func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer) error {
+// RunLoop executes the main Ralph iteration loop.
+func RunLoop(cfg *config.Config, promptText, promptName string, output io.Writer) error {
 	completionSignal := "<promise>COMPLETE</promise>"
 	writef := func(format string, args ...any) {
 		_, _ = fmt.Fprintf(output, format, args...)
@@ -138,6 +147,7 @@ func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 			writeln(promptText)
 			writef("\nAll planned tasks completed!\n")
 			writef("Completed at iteration %d of %d\n", i, cfg.MaxIterations)
+
 			return nil
 		}
 
@@ -152,6 +162,7 @@ func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 		if strings.Contains(result, completionSignal) {
 			writef("\nAll planned tasks completed!\n")
 			writef("Completed at iteration %d of %d\n", i, cfg.MaxIterations)
+
 			return nil
 		}
 
@@ -159,5 +170,6 @@ func runLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 	}
 
 	writef("\nReached max iterations (%d) without completing all planned tasks.\n", cfg.MaxIterations)
+
 	return fmt.Errorf("max iterations reached")
 }

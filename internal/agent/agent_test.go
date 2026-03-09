@@ -1,4 +1,4 @@
-package agent
+package agent_test
 
 import (
 	"bytes"
@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/iyaki/ralph/internal/agent"
 )
 
 func writeExecutable(t *testing.T, dir, name, content string) string {
@@ -14,6 +16,7 @@ func writeExecutable(t *testing.T, dir, name, content string) string {
 	if err := os.WriteFile(path, []byte(content), 0755); err != nil {
 		t.Fatalf("failed to write executable: %v", err)
 	}
+
 	return path
 }
 
@@ -31,7 +34,7 @@ func TestGetAgentReturnsExpectedType(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			a := GetAgent(tc.agentName, "model-x", "reviewer")
+			a := agent.GetAgent(tc.agentName, "model-x", "reviewer")
 			if a.Name() != tc.expected {
 				t.Fatalf("expected %q, got %q", tc.expected, a.Name())
 			}
@@ -41,10 +44,14 @@ func TestGetAgentReturnsExpectedType(t *testing.T) {
 
 func TestClaudeExecuteSuccessAndFailure(t *testing.T) {
 	tmp := t.TempDir()
-	writeExecutable(t, tmp, "claude", "#!/bin/sh\necho \"out:$*\"\necho \"err:$*\" 1>&2\nif [ \"$FAIL\" = \"1\" ]; then exit 1; fi\n")
+	claudeScript := "#!/bin/sh\n" +
+		"echo \"out:$*\"\n" +
+		"echo \"err:$*\" 1>&2\n" +
+		"if [ \"$FAIL\" = \"1\" ]; then exit 1; fi\n"
+	writeExecutable(t, tmp, "claude", claudeScript)
 	t.Setenv("PATH", tmp)
 
-	a := &ClaudeAgent{Model: "m1", AgentMode: "planner"}
+	a := &agent.ClaudeAgent{Model: "m1", AgentMode: "planner"}
 	var out bytes.Buffer
 	result, err := a.Execute("hello", &out)
 	if err != nil {
@@ -74,7 +81,7 @@ func TestCursorExecuteAndAvailability(t *testing.T) {
 	writeExecutable(t, tmp, "cursor", "#!/bin/sh\necho \"cursor:$*\"\n")
 	t.Setenv("PATH", tmp)
 
-	a := &CursorAgent{Model: "m2"}
+	a := &agent.CursorAgent{Model: "m2"}
 	if !a.IsAvailable() {
 		t.Fatal("expected cursor to be available")
 	}
@@ -101,7 +108,7 @@ func TestOpencodeExecuteAndAvailability(t *testing.T) {
 	writeExecutable(t, tmp, "opencode", "#!/bin/sh\necho \"open:$*\"\n")
 	t.Setenv("PATH", tmp)
 
-	a := &OpencodeAgent{Model: "m3", AgentMode: "reviewer"}
+	a := &agent.OpencodeAgent{Model: "m3", AgentMode: "reviewer"}
 	if !a.IsAvailable() {
 		t.Fatal("expected opencode to be available")
 	}
