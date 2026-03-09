@@ -104,8 +104,9 @@ func BuildPrompt(cfg *config.Config) string {
 	prompt += fmt.Sprintf("- Study `%s` and pick the single most important task.\n", cfg.ImplementationPlanName)
 	prompt += "- Implement the task\n"
 	prompt += "- Validate the implementation\n"
-	prompt += "- Update the plan\n"
 	prompt += "- Commit the changes\n"
+	prompt += "- Update the plan\n"
+	prompt += "- Commit the update plan\n"
 	prompt += "- Stop after the commit\n\n"
 
 	prompt += "## Stop Condition\n\n"
