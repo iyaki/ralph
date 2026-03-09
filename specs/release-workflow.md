@@ -1,6 +1,6 @@
 # Release Workflow
 
-Status: Proposed
+Status: Partially Implemented
 
 ## Overview
 
@@ -131,13 +131,13 @@ Status: Proposed
 
 ## Dependencies
 
-| Dependency | Purpose |
-| --- | --- |
-| `actions/checkout` | Check out source at release ref |
-| `actions/setup-go` | Configure Go toolchain |
-| `actions/upload-artifact` | Persist matrix build outputs |
-| `actions/download-artifact` | Collect outputs for publishing |
-| `softprops/action-gh-release` | Create/update GitHub Release |
+| Dependency                    | Purpose                         |
+| ----------------------------- | ------------------------------- |
+| `actions/checkout`            | Check out source at release ref |
+| `actions/setup-go`            | Configure Go toolchain          |
+| `actions/upload-artifact`     | Persist matrix build outputs    |
+| `actions/download-artifact`   | Collect outputs for publishing  |
+| `softprops/action-gh-release` | Create/update GitHub Release    |
 
 ## Open questions / risks
 
