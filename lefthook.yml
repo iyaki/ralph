@@ -21,7 +21,7 @@ pre-commit:
     - name: golangci-lint
       run: make lint
       glob: "*.go"
-    - name: govulncheck
+    - name: security-checks
       run: make security
       glob: "*.go"
     - name: go-arch-lint
