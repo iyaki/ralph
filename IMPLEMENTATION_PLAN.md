@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** In Progress (8/21)
+**Status:** Complete (21/21)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -72,10 +72,10 @@
 
 #### 2.3 Logging
 
-- [ ] Implement `TestE2ELogging`:
-  - [ ] Enable logging via flag/env.
-  - [ ] Assert log file creation.
-  - [ ] Assert expected log entries exist.
+- [x] Implement `TestE2ELogging`:
+  - [x] Enable logging via flag/env.
+  - [x] Assert log file creation.
+  - [x] Assert expected log entries exist.
 
 **Definition of Done:**
 
@@ -95,14 +95,16 @@
 | 2026-03-10 | `go test ./test/e2e -run TestE2ECompletionFlow`                  | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2EMaxIterations`                   | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2EMissingPromptFile`               | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2ELogging`                         | Passed |
+| 2026-03-10 | `go test -v ./test/e2e` (all scenarios)                          | Passed |
 
 ## Summary
 
-| Phase                        | Status      | Completion |
-| :--------------------------- | :---------- | :--------- |
-| Phase 1: Test Infrastructure | Done        | 100%       |
-| Phase 2: Core Scenarios      | In Progress | 71%        |
-| **Remaining Effort**         | **Low**     | **29%**    |
+| Phase                        | Status  | Completion |
+| :--------------------------- | :------ | :--------- |
+| Phase 1: Test Infrastructure | Done    | 100%       |
+| Phase 2: Core Scenarios      | Done    | 100%       |
+| **Remaining Effort**         | **Low** | **0%**     |
 
 ## Known Existing Work
 
