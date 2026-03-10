@@ -116,6 +116,7 @@ internal/
 ### Precedence
 
 - Flags > environment variables > config file > defaults.
+- Local overlay behavior for `ralph-local.toml` is defined in [specs/config-local-overlay.md](config-local-overlay.md).
 
 ### CLI flags
 
