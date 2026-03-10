@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Pending (0/21)
+**Status:** In Progress (5/21)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -9,7 +9,7 @@
 | System             | Spec                                | Package           | Artifacts           | Implemented? |
 | :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
 | **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [ ]          |
-| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [ ]          |
+| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [x]          |
 | **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
 
 ## Phased Plan
@@ -21,12 +21,12 @@
 
 #### 1.1 Test Agent Implementation
 
-- [ ] Create `test/e2e/agents/ralph-test-agent/main.go`.
-- [ ] Implement `main` to respect `RALPH_TEST_AGENT_MODE`.
-- [ ] Implement `complete_once` mode (emit `<promise>COMPLETE</promise>`).
-- [ ] Implement `never_complete` mode (no output).
-- [ ] Implement `return_error` mode (exit non-zero).
-- [ ] Implement `slow_complete` mode (delay + complete).
+- [x] Create `test/e2e/agents/ralph-test-agent/main.go`.
+- [x] Implement `main` to respect `RALPH_TEST_AGENT_MODE`.
+- [x] Implement `complete_once` mode (emit `<promise>COMPLETE</promise>`).
+- [x] Implement `never_complete` mode (no output).
+- [x] Implement `return_error` mode (exit non-zero).
+- [x] Implement `slow_complete` mode (delay + complete).
 
 #### 1.2 Harness & Types
 
@@ -84,17 +84,21 @@
 
 ## Verification Log
 
-| Date | Verification Step | Result |
-| :--- | :---------------- | :----- |
-|      |                   |        |
+| Date       | Verification Step                                                | Result |
+| :--------- | :--------------------------------------------------------------- | :----- |
+| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=complete_once ...`        | Passed |
+| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=never_complete ...`       | Passed |
+| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=return_error ...`         | Passed |
+| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=slow_complete ...`        | Passed |
+| 2026-03-10 | `go test ./test/e2e/agents/ralph-test-agent/... && lint && arch` | Passed |
 
 ## Summary
 
-| Phase                        | Status   | Completion |
-| :--------------------------- | :------- | :--------- |
-| Phase 1: Test Infrastructure | Pending  | 0%         |
-| Phase 2: Core Scenarios      | Pending  | 0%         |
-| **Remaining Effort**         | **High** | **100%**   |
+| Phase                        | Status      | Completion |
+| :--------------------------- | :---------- | :--------- |
+| Phase 1: Test Infrastructure | In Progress | 25%        |
+| Phase 2: Core Scenarios      | Pending     | 0%         |
+| **Remaining Effort**         | **High**    | **75%**    |
 
 ## Known Existing Work
 
