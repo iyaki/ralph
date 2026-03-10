@@ -21,16 +21,16 @@
 
 #### 1.1 Refactor Execution Loop
 
-- [ ] Move `RunLoop` and `hasCompletionSignal` from `internal/cli/cmd.go` to `internal/cli/run.go`.
-- [ ] Move `applyEffectiveSettings`, `applyModelSettings`, `applyAgentModeSettings` to `internal/cli/run.go` (or a shared utility if needed, but likely `run.go` is fine as they are specific to the run loop).
-- [ ] Ensure `RunLoop` signature remains compatible or update call sites (`cmd.go`, tests).
+- [x] Move `RunLoop` and `hasCompletionSignal` from `internal/cli/cmd.go` to `internal/cli/run.go`.
+- [x] Move `applyEffectiveSettings`, `applyModelSettings`, `applyAgentModeSettings` to `internal/cli/run.go` (or a shared utility if needed, but likely `run.go` is fine as they are specific to the run loop).
+- [x] Ensure `RunLoop` signature remains compatible or update call sites (`cmd.go`, tests).
 
 #### 1.2 Implement Run Command
 
-- [ ] Create `NewRunCommand()` in `internal/cli/run.go`.
-- [ ] Configure `Use: "run [prompt] [scope]"`.
-- [ ] Register all flags currently on the root command to the `run` command (they must be available to both).
-- [ ] Implement `RunE` for `run` command to:
+- [x] Create `NewRunCommand()` in `internal/cli/run.go`.
+- [x] Configure `Use: "run [prompt] [scope]"`.
+- [x] Register all flags currently on the root command to the `run` command (they must be available to both).
+- [x] Implement `RunE` for `run` command to:
   - Parse args (prompt, scope).
   - Load config.
   - Initialize logger.
@@ -50,16 +50,16 @@
 
 #### 2.1 Update Root Command
 
-- [ ] Register `NewRunCommand()` as a subcommand of the root command.
-- [ ] Modify `NewRalphCommand`'s `RunE` to:
+- [x] Register `NewRunCommand()` as a subcommand of the root command.
+- [x] Modify `NewRalphCommand`'s `RunE` to:
   - If no args: Default to `run build` (invoke run logic).
   - If args present (and not caught by subcommands): Treat as `run <args>` (invoke run logic).
-- [ ] Ensure `ralph init` still works (handled by Cobra automatically).
-- [ ] Ensure `ralph run init` works (handled by `run` subcommand, treats "init" as prompt name).
+- [x] Ensure `ralph init` still works (handled by Cobra automatically).
+- [x] Ensure `ralph run init` works (handled by `run` subcommand, treats "init" as prompt name).
 
 #### 2.2 Shared Flags
 
-- [ ] Refactor flag setup so common flags are available to both root (for alias usage) and `run` command.
+- [x] Refactor flag setup so common flags are available to both root (for alias usage) and `run` command.
 
 **Definition of Done:**
 
@@ -92,18 +92,22 @@
 
 ## Verification Log
 
-| Date | Verification Step | Result |
-| :--- | :---------------- | :----- |
-|      |                   |        |
+| Date       | Verification Step            | Result             |
+| :--------- | :--------------------------- | :----------------- |
+| 2026-03-10 | `ralph run build`            | Works              |
+| 2026-03-10 | `ralph` (defaults to build)  | Works              |
+| 2026-03-10 | `ralph init`                 | Works              |
+| 2026-03-10 | `ralph run init` (as prompt) | Failed (correctly) |
+| 2026-03-10 | `make test`                  | Pass               |
 
 ## Summary
 
-| Phase                           | Status     | Completion |
-| :------------------------------ | :--------- | :--------- |
-| Phase 1: Explicit Run Command   | Pending    | 0%         |
-| Phase 2: Root Command Routing   | Pending    | 0%         |
-| Phase 3: Verification & Cleanup | Pending    | 0%         |
-| **Remaining Effort**            | **Medium** | **0%**     |
+| Phase                           | Status   | Completion |
+| :------------------------------ | :------- | :--------- |
+| Phase 1: Explicit Run Command   | Complete | 100%       |
+| Phase 2: Root Command Routing   | Complete | 100%       |
+| Phase 3: Verification & Cleanup | Pending  | 0%         |
+| **Remaining Effort**            | **Low**  | **66%**    |
 
 ## Known Existing Work
 
