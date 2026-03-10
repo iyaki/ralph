@@ -1,111 +1,104 @@
-# Implementation Plan (config-by-prompt)
+# Implementation Plan (e2e-testing)
 
-**Status:** Complete
+**Status:** Pending (0/21)
 **Last Updated:** 2026-03-10
-**Primary Spec:** [specs/config-by-prompt.md](specs/config-by-prompt.md)
+**Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
 ## Quick Reference
 
-| System                  | Spec                                          | Package           | Artifacts        | Implemented? |
-| :---------------------- | :-------------------------------------------- | :---------------- | :--------------- | :----------- |
-| **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [x]          |
-| **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [x]          |
-| **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [x]          |
-| **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [x]          |
+| System             | Spec                                | Package           | Artifacts           | Implemented? |
+| :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
+| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [ ]          |
+| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [ ]          |
+| **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
 
 ## Phased Plan
 
-### Phase 1: Configuration Data Model
+### Phase 1: Test Infrastructure
 
-**Goal:** Update the configuration structure to support per-prompt overrides.
-**Paths:** `internal/config/`
+**Goal:** Establish the test harness, build the test-only agent, and define the test execution logic.
+**Paths:** `test/e2e/`
 
-#### 1.1 Add Override Structures
+#### 1.1 Test Agent Implementation
 
-- [x] Define `PromptConfigOverride` struct (Model, AgentMode).
-- [x] Add `PromptOverrides` map to `Config` struct (`[prompt-overrides.<name>]`).
-- [x] Update `config_test.go` to verify TOML parsing of the new section.
+- [ ] Create `test/e2e/agents/ralph-test-agent/main.go`.
+- [ ] Implement `main` to respect `RALPH_TEST_AGENT_MODE`.
+- [ ] Implement `complete_once` mode (emit `<promise>COMPLETE</promise>`).
+- [ ] Implement `never_complete` mode (no output).
+- [ ] Implement `return_error` mode (exit non-zero).
+- [ ] Implement `slow_complete` mode (delay + complete).
 
-**Definition of Done:**
+#### 1.2 Harness & Types
 
-- `Config` struct can hold `prompt-overrides` data loaded from TOML.
-- Unit tests pass.
-
-### Phase 2: Front Matter Parsing
-
-**Goal:** Implement parsing of YAML front matter from markdown prompts.
-**Paths:** `internal/prompt/`
-
-#### 2.1 YAML Parser Dependency
-
-- [x] Add `gopkg.in/yaml.v3` dependency.
-
-#### 2.2 Front Matter Extractor
-
-- [x] Create `internal/prompt/frontmatter.go`.
-- [x] Implement `ParseFrontMatter(content string) (*PromptFrontMatterSettings, string, error)`.
-- [x] Ensure `ParseFrontMatter` returns the body with front matter stripped.
-- [x] Handle invalid YAML (fail fast).
-- [x] Handle unknown keys (ignore).
-- [x] Add unit tests for various front matter scenarios (valid, invalid, missing, unknown keys).
+- [ ] Create `test/e2e/types.go` with `E2ETestCase`, `AgentFixture`, `E2ERunResult` structs.
+- [ ] Create `test/e2e/harness_test.go`.
+- [ ] Implement `TestMain` to:
+  - [ ] Build `ralph` binary to a temp location.
+  - [ ] Build `ralph-test-agent` binary to a temp location.
+  - [ ] Ensure cleanup of temp binaries on exit.
+- [ ] Implement `runTestCase(t *testing.T, tc E2ETestCase)` helper:
+  - [ ] Create temp test execution directory.
+  - [ ] Write fixture files.
+  - [ ] Execute `ralph` with correct `PATH` and environment variables.
+  - [ ] Capture output and exit code.
 
 **Definition of Done:**
 
-- Reliable extraction of `model` and `agent-mode` from markdown content.
-- Robust error handling and stripping logic.
+- `go test ./test/e2e` can compile and run (even if empty tests).
+- Test agent and Ralph binaries are successfully built during test setup.
 
-### Phase 3: Integration & Precedence
+### Phase 2: Core Scenarios
 
-**Goal:** Integrate front matter and config overrides into the CLI execution flow with correct precedence.
-**Paths:** `internal/prompt/`, `internal/cli/`
+**Goal:** Implement the specific E2E test cases defined in the spec.
+**Paths:** `test/e2e/`
 
-#### 3.1 Update Prompt Resolver
+#### 2.1 Happy Path
 
-- [x] Update `GetPrompt` signature to return `(string, *config.PromptConfigOverride, error)`.
-- [x] Update `explicitPromptFile` and `promptFromDir` to use `ParseFrontMatter`.
-- [x] Ensure `bundledPrompt`, `customPrompt`, `stdinPrompt` return nil/empty overrides or handle accordingly.
+- [ ] Create `test/e2e/scenarios_test.go`.
+- [ ] Implement `TestE2ECompletionFlow`:
+  - [ ] Configure `complete_once` agent.
+  - [ ] Run with valid prompt.
+  - [ ] Assert zero exit code and completion signal.
 
-#### 3.2 CLI Command Logic
+#### 2.2 Failure Paths
 
-- [x] Update `RunE` in `internal/cli/cmd.go`.
-- [x] Implement precedence logic:
-  1. CLI Flags (`cmd.Flags().Changed`)
-  2. Env Vars (`os.Getenv`)
-  3. Front Matter (from `GetPrompt`)
-  4. Config Override (`cfg.PromptOverrides[name]`)
-  5. Global Config (already in `cfg`)
-- [x] Apply the effective `Model` and `AgentMode` to the `Config` object before `RunLoop`.
+- [ ] Implement `TestE2EMaxIterations`:
+  - [ ] Configure `never_complete` agent.
+  - [ ] Run with low `--max-iterations`.
+  - [ ] Assert non-zero exit code.
+- [ ] Implement `TestE2EMissingPromptFile`:
+  - [ ] Run with non-existent `--prompt-file`.
+  - [ ] Assert non-zero exit code and error message.
+
+#### 2.3 Logging
+
+- [ ] Implement `TestE2ELogging`:
+  - [ ] Enable logging via flag/env.
+  - [ ] Assert log file creation.
+  - [ ] Assert expected log entries exist.
 
 **Definition of Done:**
 
-- `ralph` command respects the precedence rules defined in the spec.
-- `RunLoop` receives the correct Model and AgentMode.
-- Manual verification with sample prompts and configs.
+- All scenarios pass with `go test -v ./test/e2e`.
+- Tests are deterministic and clean up artifacts.
 
 ## Verification Log
 
-| Date       | Verification Step              | Result |
-| :--------- | :----------------------------- | :----- |
-| 2026-03-10 | `go test -v ./internal/config` | PASS   |
-| 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
-| 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
-| 2026-03-10 | `go test -v ./internal/cli`    | PASS   |
-| 2026-03-10 | `go test -v ./internal/cli`    | PASS   |
+| Date | Verification Step | Result |
+| :--- | :---------------- | :----- |
+|      |                   |        |
 
 ## Summary
 
-| Phase                             | Status    | Completion |
-| :-------------------------------- | :-------- | :--------- |
-| Phase 1: Config Data Model        | Completed | 100%       |
-| Phase 2: Front Matter Parsing     | Completed | 100%       |
-| Phase 3: Integration & Precedence | Completed | 100%       |
-| **Remaining Effort**              | **None**  | **0%**     |
+| Phase                        | Status   | Completion |
+| :--------------------------- | :------- | :--------- |
+| Phase 1: Test Infrastructure | Pending  | 0%         |
+| Phase 2: Core Scenarios      | Pending  | 0%         |
+| **Remaining Effort**         | **High** | **100%**   |
 
 ## Known Existing Work
 
-- `internal/config/config.go`: Existing configuration loading logic.
-- `internal/prompt/prompts.go`: Existing prompt file reading logic (needs modification).
-- `internal/cli/cmd.go`: Existing CLI entry point and flag setup.
+- None. This is a new subsystem.
 
 ## Manual Deployment Tasks
 
