@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** In Progress (6/21)
+**Status:** In Progress (8/21)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -66,9 +66,9 @@
   - [x] Configure `never_complete` agent.
   - [x] Run with low `--max-iterations`.
   - [x] Assert non-zero exit code.
-- [ ] Implement `TestE2EMissingPromptFile`:
-  - [ ] Run with non-existent `--prompt-file`.
-  - [ ] Assert non-zero exit code and error message.
+- [x] Implement `TestE2EMissingPromptFile`:
+  - [x] Run with non-existent `--prompt-file`.
+  - [x] Assert non-zero exit code and error message.
 
 #### 2.3 Logging
 
@@ -94,14 +94,15 @@
 | 2026-03-10 | `go test ./test/e2e` (validates TestMain & build process)        | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ECompletionFlow`                  | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2EMaxIterations`                   | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2EMissingPromptFile`               | Passed |
 
 ## Summary
 
 | Phase                        | Status      | Completion |
 | :--------------------------- | :---------- | :--------- |
 | Phase 1: Test Infrastructure | Done        | 100%       |
-| Phase 2: Core Scenarios      | In Progress | 50%        |
-| **Remaining Effort**         | **Medium**  | **50%**    |
+| Phase 2: Core Scenarios      | In Progress | 71%        |
+| **Remaining Effort**         | **Low**     | **29%**    |
 
 ## Known Existing Work
 
