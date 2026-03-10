@@ -1,167 +1,115 @@
-# Implementation Plan (e2e-testing)
+# Implementation Plan (run-command)
 
-**Status:** Complete
+**Status:** Proposed
 **Last Updated:** 2026-03-10
-**Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
+**Primary Spec:** [specs/run-command.md](specs/run-command.md)
 
 ## Quick Reference
 
-| System             | Spec                                | Package           | Artifacts           | Implemented? |
-| :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
-| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | ✅           |
-| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | ✅           |
-| **Core Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | ✅           |
-| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `test/*.go`         | ✅           |
+| System             | Spec                                | Package        | Artifacts | Implemented? |
+| :----------------- | :---------------------------------- | :------------- | :-------- | :----------- |
+| **Run Command**    | [Run Command](specs/run-command.md) | `internal/cli` | `run.go`  | ⬜           |
+| **Command Router** | [Run Command](specs/run-command.md) | `internal/cli` | `cmd.go`  | ⬜           |
+| **Legacy Support** | [Run Command](specs/run-command.md) | `internal/cli` | `cmd.go`  | ✅           |
 
 ## Phased Plan
 
-### Phase 1: Test Infrastructure
+### Phase 1: Explicit Run Command
 
-**Goal:** Establish the test harness, build the test-only agent, and define the test execution logic.
-**Paths:** `test/e2e/`
+**Goal:** Implement the explicit `ralph run` command and extract the execution loop logic.
+**Paths:** `internal/cli/`
 
-#### 1.1 Test Agent Implementation
+#### 1.1 Refactor Execution Loop
 
-- [x] Create `test/e2e/agents/ralph-test-agent/main.go`.
-- [x] Implement `main` to respect `RALPH_TEST_AGENT_MODE`.
-- [x] Implement `complete_once` mode (emit `<promise>COMPLETE</promise>`).
-- [x] Implement `never_complete` mode (no output).
-- [x] Implement `return_error` mode (exit non-zero).
-- [x] Implement `slow_complete` mode (delay + complete).
+- [ ] Move `RunLoop` and `hasCompletionSignal` from `internal/cli/cmd.go` to `internal/cli/run.go`.
+- [ ] Move `applyEffectiveSettings`, `applyModelSettings`, `applyAgentModeSettings` to `internal/cli/run.go` (or a shared utility if needed, but likely `run.go` is fine as they are specific to the run loop).
+- [ ] Ensure `RunLoop` signature remains compatible or update call sites (`cmd.go`, tests).
 
-#### 1.2 Harness & Types
+#### 1.2 Implement Run Command
 
-- [x] Create `test/e2e/types.go` with `E2ETestCase`, `AgentFixture`, `E2ERunResult` structs.
-- [x] Create `test/e2e/harness_test.go`.
-- [x] Implement `TestMain` to:
-  - [x] Build `ralph` binary to a temp location.
-  - [x] Build `ralph-test-agent` binary to a temp location.
-  - [x] Ensure cleanup of temp binaries on exit.
-- [x] Implement `runTestCase(t *testing.T, tc E2ETestCase)` helper:
-  - [x] Create temp test execution directory.
-  - [x] Write fixture files.
-  - [x] Execute `ralph` with correct `PATH` and environment variables.
-  - [x] Capture output and exit code.
+- [ ] Create `NewRunCommand()` in `internal/cli/run.go`.
+- [ ] Configure `Use: "run [prompt] [scope]"`.
+- [ ] Register all flags currently on the root command to the `run` command (they must be available to both).
+- [ ] Implement `RunE` for `run` command to:
+  - Parse args (prompt, scope).
+  - Load config.
+  - Initialize logger.
+  - Get prompt.
+  - Apply settings.
+  - Call `RunLoop`.
 
 **Definition of Done:**
 
-- `go test ./test/e2e` can compile and run (even if empty tests).
-- Test agent and Ralph binaries are successfully built during test setup.
+- `ralph run` exists and works identical to current `ralph` command.
+- Unit tests for `RunLoop` pass in their new location.
 
-### Phase 2: Core Scenarios
+### Phase 2: Root Command Routing
 
-**Goal:** Implement the primary happy/failure paths defined in the spec.
-**Paths:** `test/e2e/`
+**Goal:** Update the root command to act as a router/dispatcher while preserving backward compatibility.
+**Paths:** `internal/cli/cmd.go`
 
-#### 2.1 Happy Path
+#### 2.1 Update Root Command
 
-- [x] Create `test/e2e/scenarios_test.go`.
-- [x] Implement `TestE2ECompletionFlow`:
-  - [x] Configure `complete_once` agent.
-  - [x] Run with valid prompt.
-  - [x] Assert zero exit code and completion signal.
+- [ ] Register `NewRunCommand()` as a subcommand of the root command.
+- [ ] Modify `NewRalphCommand`'s `RunE` to:
+  - If no args: Default to `run build` (invoke run logic).
+  - If args present (and not caught by subcommands): Treat as `run <args>` (invoke run logic).
+- [ ] Ensure `ralph init` still works (handled by Cobra automatically).
+- [ ] Ensure `ralph run init` works (handled by `run` subcommand, treats "init" as prompt name).
 
-#### 2.2 Failure Paths
+#### 2.2 Shared Flags
 
-- [x] Implement `TestE2EMaxIterations`:
-  - [x] Configure `never_complete` agent.
-  - [x] Run with low `--max-iterations`.
-  - [x] Assert non-zero exit code.
-- [x] Implement `TestE2EMissingPromptFile`:
-  - [x] Run with non-existent `--prompt-file`.
-  - [x] Assert non-zero exit code and error message.
-
-#### 2.3 Logging
-
-- [x] Implement `TestE2ELogging`:
-  - [x] Enable logging via flag/env.
-  - [x] Assert log file creation.
-  - [x] Assert expected log entries exist.
+- [ ] Refactor flag setup so common flags are available to both root (for alias usage) and `run` command.
 
 **Definition of Done:**
 
-- All scenarios pass with `go test -v ./test/e2e`.
-- Tests are deterministic and clean up artifacts.
+- `ralph` (no args) executes `run build`.
+- `ralph my-prompt` executes `run my-prompt`.
+- `ralph run my-prompt` executes `run my-prompt`.
+- `ralph init` executes init command.
 
-### Phase 3: Comprehensive Coverage
+### Phase 3: Verification & Cleanup
 
-**Goal:** Extend suite to cover ALL supported CLI options, config keys, and output channels as required by spec.
-**Paths:** `test/e2e/`
+**Goal:** Verify all routing scenarios and collision rules.
+**Paths:** `internal/cli/`, `test/e2e/`
 
-#### 3.1 Prompt Resolution Coverage
+#### 3.1 Unit Tests
 
-- [x] Implement `TestE2EInlinePrompt`:
-  - [x] Use `--prompt "custom prompt"`.
-  - [x] Assert agent receives the inline prompt.
-- [x] Implement `TestE2EStdinPrompt`:
-  - [x] Pipe prompt via stdin (`-` argument or implicit).
-  - [x] Assert agent receives the stdin prompt.
+- [ ] Update `internal/cli/cmd_test.go` to test routing logic.
+- [ ] Add `internal/cli/run_test.go` for specific `run` command tests.
 
-#### 3.2 Extended CLI Flags Coverage
+#### 3.2 E2E Verification
 
-- [x] Implement `TestE2ESpecsFlags`:
-  - [x] Test `--specs-dir` and `--specs-index`.
-  - [x] Test `--no-specs-index`.
-- [x] Implement `TestE2EPlanFlags`:
-  - [x] Test `--implementation-plan-name`.
-- [x] Implement `TestE2ELoggingFlags`:
-  - [x] Test `--no-log`.
-  - [x] Test `--log-truncate`.
-- [x] Implement `TestE2EModelFlags`:
-  - [x] Test `--model` override.
-  - [x] Test `--agent-mode` override.
-
-#### 3.3 Configuration Precedence
-
-- [x] Implement `TestE2EConfigPrecedence`:
-  - [x] Set conflicting values in Config File, Env Var, and CLI Flag.
-  - [x] Assert CLI Flag wins.
-  - [x] Assert Env Var wins over Config File.
+- [ ] Verify `ralph run build` works.
+- [ ] Verify `ralph` works (defaults to build).
+- [ ] Verify `ralph init` works.
+- [ ] Verify `ralph run init` works (runs prompt "init", does not trigger init command).
 
 **Definition of Done:**
 
-- Every flag in `ralph --help` has a corresponding e2e test case.
-- Prompt loading from all sources (file, inline, stdin) is verified.
-- Configuration precedence rules are verified.
+- All specs scenarios verified.
+- Tests pass.
 
 ## Verification Log
 
-| Date       | Verification Step                                                | Result |
-| :--------- | :--------------------------------------------------------------- | :----- |
-| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=complete_once ...`        | Passed |
-| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=never_complete ...`       | Passed |
-| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=return_error ...`         | Passed |
-| 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=slow_complete ...`        | Passed |
-| 2026-03-10 | `go test ./test/e2e/agents/ralph-test-agent/... && lint && arch` | Passed |
-| 2026-03-10 | `go test ./test/e2e` (validates TestMain & build process)        | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2ECompletionFlow`                  | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2EMaxIterations`                   | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2EMissingPromptFile`               | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2ELogging`                         | Passed |
-| 2026-03-10 | `go test -v ./test/e2e` (all scenarios)                          | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2E.*Prompt`                        | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2ESpecsFlags`                      | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2EPlanFlags`                       | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2ELoggingFlags`                    | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2EModelFlags`                      | Passed |
-| 2026-03-10 | `go test ./test/e2e -run TestE2EConfigPrecedence`                | Passed |
+| Date | Verification Step | Result |
+| :--- | :---------------- | :----- |
+|      |                   |        |
 
 ## Summary
 
-| Phase                           | Status  | Completion |
-| :------------------------------ | :------ | :--------- |
-| Phase 1: Test Infrastructure    | Done    | 100%       |
-| Phase 2: Core Scenarios         | Done    | 100%       |
-| Phase 3: Comprehensive Coverage | Done    | 100%       |
-| **Remaining Effort**            | **Low** | **0%**     |
+| Phase                           | Status     | Completion |
+| :------------------------------ | :--------- | :--------- |
+| Phase 1: Explicit Run Command   | Pending    | 0%         |
+| Phase 2: Root Command Routing   | Pending    | 0%         |
+| Phase 3: Verification & Cleanup | Pending    | 0%         |
+| **Remaining Effort**            | **Medium** | **0%**     |
 
 ## Known Existing Work
 
-- `test/e2e/harness_test.go`: Complete harness implementation.
-- `test/e2e/scenarios_test.go`: Basic scenarios implemented.
-- `test/e2e/prompt_test.go`: Prompt resolution scenarios.
-- `test/e2e/agents/ralph-test-agent/`: Fully functional test agent.
-- `test/e2e/config_precedence_test.go`: Config precedence tests.
+- `RunLoop` logic exists in `internal/cli/cmd.go` (needs refactoring).
+- `NewInitCommand` exists and works.
+- `NewRalphCommand` exists but implements the logic directly.
 
 ## Manual Deployment Tasks
 
