@@ -1,84 +1,106 @@
-# Implementation Plan (command-init)
+# Implementation Plan (config-by-prompt)
 
-**Status:** Implementation In Progress (2/2)
+**Status:** Planning
 **Last Updated:** 2026-03-09
-**Primary Spec:** [specs/init-command.md](specs/init-command.md)
+**Primary Spec:** [specs/config-by-prompt.md](specs/config-by-prompt.md)
 
 ## Quick Reference
 
-| System            | Spec                                    | Package           | Artifacts   | Implemented? |
-| :---------------- | :-------------------------------------- | :---------------- | :---------- | :----------- | --- | -------------- | ------------------------------------- | -------------- | -------- | --- |
-| **Config Writer** | [Configuration](specs/configuration.md) | `internal/config` | `writer.go` | [x]          |
-| **Init Command**  | [Init Command](specs/init-command.md)   | `internal/cli`    | `init.go`   | [~]          |     | **CLI Wiring** | [Init Command](specs/init-command.md) | `internal/cli` | `cmd.go` | [x] |
+| System                  | Spec                                          | Package           | Artifacts        | Implemented? |
+| :---------------------- | :-------------------------------------------- | :---------------- | :--------------- | :----------- |
+| **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [ ]          |
+| **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [ ]          |
+| **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [ ]          |
+| **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [ ]          |
 
 ## Phased Plan
 
-### Phase 1: Config Writer Implementation
+### Phase 1: Configuration Data Model
 
-**Goal:** Enable programmatic writing of `ralph.toml` configuration files.
+**Goal:** Update the configuration structure to support per-prompt overrides.
 **Paths:** `internal/config/`
 
-#### 1.1 TOML Writer
+#### 1.1 Add Override Structures
 
-- [x] Create `internal/config/writer.go`
-- [x] Implement `WriteConfig(path string, cfg *Config) error`
-- [x] Implement atomic write pattern (write temp -> rename)
-- [x] Add `internal/config/writer_test.go` for verification
-
-**Definition of Done:**
-
-- `WriteConfig` correctly serializes `Config` struct to TOML.
-- Unit tests pass for writing and overwriting files.
-
-### Phase 2: Init Command Implementation
-
-**Goal:** Implement the interactive `ralph init` command.
-**Paths:** `internal/cli/`
-
-#### 2.1 Init Command Structure
-
-- [x] Create `internal/cli/init.go`
-- [x] Implement `NewInitCommand() *cobra.Command`
-- [x] Define `InitSession`, `InitQuestion`, `InitAnswers` structs (internal to `init.go` or private)
-
-#### 2.2 Interactive Logic & Validation
-
-- [ ] Implement TTY detection
-- [ ] Implement question loop with `bufio`
-- [ ] Implement validators (Enum, Integer, Non-empty)
-- [ ] Implement default seeding from existing config/defaults
-- [ ] Implement overwrite confirmation logic
-
-#### 2.3 CLI Wiring
-
-- [x] Register `init` subcommand in `internal/cli/cmd.go` (Update `NewRalphCommand`)
+- [ ] Define `PromptConfigOverride` struct (Model, AgentMode).
+- [ ] Add `PromptOverrides` map to `Config` struct (`[prompt-overrides.<name>]`).
+- [ ] Update `config_test.go` to verify TOML parsing of the new section.
 
 **Definition of Done:**
 
-- `ralph init` runs interactively.
-- Input validation works as specified.
-- `ralph.toml` is generated correctly.
-- Tests in `internal/cli/init_test.go` (if feasible) or manual verification passes.
+- `Config` struct can hold `prompt-overrides` data loaded from TOML.
+- Unit tests pass.
+
+### Phase 2: Front Matter Parsing
+
+**Goal:** Implement parsing of YAML front matter from markdown prompts.
+**Paths:** `internal/prompt/`
+
+#### 2.1 YAML Parser Dependency
+
+- [ ] Add `gopkg.in/yaml.v3` dependency.
+
+#### 2.2 Front Matter Extractor
+
+- [ ] Create `internal/prompt/frontmatter.go`.
+- [ ] Implement `ParseFrontMatter(content string) (*PromptFrontMatterSettings, string, error)`.
+- [ ] Ensure `ParseFrontMatter` returns the body with front matter stripped.
+- [ ] Handle invalid YAML (fail fast).
+- [ ] Handle unknown keys (ignore).
+- [ ] Add unit tests for various front matter scenarios (valid, invalid, missing, unknown keys).
+
+**Definition of Done:**
+
+- Reliable extraction of `model` and `agent-mode` from markdown content.
+- Robust error handling and stripping logic.
+
+### Phase 3: Integration & Precedence
+
+**Goal:** Integrate front matter and config overrides into the CLI execution flow with correct precedence.
+**Paths:** `internal/prompt/`, `internal/cli/`
+
+#### 3.1 Update Prompt Resolver
+
+- [ ] Update `GetPrompt` signature to return `(string, *config.PromptConfigOverride, error)`.
+- [ ] Update `explicitPromptFile` and `promptFromDir` to use `ParseFrontMatter`.
+- [ ] Ensure `bundledPrompt`, `customPrompt`, `stdinPrompt` return nil/empty overrides or handle accordingly.
+
+#### 3.2 CLI Command Logic
+
+- [ ] Update `RunE` in `internal/cli/cmd.go`.
+- [ ] Implement precedence logic:
+  1. CLI Flags (`cmd.Flags().Changed`)
+  2. Env Vars (`os.Getenv`)
+  3. Front Matter (from `GetPrompt`)
+  4. Config Override (`cfg.PromptOverrides[name]`)
+  5. Global Config (already in `cfg`)
+- [ ] Apply the effective `Model` and `AgentMode` to the `Config` object before `RunLoop`.
+
+**Definition of Done:**
+
+- `ralph` command respects the precedence rules defined in the spec.
+- `RunLoop` receives the correct Model and AgentMode.
+- Manual verification with sample prompts and configs.
 
 ## Verification Log
 
-| Date       | Verification Step                  | Result |
-| :--------- | :--------------------------------- | :----- |
-| 2026-03-09 | `go test -v ./internal/config/...` | PASS   |
-| 2026-03-09 | `go test -v ./internal/cli/...`    | PASS   |
+| Date | Verification Step | Result |
+| :--- | :---------------- | :----- |
 
 ## Summary
 
-| Phase                  | Status      | Completion |
-| :--------------------- | :---------- | :--------- |
-| Phase 1: Config Writer | Complete    | 100%       |
-| Phase 2: Init Command  | In Progress | 50%        |
-| **Remaining Effort**   | **Medium**  | **50%**    |
+| Phase                             | Status     | Completion |
+| :-------------------------------- | :--------- | :--------- |
+| Phase 1: Config Data Model        | Pending    | 0%         |
+| Phase 2: Front Matter Parsing     | Pending    | 0%         |
+| Phase 3: Integration & Precedence | Pending    | 0%         |
+| **Remaining Effort**              | **Medium** | **100%**   |
 
 ## Known Existing Work
 
-- `internal/config/config.go`: Existing configuration data model and loader.
-- `internal/cli/cmd.go`: Existing root command structure.
+- `internal/config/config.go`: Existing configuration loading logic.
+- `internal/prompt/prompts.go`: Existing prompt file reading logic (needs modification).
+- `internal/cli/cmd.go`: Existing CLI entry point and flag setup.
 
 ## Manual Deployment Tasks
 
