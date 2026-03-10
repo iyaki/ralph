@@ -165,7 +165,7 @@ func joinPromptLines(lines ...string) string {
 // BuildPrompt generates the default build prompt.
 func BuildPrompt(cfg *config.Config) string {
 	specsIndexFileReference := ""
-	if cfg.SpecsIndexFile != "" {
+	if cfg.SpecsIndexFile != "" && !cfg.NoSpecsIndex {
 		specsIndexFileReference = filepath.Join(cfg.SpecsDir, cfg.SpecsIndexFile)
 	}
 
