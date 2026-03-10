@@ -1,6 +1,6 @@
 # Init Command
 
-Status: Proposed
+Status: Partially Implemented
 
 ## Overview
 
