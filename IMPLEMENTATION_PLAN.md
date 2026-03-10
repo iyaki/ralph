@@ -10,7 +10,7 @@
 | :---------------------- | :-------------------------------------------- | :---------------- | :--------------- | :----------- |
 | **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [x]          |
 | **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [x]          |
-| **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [ ]          |
+| **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [x]          |
 | **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [ ]          |
 
 ## Phased Plan
@@ -61,9 +61,9 @@
 
 #### 3.1 Update Prompt Resolver
 
-- [ ] Update `GetPrompt` signature to return `(string, *config.PromptConfigOverride, error)`.
-- [ ] Update `explicitPromptFile` and `promptFromDir` to use `ParseFrontMatter`.
-- [ ] Ensure `bundledPrompt`, `customPrompt`, `stdinPrompt` return nil/empty overrides or handle accordingly.
+- [x] Update `GetPrompt` signature to return `(string, *config.PromptConfigOverride, error)`.
+- [x] Update `explicitPromptFile` and `promptFromDir` to use `ParseFrontMatter`.
+- [x] Ensure `bundledPrompt`, `customPrompt`, `stdinPrompt` return nil/empty overrides or handle accordingly.
 
 #### 3.2 CLI Command Logic
 
@@ -88,6 +88,8 @@
 | :--------- | :----------------------------- | :----- |
 | 2026-03-10 | `go test -v ./internal/config` | PASS   |
 | 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
+| 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
+| 2026-03-10 | `go test -v ./internal/cli`    | PASS   |
 
 ## Summary
 
@@ -95,8 +97,8 @@
 | :-------------------------------- | :-------- | :--------- |
 | Phase 1: Config Data Model        | Completed | 100%       |
 | Phase 2: Front Matter Parsing     | Completed | 100%       |
-| Phase 3: Integration & Precedence | Pending   | 0%         |
-| **Remaining Effort**              | **Low**   | **33%**    |
+| Phase 3: Integration & Precedence | Partial   | 50%        |
+| **Remaining Effort**              | **Low**   | **16%**    |
 
 ## Known Existing Work
 
