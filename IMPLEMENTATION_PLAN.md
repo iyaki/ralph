@@ -1,6 +1,6 @@
 # Implementation Plan (run-command)
 
-**Status:** Proposed
+**Status:** Complete
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/run-command.md](specs/run-command.md)
 
@@ -8,8 +8,8 @@
 
 | System             | Spec                                | Package        | Artifacts | Implemented? |
 | :----------------- | :---------------------------------- | :------------- | :-------- | :----------- |
-| **Run Command**    | [Run Command](specs/run-command.md) | `internal/cli` | `run.go`  | ⬜           |
-| **Command Router** | [Run Command](specs/run-command.md) | `internal/cli` | `cmd.go`  | ⬜           |
+| **Run Command**    | [Run Command](specs/run-command.md) | `internal/cli` | `run.go`  | ✅           |
+| **Command Router** | [Run Command](specs/run-command.md) | `internal/cli` | `cmd.go`  | ✅           |
 | **Legacy Support** | [Run Command](specs/run-command.md) | `internal/cli` | `cmd.go`  | ✅           |
 
 ## Phased Plan
@@ -75,15 +75,15 @@
 
 #### 3.1 Unit Tests
 
-- [ ] Update `internal/cli/cmd_test.go` to test routing logic.
-- [ ] Add `internal/cli/run_test.go` for specific `run` command tests.
+- [x] Update `internal/cli/cmd_test.go` to test routing logic.
+- [x] Add `internal/cli/run_test.go` for specific `run` command tests.
 
 #### 3.2 E2E Verification
 
-- [ ] Verify `ralph run build` works.
-- [ ] Verify `ralph` works (defaults to build).
-- [ ] Verify `ralph init` works.
-- [ ] Verify `ralph run init` works (runs prompt "init", does not trigger init command).
+- [x] Verify `ralph run build` works.
+- [x] Verify `ralph` works (defaults to build).
+- [x] Verify `ralph init` works.
+- [x] Verify `ralph run init` works (runs prompt "init", does not trigger init command).
 
 **Definition of Done:**
 
@@ -106,8 +106,8 @@
 | :------------------------------ | :------- | :--------- |
 | Phase 1: Explicit Run Command   | Complete | 100%       |
 | Phase 2: Root Command Routing   | Complete | 100%       |
-| Phase 3: Verification & Cleanup | Pending  | 0%         |
-| **Remaining Effort**            | **Low**  | **66%**    |
+| Phase 3: Verification & Cleanup | Complete | 100%       |
+| **Remaining Effort**            | **None** | **100%**   |
 
 ## Known Existing Work
 
