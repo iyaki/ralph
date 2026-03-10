@@ -45,10 +45,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	// Create symlink for "opencode" to point to our test agent so ralph picks it up by default
-	if err := os.Symlink(agentPath, filepath.Join(tmpDir, "opencode")); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to symlink opencode to test agent: %v\n", err)
-		os.Exit(1)
+	// Create symlinks for all supported agents to point to our test agent.
+	for _, agentName := range []string{"opencode", "claude", "cursor"} {
+		if err := os.Symlink(agentPath, filepath.Join(tmpDir, agentName)); err != nil {
+			fmt.Fprintf(os.Stderr, "failed to symlink %s to test agent: %v\n", agentName, err)
+			os.Exit(1)
+		}
 	}
 
 	// 4. Run tests
