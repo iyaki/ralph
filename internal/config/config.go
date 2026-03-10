@@ -63,9 +63,24 @@ type PromptConfigOverride struct {
 
 // LoadConfig loads configuration with proper precedence: flags > env vars > config file > defaults.
 func (c *Config) LoadConfig() error {
-	configFromFile, err := c.resolveFileConfig()
+	configFromFile, configPath, err := c.resolveFileConfig()
 	if err != nil {
 		return err
+	}
+
+	// Check for local overlay
+	if configPath != "" {
+		configDir := filepath.Dir(configPath)
+		overlayPath := filepath.Join(configDir, "ralph-local.toml")
+
+		if _, err := os.Stat(overlayPath); err == nil {
+			overlayConfig := &Config{}
+			meta, err := c.loadConfigFile(overlayPath, overlayConfig)
+			if err != nil {
+				return fmt.Errorf("failed to load overlay config file %s: %w", overlayPath, err)
+			}
+			mergeConfig(configFromFile, overlayConfig, meta)
+		}
 	}
 
 	env := readEnv()
@@ -75,7 +90,7 @@ func (c *Config) LoadConfig() error {
 	return nil
 }
 
-func (c *Config) resolveFileConfig() (*Config, error) {
+func (c *Config) resolveFileConfig() (*Config, string, error) {
 	configFromFile := &Config{}
 
 	// Priority 1: Config file path from flag (c.ConfigFile is already set by flag parsing)
@@ -92,28 +107,30 @@ func (c *Config) resolveFileConfig() (*Config, error) {
 			configPath = filepath.Join(cwd, configPath)
 		}
 
-		if err := c.loadConfigFile(configPath, configFromFile); err != nil {
-			return nil, fmt.Errorf("failed to load config file %s: %w", configPath, err)
+		if _, err := c.loadConfigFile(configPath, configFromFile); err != nil {
+			return nil, "", fmt.Errorf("failed to load config file %s: %w", configPath, err)
 		}
 
-		return configFromFile, nil
+		return configFromFile, configPath, nil
 	}
 
-	loadDefaultConfig(c, configFromFile)
+	foundPath := loadDefaultConfig(c, configFromFile)
 
-	return configFromFile, nil
+	return configFromFile, foundPath, nil
 }
 
-func loadDefaultConfig(c *Config, target *Config) {
+func loadDefaultConfig(c *Config, target *Config) string {
 	cwd, _ := os.Getwd()
 	for _, name := range []string{"ralph.toml", ".ralphrc.toml", ".ralphrc"} {
 		path := filepath.Join(cwd, name)
 		if _, err := os.Stat(path); err == nil {
-			_ = c.loadConfigFile(path, target)
+			_, _ = c.loadConfigFile(path, target)
 
-			return
+			return path
 		}
 	}
+
+	return ""
 }
 
 func readEnv() envValues {
@@ -219,8 +236,87 @@ func defaultLogFile() string {
 }
 
 // loadConfigFile reads a TOML config file and populates the given Config.
-func (c *Config) loadConfigFile(path string, target *Config) error {
-	_, err := toml.DecodeFile(path, target)
+func (c *Config) loadConfigFile(path string, target *Config) (toml.MetaData, error) {
+	return toml.DecodeFile(path, target)
+}
 
-	return err
+func mergeConfig(base *Config, overlay *Config, meta toml.MetaData) {
+	mergeScalars(base, overlay, meta)
+	mergePromptOverrides(base, overlay, meta)
+}
+
+func mergeScalars(base *Config, overlay *Config, meta toml.MetaData) {
+	if meta.IsDefined("max-iterations") {
+		base.MaxIterations = overlay.MaxIterations
+	}
+	if meta.IsDefined("no-specs-index") {
+		base.NoSpecsIndex = overlay.NoSpecsIndex
+	}
+	if meta.IsDefined("no-log") {
+		base.NoLog = overlay.NoLog
+	}
+	if meta.IsDefined("log-truncate") {
+		base.LogTruncate = overlay.LogTruncate
+	}
+
+	mergeStringScalars(base, overlay, meta)
+}
+
+func mergeStringScalars(base *Config, overlay *Config, meta toml.MetaData) {
+	if meta.IsDefined("specs-dir") {
+		base.SpecsDir = overlay.SpecsDir
+	}
+	if meta.IsDefined("specs-index-file") {
+		base.SpecsIndexFile = overlay.SpecsIndexFile
+	}
+	if meta.IsDefined("implementation-plan-name") {
+		base.ImplementationPlanName = overlay.ImplementationPlanName
+	}
+	if meta.IsDefined("log-file") {
+		base.LogFile = overlay.LogFile
+	}
+	if meta.IsDefined("custom-prompt") {
+		base.CustomPrompt = overlay.CustomPrompt
+	}
+	if meta.IsDefined("prompts-dir") {
+		base.PromptsDir = overlay.PromptsDir
+	}
+	if meta.IsDefined("agent") {
+		base.AgentName = overlay.AgentName
+	}
+	if meta.IsDefined("model") {
+		base.Model = overlay.Model
+	}
+	if meta.IsDefined("agent-mode") {
+		base.AgentMode = overlay.AgentMode
+	}
+}
+
+func mergePromptOverrides(base *Config, overlay *Config, meta toml.MetaData) {
+	if len(overlay.PromptOverrides) == 0 {
+		return
+	}
+
+	if base.PromptOverrides == nil {
+		base.PromptOverrides = make(map[string]PromptConfigOverride)
+	}
+
+	for k, v := range overlay.PromptOverrides {
+		if baseVal, ok := base.PromptOverrides[k]; ok {
+			// To correctly merge structs inside the map, we need to check if fields are defined in TOML.
+			// However, toml.MetaData keys are flat.
+			// We can check specific keys.
+			baseKey := []string{"prompt-overrides", k}
+
+			if meta.IsDefined(append(baseKey, "model")...) {
+				baseVal.Model = v.Model
+			}
+			if meta.IsDefined(append(baseKey, "agent-mode")...) {
+				baseVal.AgentMode = v.AgentMode
+			}
+			base.PromptOverrides[k] = baseVal
+		} else {
+			base.PromptOverrides[k] = v
+		}
+	}
 }
