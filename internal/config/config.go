@@ -77,8 +77,16 @@ func (c *Config) LoadConfig() error {
 
 func (c *Config) resolveFileConfig() (*Config, error) {
 	configFromFile := &Config{}
-	if c.ConfigFile != "" {
-		configPath := c.ConfigFile
+
+	// Priority 1: Config file path from flag (c.ConfigFile is already set by flag parsing)
+	configPath := c.ConfigFile
+
+	// Priority 2: Config file path from environment variable
+	if configPath == "" {
+		configPath = os.Getenv("RALPH_CONFIG")
+	}
+
+	if configPath != "" {
 		if !filepath.IsAbs(configPath) {
 			cwd, _ := os.Getwd()
 			configPath = filepath.Join(cwd, configPath)
