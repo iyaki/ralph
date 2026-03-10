@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion Needed (Phase 3 pending)
+**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 started)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -90,12 +90,12 @@
 
 #### 3.1 Prompt Resolution Coverage
 
-- [ ] Implement `TestE2EInlinePrompt`:
-  - [ ] Use `--prompt "custom prompt"`.
-  - [ ] Assert agent receives the inline prompt.
-- [ ] Implement `TestE2EStdinPrompt`:
-  - [ ] Pipe prompt via stdin (`-` argument or implicit).
-  - [ ] Assert agent receives the stdin prompt.
+- [x] Implement `TestE2EInlinePrompt`:
+  - [x] Use `--prompt "custom prompt"`.
+  - [x] Assert agent receives the inline prompt.
+- [x] Implement `TestE2EStdinPrompt`:
+  - [x] Pipe prompt via stdin (`-` argument or implicit).
+  - [x] Assert agent receives the stdin prompt.
 
 #### 3.2 Extended CLI Flags Coverage
 
@@ -139,6 +139,7 @@
 | 2026-03-10 | `go test ./test/e2e -run TestE2EMissingPromptFile`               | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ELogging`                         | Passed |
 | 2026-03-10 | `go test -v ./test/e2e` (all scenarios)                          | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2E.*Prompt`                        | Passed |
 
 ## Summary
 
@@ -146,13 +147,14 @@
 | :------------------------------ | :---------- | :--------- |
 | Phase 1: Test Infrastructure    | Done        | 100%       |
 | Phase 2: Core Scenarios         | Done        | 100%       |
-| Phase 3: Comprehensive Coverage | Not Started | 0%         |
-| **Remaining Effort**            | **Medium**  | **33%**    |
+| Phase 3: Comprehensive Coverage | In Progress | 20%        |
+| **Remaining Effort**            | **Medium**  | **20%**    |
 
 ## Known Existing Work
 
 - `test/e2e/harness_test.go`: Complete harness implementation.
 - `test/e2e/scenarios_test.go`: Basic scenarios implemented.
+- `test/e2e/prompt_test.go`: Prompt resolution scenarios.
 - `test/e2e/agents/ralph-test-agent/`: Fully functional test agent.
 
 ## Manual Deployment Tasks
