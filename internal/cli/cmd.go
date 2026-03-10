@@ -216,7 +216,7 @@ func RunLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 		}
 
 		// Check for completion signal
-		if strings.Contains(result, completionSignal) {
+		if hasCompletionSignal(result, completionSignal) {
 			writef("\nAll planned tasks completed!\n")
 			writef("Completed at iteration %d of %d\n", i, cfg.MaxIterations)
 
@@ -229,4 +229,14 @@ func RunLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 	writef("\nReached max iterations (%d) without completing all planned tasks.\n", cfg.MaxIterations)
 
 	return fmt.Errorf("max iterations reached")
+}
+
+func hasCompletionSignal(result, completionSignal string) bool {
+	for line := range strings.SplitSeq(result, "\n") {
+		if strings.TrimSpace(line) == completionSignal {
+			return true
+		}
+	}
+
+	return false
 }

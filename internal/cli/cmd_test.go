@@ -109,6 +109,28 @@ func TestRunLoopCompletesOnSignal(t *testing.T) {
 	}
 }
 
+func TestRunLoopDoesNotCompleteWhenSignalOnlyAppearsInEchoedPrompt(t *testing.T) {
+	tmp := t.TempDir()
+	writeExecutable(t, tmp, "opencode", "#!/bin/sh\necho \"$*\"\n")
+	t.Setenv("PATH", tmp)
+	t.Setenv("DEBUG", "")
+
+	cfg := &config.Config{MaxIterations: 2, AgentName: "opencode"}
+	var out bytes.Buffer
+	err := cli.RunLoop(cfg, "task <COMPLETION_SIGNAL>", "build", &out)
+	if err == nil {
+		t.Fatal("expected max iterations error when completion signal is not explicitly returned")
+	}
+	if !strings.Contains(err.Error(), "max iterations reached") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output := out.String()
+	if strings.Contains(output, "All planned tasks completed!") {
+		t.Fatalf("expected no completion message when signal is only in echoed prompt, got %q", output)
+	}
+}
+
 func TestRunLoopDebugMode(t *testing.T) {
 	tmp := t.TempDir()
 	writeExecutable(t, tmp, "opencode", "#!/bin/sh\necho \"should-not-run\"\n")
