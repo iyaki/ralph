@@ -1,6 +1,6 @@
 # Config by Prompt
 
-Status: Proposed
+Status: Implemented
 
 ## Overview
 
