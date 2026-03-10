@@ -97,6 +97,12 @@ internal/
 2. Otherwise, the loader checks in order: `ralph.toml`, `.ralphrc.toml`, `.ralphrc` (current directory only).
 3. The first existing file is parsed as TOML.
 
+### Command routing interaction
+
+1. Config loading and precedence do not depend on whether invocation is `ralph run ...`, `ralph <prompt> ...` (alias), or an explicit subcommand.
+2. Routing behavior is defined in [specs/run-command.md](run-command.md).
+3. Effective precedence remains unchanged: flags > env vars > config file > defaults.
+
 ## APIs
 
 - None. Configuration is local and file-based.
@@ -208,6 +214,9 @@ internal/
 - `RALPH_MAX_ITERATIONS=2 ralph build` uses `2`.
 - `ralph --config ./ralph.toml` loads TOML values.
 - Default values apply when no flags, env vars, or config files are provided.
+- `ralph run build --max-iterations 1` uses `1`.
+- `RALPH_MAX_ITERATIONS=2 ralph run build` uses `2`.
+- `ralph` applies the same config precedence as `ralph run build`.
 
 ## Appendices
 

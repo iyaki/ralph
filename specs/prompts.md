@@ -64,6 +64,8 @@ internal/
 5. If not found, it falls back to built-in prompts for `build` and `plan`.
 6. If no source is valid, it returns an error.
 
+Note: prompt resolution behavior is independent of command routing. Routing and collision rules are defined in [specs/run-command.md](run-command.md).
+
 ## Data model
 
 ### Core Entities
@@ -95,6 +97,25 @@ internal/
 4. If a prompt file exists at `PromptsDir/<promptName>.md` (searching upward), read it.
 5. If `promptName` is `build` or `plan`, generate the built-in prompt.
 6. Otherwise, return an error.
+
+### Resolve prompt through explicit run command
+
+1. User invokes `ralph run [prompt] [scope]`.
+2. Run command determines `promptName` and optional `scope`.
+3. Prompt resolver applies the same precedence chain as the generic happy path.
+4. Resulting prompt text is passed to loop execution.
+
+### Resolve prompt through alias
+
+1. User invokes `ralph <prompt> [scope]`.
+2. Command router treats this as an alias to `ralph run <prompt> [scope]` when `<prompt>` is not a registered subcommand.
+3. Prompt resolver behavior is identical to explicit run invocation.
+
+### Resolve prompt when command name collides with prompt name
+
+1. User invokes `ralph <name>` where `<name>` is both a subcommand and a prompt file name.
+2. Command router dispatches to the subcommand.
+3. To execute the prompt, user invokes `ralph run <name>`.
 
 ### Resolve prompt (missing file)
 
@@ -143,6 +164,8 @@ internal/
 - `echo "hi" | ralph -` reads from stdin.
 - `ralph --prompt-file ./prompts/build.md build` uses that file.
 - `ralph plan` uses built-in plan prompt when no file exists.
+- `ralph run plan` uses built-in plan prompt when no file exists.
+- `ralph init` executes init subcommand, while `ralph run init` resolves prompt `init`.
 
 ## Appendices
 
