@@ -7,8 +7,22 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/iyaki/ralph/internal/config"
 	"github.com/spf13/cobra"
 )
+
+var isInteractiveTerminal = func() bool {
+	fileInfo, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+
+	return (fileInfo.Mode() & os.ModeCharDevice) != 0
+}
+
+var getWorkingDir = os.Getwd
+
+const defaultInitMaxIterations = 25
 
 // InitSession represents one interactive run of ralph init.
 type InitSession struct {
@@ -57,17 +71,16 @@ func NewInitCommand() *cobra.Command {
 		Use:   "init",
 		Short: "Initialize Ralph configuration",
 		Long:  `Interactive command to generate a ralph.toml configuration file.`,
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			session := &InitSession{
 				OutputPath: output,
 				Answers:    &InitAnswers{},
 				Reader:     bufio.NewReader(os.Stdin),
-				Writer:     os.Stdout,
+				Writer:     cmd.OutOrStdout(),
 			}
 
 			// TTY detection
-			fileInfo, _ := os.Stdout.Stat()
-			session.IsTTY = (fileInfo.Mode() & os.ModeCharDevice) != 0
+			session.IsTTY = isInteractiveTerminal()
 
 			if !session.IsTTY {
 				return fmt.Errorf("ralph init requires an interactive terminal")
@@ -75,7 +88,7 @@ func NewInitCommand() *cobra.Command {
 
 			// Default output path
 			if session.OutputPath == "" {
-				cwd, _ := os.Getwd()
+				cwd, _ := getWorkingDir()
 				session.OutputPath = filepath.Join(cwd, "ralph.toml")
 			}
 
@@ -91,8 +104,23 @@ func NewInitCommand() *cobra.Command {
 				}
 			}
 
-			// Implementation of the full interactive flow is pending.
-			_, _ = fmt.Fprintf(session.Writer, "Initializing Ralph configuration at %s\n", session.OutputPath)
+			cfg := &config.Config{
+				AgentName:              "opencode",
+				MaxIterations:          defaultInitMaxIterations,
+				SpecsDir:               "specs",
+				SpecsIndexFile:         "README.md",
+				ImplementationPlanName: "IMPLEMENTATION_PLAN.md",
+				PromptsDir:             ".ralph/prompts",
+				NoLog:                  false,
+				LogFile:                "./ralph.log",
+				LogTruncate:            false,
+			}
+
+			if err := config.WriteConfig(session.OutputPath, cfg); err != nil {
+				return fmt.Errorf("failed to write configuration: %w", err)
+			}
+
+			_, _ = fmt.Fprintf(session.Writer, "Initialized Ralph configuration at %s\n", session.OutputPath)
 
 			return nil
 		},
