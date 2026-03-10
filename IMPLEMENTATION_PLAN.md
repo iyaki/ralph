@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 ~70% done)
+**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 ~85% done)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -107,9 +107,9 @@
 - [x] Implement `TestE2ELoggingFlags`:
   - [x] Test `--no-log`.
   - [x] Test `--log-truncate`.
-- [ ] Implement `TestE2EModelFlags`:
-  - [ ] Test `--model` override.
-  - [ ] Test `--agent-mode` override.
+- [x] Implement `TestE2EModelFlags`:
+  - [x] Test `--model` override.
+  - [x] Test `--agent-mode` override.
 
 #### 3.3 Configuration Precedence
 
@@ -143,6 +143,7 @@
 | 2026-03-10 | `go test ./test/e2e -run TestE2ESpecsFlags`                      | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2EPlanFlags`                       | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ELoggingFlags`                    | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2EModelFlags`                      | Passed |
 
 ## Summary
 
@@ -150,7 +151,7 @@
 | :------------------------------ | :---------- | :--------- |
 | Phase 1: Test Infrastructure    | Done        | 100%       |
 | Phase 2: Core Scenarios         | Done        | 100%       |
-| Phase 3: Comprehensive Coverage | In Progress | 70%        |
+| Phase 3: Comprehensive Coverage | In Progress | 85%        |
 | **Remaining Effort**            | **Medium**  | **10%**    |
 
 ## Known Existing Work
