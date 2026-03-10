@@ -28,3 +28,4 @@ Design docs and technical specifications
 - [init-command.md](init-command.md)
 - [run-command.md](run-command.md)
 - [config-by-prompt.md](config-by-prompt.md)
+- [config-local-overlay.md](config-local-overlay.md)
