@@ -12,6 +12,7 @@
 - Document build, test, and coverage gate commands.
 - Specify local run workflow and debug mode behavior.
 - Capture required tooling versions and code style expectations.
+- Reference dedicated test strategy specs, including end-to-end coverage.
 
 ### Non-Goals
 
@@ -21,7 +22,12 @@
 ### Scope
 
 - In scope: local development commands, test workflows, coverage gate, and debug mode.
+- In scope: pointers to specialized testing specs that define deeper coverage requirements.
 - Out of scope: external agent CLI installation and system packaging.
+
+### Related specs
+
+- End-to-end testing requirements and scenario matrix are defined in [e2e-testing.md](e2e-testing.md).
 
 ## Architecture
 
@@ -112,14 +118,6 @@ internal/
 2. Run any CLI command.
 3. The loop prints the prompt and exits after the first iteration.
 
-## APIs
-
-- None. This spec covers local development workflows.
-
-## Client SDK Design
-
-- Not applicable.
-
 ## Configuration
 
 - `DEBUG=1` enables debug mode to short-circuit the agent loop.
@@ -140,9 +138,6 @@ internal/
 | Go 1.21    | Build and test toolchain       |
 | Make       | Build/test convenience targets |
 
-## Open Questions / Risks
-
-- Should coverage gate be configurable per branch or CI environment?
 
 ## Verifications
 
