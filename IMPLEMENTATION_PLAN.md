@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 ~85% done)
+**Status:** Complete
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -11,7 +11,7 @@
 | **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | ✅           |
 | **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | ✅           |
 | **Core Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | ✅           |
-| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `test/*.go`         | [ ]          |
+| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `test/*.go`         | ✅           |
 
 ## Phased Plan
 
@@ -113,10 +113,10 @@
 
 #### 3.3 Configuration Precedence
 
-- [ ] Implement `TestE2EConfigPrecedence`:
-  - [ ] Set conflicting values in Config File, Env Var, and CLI Flag.
-  - [ ] Assert CLI Flag wins.
-  - [ ] Assert Env Var wins over Config File.
+- [x] Implement `TestE2EConfigPrecedence`:
+  - [x] Set conflicting values in Config File, Env Var, and CLI Flag.
+  - [x] Assert CLI Flag wins.
+  - [x] Assert Env Var wins over Config File.
 
 **Definition of Done:**
 
@@ -144,15 +144,16 @@
 | 2026-03-10 | `go test ./test/e2e -run TestE2EPlanFlags`                       | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ELoggingFlags`                    | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2EModelFlags`                      | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2EConfigPrecedence`                | Passed |
 
 ## Summary
 
-| Phase                           | Status      | Completion |
-| :------------------------------ | :---------- | :--------- |
-| Phase 1: Test Infrastructure    | Done        | 100%       |
-| Phase 2: Core Scenarios         | Done        | 100%       |
-| Phase 3: Comprehensive Coverage | In Progress | 85%        |
-| **Remaining Effort**            | **Medium**  | **10%**    |
+| Phase                           | Status  | Completion |
+| :------------------------------ | :------ | :--------- |
+| Phase 1: Test Infrastructure    | Done    | 100%       |
+| Phase 2: Core Scenarios         | Done    | 100%       |
+| Phase 3: Comprehensive Coverage | Done    | 100%       |
+| **Remaining Effort**            | **Low** | **0%**     |
 
 ## Known Existing Work
 
@@ -160,6 +161,7 @@
 - `test/e2e/scenarios_test.go`: Basic scenarios implemented.
 - `test/e2e/prompt_test.go`: Prompt resolution scenarios.
 - `test/e2e/agents/ralph-test-agent/`: Fully functional test agent.
+- `test/e2e/config_precedence_test.go`: Config precedence tests.
 
 ## Manual Deployment Tasks
 
