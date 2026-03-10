@@ -99,9 +99,9 @@
 
 #### 3.2 Extended CLI Flags Coverage
 
-- [ ] Implement `TestE2ESpecsFlags`:
-  - [ ] Test `--specs-dir` and `--specs-index`.
-  - [ ] Test `--no-specs-index`.
+- [x] Implement `TestE2ESpecsFlags`:
+  - [x] Test `--specs-dir` and `--specs-index`.
+  - [x] Test `--no-specs-index`.
 - [ ] Implement `TestE2EPlanFlags`:
   - [ ] Test `--implementation-plan-name`.
 - [ ] Implement `TestE2ELoggingFlags`:
@@ -140,6 +140,7 @@
 | 2026-03-10 | `go test ./test/e2e -run TestE2ELogging`                         | Passed |
 | 2026-03-10 | `go test -v ./test/e2e` (all scenarios)                          | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2E.*Prompt`                        | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2ESpecsFlags`                      | Passed |
 
 ## Summary
 
