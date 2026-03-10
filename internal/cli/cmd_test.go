@@ -203,3 +203,71 @@ func TestRunLoopMaxIterationsWithoutCompletion(t *testing.T) {
 		t.Fatal("expected max iterations error")
 	}
 }
+
+func TestNewRalphCommandDefaultToBuild(t *testing.T) {
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("DEBUG", "1")
+
+	binDir := t.TempDir()
+	writeExecutable(t, binDir, "opencode", "#!/bin/sh\necho \"ok\"\n")
+	t.Setenv("PATH", binDir)
+
+	cmd := cli.NewRalphCommand()
+	cmd.SetArgs([]string{}) // No args
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected execute success in debug mode, got: %v", err)
+	}
+
+	output := out.String()
+	if !strings.Contains(output, "[build]") {
+		t.Errorf("expected output to contain [build] (default behavior), got %q", output)
+	}
+}
+
+func TestNewRalphCommandInit(t *testing.T) {
+	// Tests that `ralph init` executes the init command
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	tmp := t.TempDir()
+	if err := os.Chdir(tmp); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+
+	cmd := cli.NewRalphCommand()
+	cmd.SetArgs([]string{"init"})
+
+	// Capture output
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	err = cmd.Execute()
+	if err == nil {
+		t.Fatal("expected error because init requires TTY")
+	}
+
+	if !strings.Contains(err.Error(), "ralph init requires an interactive terminal") {
+		t.Errorf("expected error to contain 'ralph init requires an interactive terminal', got %q", err.Error())
+	}
+}
