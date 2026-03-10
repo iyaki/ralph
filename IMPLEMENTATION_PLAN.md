@@ -1,6 +1,6 @@
 # Implementation Plan (config-by-prompt)
 
-**Status:** In Progress
+**Status:** Complete
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/config-by-prompt.md](specs/config-by-prompt.md)
 
@@ -11,7 +11,7 @@
 | **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [x]          |
 | **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [x]          |
 | **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [x]          |
-| **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [ ]          |
+| **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [x]          |
 
 ## Phased Plan
 
@@ -67,14 +67,14 @@
 
 #### 3.2 CLI Command Logic
 
-- [ ] Update `RunE` in `internal/cli/cmd.go`.
-- [ ] Implement precedence logic:
+- [x] Update `RunE` in `internal/cli/cmd.go`.
+- [x] Implement precedence logic:
   1. CLI Flags (`cmd.Flags().Changed`)
   2. Env Vars (`os.Getenv`)
   3. Front Matter (from `GetPrompt`)
   4. Config Override (`cfg.PromptOverrides[name]`)
   5. Global Config (already in `cfg`)
-- [ ] Apply the effective `Model` and `AgentMode` to the `Config` object before `RunLoop`.
+- [x] Apply the effective `Model` and `AgentMode` to the `Config` object before `RunLoop`.
 
 **Definition of Done:**
 
@@ -90,6 +90,7 @@
 | 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
 | 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
 | 2026-03-10 | `go test -v ./internal/cli`    | PASS   |
+| 2026-03-10 | `go test -v ./internal/cli`    | PASS   |
 
 ## Summary
 
@@ -97,8 +98,8 @@
 | :-------------------------------- | :-------- | :--------- |
 | Phase 1: Config Data Model        | Completed | 100%       |
 | Phase 2: Front Matter Parsing     | Completed | 100%       |
-| Phase 3: Integration & Precedence | Partial   | 50%        |
-| **Remaining Effort**              | **Low**   | **16%**    |
+| Phase 3: Integration & Precedence | Completed | 100%       |
+| **Remaining Effort**              | **None**  | **0%**     |
 
 ## Known Existing Work
 
