@@ -22,3 +22,22 @@ func TestE2ECompletionFlow(t *testing.T) {
 
 	runTestCase(t, tc)
 }
+
+func TestE2EMaxIterations(t *testing.T) {
+	tc := TestCase{
+		Name: "Failure Path: Max Iterations Reached",
+		Args: []string{"--prompt-file", "prompt.txt", "--max-iterations", "2"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "never_complete",
+		},
+		Files: map[string]string{
+			"prompt.txt": "Just a simple prompt",
+		},
+		ExpectedExitCode: 1,
+		ExpectedStderrContains: []string{
+			"max iterations reached",
+		},
+	}
+
+	runTestCase(t, tc)
+}
