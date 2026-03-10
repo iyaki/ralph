@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Complete (21/21)
+**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion Needed (Phase 3 pending)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -8,9 +8,10 @@
 
 | System             | Spec                                | Package           | Artifacts           | Implemented? |
 | :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
-| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [x]          |
-| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [x]          |
-| **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [x]          |
+| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | ✅           |
+| **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | ✅           |
+| **Core Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | ✅           |
+| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
 
 ## Phased Plan
 
@@ -49,7 +50,7 @@
 
 ### Phase 2: Core Scenarios
 
-**Goal:** Implement the specific E2E test cases defined in the spec.
+**Goal:** Implement the primary happy/failure paths defined in the spec.
 **Paths:** `test/e2e/`
 
 #### 2.1 Happy Path
@@ -82,6 +83,47 @@
 - All scenarios pass with `go test -v ./test/e2e`.
 - Tests are deterministic and clean up artifacts.
 
+### Phase 3: Comprehensive Coverage
+
+**Goal:** Extend suite to cover ALL supported CLI options, config keys, and output channels as required by spec.
+**Paths:** `test/e2e/`
+
+#### 3.1 Prompt Resolution Coverage
+
+- [ ] Implement `TestE2EInlinePrompt`:
+  - [ ] Use `--prompt "custom prompt"`.
+  - [ ] Assert agent receives the inline prompt.
+- [ ] Implement `TestE2EStdinPrompt`:
+  - [ ] Pipe prompt via stdin (`-` argument or implicit).
+  - [ ] Assert agent receives the stdin prompt.
+
+#### 3.2 Extended CLI Flags Coverage
+
+- [ ] Implement `TestE2ESpecsFlags`:
+  - [ ] Test `--specs-dir` and `--specs-index`.
+  - [ ] Test `--no-specs-index`.
+- [ ] Implement `TestE2EPlanFlags`:
+  - [ ] Test `--implementation-plan-name`.
+- [ ] Implement `TestE2ELoggingFlags`:
+  - [ ] Test `--no-log`.
+  - [ ] Test `--log-truncate`.
+- [ ] Implement `TestE2EModelFlags`:
+  - [ ] Test `--model` override.
+  - [ ] Test `--agent-mode` override.
+
+#### 3.3 Configuration Precedence
+
+- [ ] Implement `TestE2EConfigPrecedence`:
+  - [ ] Set conflicting values in Config File, Env Var, and CLI Flag.
+  - [ ] Assert CLI Flag wins.
+  - [ ] Assert Env Var wins over Config File.
+
+**Definition of Done:**
+
+- Every flag in `ralph --help` has a corresponding e2e test case.
+- Prompt loading from all sources (file, inline, stdin) is verified.
+- Configuration precedence rules are verified.
+
 ## Verification Log
 
 | Date       | Verification Step                                                | Result |
@@ -100,15 +142,18 @@
 
 ## Summary
 
-| Phase                        | Status  | Completion |
-| :--------------------------- | :------ | :--------- |
-| Phase 1: Test Infrastructure | Done    | 100%       |
-| Phase 2: Core Scenarios      | Done    | 100%       |
-| **Remaining Effort**         | **Low** | **0%**     |
+| Phase                           | Status      | Completion |
+| :------------------------------ | :---------- | :--------- |
+| Phase 1: Test Infrastructure    | Done        | 100%       |
+| Phase 2: Core Scenarios         | Done        | 100%       |
+| Phase 3: Comprehensive Coverage | Not Started | 0%         |
+| **Remaining Effort**            | **Medium**  | **33%**    |
 
 ## Known Existing Work
 
-- None. This is a new subsystem.
+- `test/e2e/harness_test.go`: Complete harness implementation.
+- `test/e2e/scenarios_test.go`: Basic scenarios implemented.
+- `test/e2e/agents/ralph-test-agent/`: Fully functional test agent.
 
 ## Manual Deployment Tasks
 
