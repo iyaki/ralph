@@ -9,7 +9,7 @@
 | System                  | Spec                                          | Package           | Artifacts        | Implemented? |
 | :---------------------- | :-------------------------------------------- | :---------------- | :--------------- | :----------- |
 | **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [x]          |
-| **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [ ]          |
+| **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [x]          |
 | **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [ ]          |
 | **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [ ]          |
 
@@ -38,16 +38,16 @@
 
 #### 2.1 YAML Parser Dependency
 
-- [ ] Add `gopkg.in/yaml.v3` dependency.
+- [x] Add `gopkg.in/yaml.v3` dependency.
 
 #### 2.2 Front Matter Extractor
 
-- [ ] Create `internal/prompt/frontmatter.go`.
-- [ ] Implement `ParseFrontMatter(content string) (*PromptFrontMatterSettings, string, error)`.
-- [ ] Ensure `ParseFrontMatter` returns the body with front matter stripped.
-- [ ] Handle invalid YAML (fail fast).
-- [ ] Handle unknown keys (ignore).
-- [ ] Add unit tests for various front matter scenarios (valid, invalid, missing, unknown keys).
+- [x] Create `internal/prompt/frontmatter.go`.
+- [x] Implement `ParseFrontMatter(content string) (*PromptFrontMatterSettings, string, error)`.
+- [x] Ensure `ParseFrontMatter` returns the body with front matter stripped.
+- [x] Handle invalid YAML (fail fast).
+- [x] Handle unknown keys (ignore).
+- [x] Add unit tests for various front matter scenarios (valid, invalid, missing, unknown keys).
 
 **Definition of Done:**
 
@@ -87,15 +87,16 @@
 | Date       | Verification Step              | Result |
 | :--------- | :----------------------------- | :----- |
 | 2026-03-10 | `go test -v ./internal/config` | PASS   |
+| 2026-03-10 | `go test -v ./internal/prompt` | PASS   |
 
 ## Summary
 
-| Phase                             | Status     | Completion |
-| :-------------------------------- | :--------- | :--------- |
-| Phase 1: Config Data Model        | Completed  | 100%       |
-| Phase 2: Front Matter Parsing     | Pending    | 0%         |
-| Phase 3: Integration & Precedence | Pending    | 0%         |
-| **Remaining Effort**              | **Medium** | **66%**    |
+| Phase                             | Status    | Completion |
+| :-------------------------------- | :-------- | :--------- |
+| Phase 1: Config Data Model        | Completed | 100%       |
+| Phase 2: Front Matter Parsing     | Completed | 100%       |
+| Phase 3: Integration & Precedence | Pending   | 0%         |
+| **Remaining Effort**              | **Low**   | **33%**    |
 
 ## Known Existing Work
 
