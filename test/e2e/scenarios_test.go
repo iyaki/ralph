@@ -57,3 +57,27 @@ func TestE2EMissingPromptFile(t *testing.T) {
 
 	runTestCase(t, tc)
 }
+
+func TestE2ELogging(t *testing.T) {
+	tc := TestCase{
+		Name: "Logging: Enabled",
+		Args: []string{"--log-file", "ralph.log", "--prompt-file", "prompt.txt"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "complete_once",
+		},
+		Files: map[string]string{
+			"prompt.txt": "Just a simple prompt",
+		},
+		ExpectedExitCode: 0,
+		ExpectedFiles: []string{
+			"ralph.log",
+		},
+		ExpectedFileContent: map[string][]string{
+			"ralph.log": {
+				"===== Ralph run started at",
+			},
+		},
+	}
+
+	runTestCase(t, tc)
+}

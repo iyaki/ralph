@@ -29,6 +29,10 @@ type TestCase struct {
 	// in the working directory after execution.
 	ExpectedFiles []string
 
+	// ExpectedFileContent is a map of filename to expected substrings that
+	// must appear in the file content.
+	ExpectedFileContent map[string][]string
+
 	// ForbiddenOutput is a list of substrings that must NOT appear in stdout or stderr.
 	ForbiddenOutput []string
 }

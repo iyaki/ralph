@@ -177,4 +177,21 @@ func verifyFiles(t *testing.T, workDir string, tc TestCase) {
 			t.Errorf("expected file missing: %s", filename)
 		}
 	}
+
+	for filename, content := range tc.ExpectedFileContent {
+		path := filepath.Join(workDir, filename)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("failed to read expected file %s: %v", filename, err)
+
+			continue
+		}
+
+		fileContent := string(data)
+		for _, substr := range content {
+			if !strings.Contains(fileContent, substr) {
+				t.Errorf("file %s missing expected content: %q", filename, substr)
+			}
+		}
+	}
 }
