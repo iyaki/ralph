@@ -36,6 +36,14 @@ type TestCase struct {
 	// must appear in the file content.
 	ExpectedFileContent map[string][]string
 
+	// ForbiddenFiles is a list of filenames that must NOT exist
+	// in the working directory after execution.
+	ForbiddenFiles []string
+
+	// ForbiddenFileContent is a map of filename to substrings that
+	// must NOT appear in the file content.
+	ForbiddenFileContent map[string][]string
+
 	// ForbiddenOutput is a list of substrings that must NOT appear in stdout or stderr.
 	ForbiddenOutput []string
 }
