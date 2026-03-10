@@ -1,6 +1,6 @@
 # Run Command
 
-Status: Proposed
+Status: Implemented
 
 ## Overview
 

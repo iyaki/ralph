@@ -1,6 +1,6 @@
 # Release Workflow
 
-Status: Partially Implemented
+Status: Implemented
 
 ## Overview
 
