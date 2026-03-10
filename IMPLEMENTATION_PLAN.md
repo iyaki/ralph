@@ -62,10 +62,10 @@
 
 #### 2.2 Failure Paths
 
-- [ ] Implement `TestE2EMaxIterations`:
-  - [ ] Configure `never_complete` agent.
-  - [ ] Run with low `--max-iterations`.
-  - [ ] Assert non-zero exit code.
+- [x] Implement `TestE2EMaxIterations`:
+  - [x] Configure `never_complete` agent.
+  - [x] Run with low `--max-iterations`.
+  - [x] Assert non-zero exit code.
 - [ ] Implement `TestE2EMissingPromptFile`:
   - [ ] Run with non-existent `--prompt-file`.
   - [ ] Assert non-zero exit code and error message.
@@ -93,13 +93,14 @@
 | 2026-03-10 | `go test ./test/e2e/agents/ralph-test-agent/... && lint && arch` | Passed |
 | 2026-03-10 | `go test ./test/e2e` (validates TestMain & build process)        | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ECompletionFlow`                  | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2EMaxIterations`                   | Passed |
 
 ## Summary
 
 | Phase                        | Status      | Completion |
 | :--------------------------- | :---------- | :--------- |
 | Phase 1: Test Infrastructure | Done        | 100%       |
-| Phase 2: Core Scenarios      | In Progress | 25%        |
+| Phase 2: Core Scenarios      | In Progress | 50%        |
 | **Remaining Effort**         | **Medium**  | **50%**    |
 
 ## Known Existing Work
