@@ -25,6 +25,9 @@ components:
   prompt:
     in:
       - internal/prompt/**
+  test:
+    in:
+      - test/**
 
 commonComponents:
   - config
@@ -63,4 +66,7 @@ deps:
   config:
     mayDependOn:
       - config
+    anyVendorDeps: true
+  test:
+    anyProjectDeps: true
     anyVendorDeps: true
