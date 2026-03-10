@@ -41,3 +41,19 @@ func TestE2EMaxIterations(t *testing.T) {
 
 	runTestCase(t, tc)
 }
+
+func TestE2EMissingPromptFile(t *testing.T) {
+	tc := TestCase{
+		Name: "Failure Path: Missing Prompt File",
+		Args: []string{"--prompt-file", "non-existent-prompt.txt"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "never_complete",
+		},
+		ExpectedExitCode: 1,
+		ExpectedStderrContains: []string{
+			"failed to read prompt file",
+		},
+	}
+
+	runTestCase(t, tc)
+}
