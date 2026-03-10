@@ -1,6 +1,6 @@
 # Makefile for Ralph Go CLI
 
-.PHONY: all build clean install test test-coverage deps help quality format lint security arch run analyze
+.PHONY: all build clean install test test-e2e test-coverage deps help quality format lint security arch run analyze
 
 BINARY_NAME=ralph
 GO=go
@@ -19,6 +19,7 @@ help:
 	"  make format       Run gofmt on tracked Go files" \
 	"  make lint         Run golangci-lint" \
 	"  make test         Run tests" \
+	"  make test-e2e     Run end-to-end tests" \
 	"  make test-race    Run tests with race detection" \
 	"  make coverage     Run coverage gate only" \
 	"  make mutation     Run mutation testing (final stage)" \
@@ -44,6 +45,10 @@ lint:
 # Run tests
 test:
 	$(GO) test -v ./...
+
+# Run end-to-end tests
+test-e2e:
+	$(GO) test -v ./test/e2e
 
 # Run coverage gate
 coverage: test-coverage

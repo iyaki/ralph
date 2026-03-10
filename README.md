@@ -150,12 +150,14 @@ Ralph supports multiple AI CLI agents. Each agent has its own implementation in 
 You can select the agent in three ways:
 
 1. **Command-line flag** (highest priority):
+
    ```bash
    ralph --agent claude
    ralph --agent cursor
    ```
 
 2. **Environment variable**:
+
    ```bash
    export RALPH_AGENT=claude
    ralph
@@ -171,12 +173,14 @@ You can select the agent in three ways:
 You can optionally specify which AI model to use with the `--model` flag or `RALPH_MODEL` environment variable:
 
 1. **Command-line flag** (highest priority):
+
    ```bash
    ralph --agent claude --model claude-sonnet-4
    ralph --agent opencode --model gpt-4
    ```
 
 2. **Environment variable**:
+
    ```bash
    export RALPH_MODEL=claude-sonnet-4
    ralph --agent claude
@@ -195,12 +199,14 @@ If no model is specified, the agent will use its default model.
 You can optionally select a custom agent mode (sub-agent) for tools that support it:
 
 1. **Command-line flag** (highest priority):
+
    ```bash
    ralph --agent opencode --agent-mode reviewer
    ralph --agent claude --agent-mode planner
    ```
 
 2. **Environment variable**:
+
    ```bash
    export RALPH_AGENT_MODE=reviewer
    ralph --agent opencode
@@ -230,7 +236,7 @@ This modular design makes it easy to add support for additional AI CLI tools in 
 Configuration works identically to the shell script:
 
 1. **Command-line flags** (highest priority)
-2. **Environment variables** 
+2. **Environment variables**
 3. **Config file** (`.ralphrc`)
 4. **Defaults** (lowest priority)
 
@@ -360,10 +366,22 @@ go mod tidy
 make test
 ```
 
+Run end-to-end tests:
+
+```bash
+make test-e2e
+```
+
 Or:
 
 ```bash
 go test -v ./...
+```
+
+For e2e directly with Go:
+
+```bash
+go test -v ./test/e2e
 ```
 
 ## Advantages Over Shell Script

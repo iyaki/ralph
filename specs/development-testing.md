@@ -101,6 +101,11 @@ internal/
 1. Run `make test`.
 2. Executes `go test -v ./...`.
 
+### Test (end-to-end)
+
+1. Run `make test-e2e`.
+2. Executes `go test -v ./test/e2e`.
+
 ### Test (coverage gate)
 
 1. Run `make test-coverage`.
@@ -138,11 +143,11 @@ internal/
 | Go 1.21    | Build and test toolchain       |
 | Make       | Build/test convenience targets |
 
-
 ## Verifications
 
 - `make build` produces a `ralph` binary.
 - `make test` completes successfully.
+- `make test-e2e` executes the e2e suite successfully.
 - `make test-coverage` fails when coverage is below 90%.
 - `DEBUG=1 ./ralph plan` exits after one iteration.
 
