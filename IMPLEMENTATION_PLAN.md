@@ -1,6 +1,6 @@
 # Implementation Plan (config-local)
 
-**Status:** Pending Implementation (0/10)
+**Status:** In Progress (5/10)
 **Last Updated:** 2026-03-10
 **Reference:** `specs/config-local-overlay.md`
 
@@ -24,11 +24,11 @@
 
 **Checklist:**
 
-- [ ] Refactor `resolveFileConfig` to return base config path alongside the config object
-- [ ] Implement `resolveLocalOverlayPath(baseConfigPath string) string`
-- [ ] Implement `mergeConfig(base *Config, overlay *Config) *Config` - [ ] Scalar overrides - [ ] Map/Table deep merge - [ ] Array/List full replacement - [ ] `prompt-overrides` deep merge
-- [ ] Update `LoadConfig` to apply the overlay if present
-- [ ] Add unit tests for: - [ ] Overlay discovery (same dir as base) - [ ] Merge semantics (scalars, arrays, tables) - [ ] Missing overlay (no error) - [ ] Invalid overlay (fail fast)
+- [x] Refactor `resolveFileConfig` to return base config path alongside the config object
+- [x] Implement `resolveLocalOverlayPath(baseConfigPath string) string`
+- [x] Implement `mergeConfig(base *Config, overlay *Config) *Config` - [x] Scalar overrides - [x] Map/Table deep merge - [x] Array/List full replacement - [x] `prompt-overrides` deep merge
+- [x] Update `LoadConfig` to apply the overlay if present
+- [x] Add unit tests for: - [x] Overlay discovery (same dir as base) - [x] Merge semantics (scalars, arrays, tables) - [x] Missing overlay (no error) - [x] Invalid overlay (fail fast)
 
 **Definition of Done:**
 
@@ -57,18 +57,18 @@
 
 ## Verification Log
 
-| Date | Verification Step | Result |
-| :--- | :---------------- | :----- |
-|      |                   |        |
+| Date       | Verification Step               | Result |
+| :--------- | :------------------------------ | :----- |
+| 2026-03-10 | `go test ./internal/config/...` | PASS   |
 
 ## Summary
 
-| Phase   | Goal                           | Status  |
-| :------ | :----------------------------- | :------ |
-| Phase 1 | Config Loading & Overlay Logic | Pending |
-| Phase 2 | End-to-End Verification        | Pending |
+| Phase   | Goal                           | Status    |
+| :------ | :----------------------------- | :-------- |
+| Phase 1 | Config Loading & Overlay Logic | Completed |
+| Phase 2 | End-to-End Verification        | Pending   |
 
-**Remaining effort:** Implement loading logic and comprehensive tests.
+**Remaining effort:** Implement E2E tests.
 
 ## Known Existing Work
 
