@@ -11,6 +11,7 @@
 
 - Validate complete CLI flows from process startup through exit code and output.
 - Cover happy path, failure path, and edge-case behavior across prompt, config, logging, and agent execution.
+- Require e2e coverage for every supported CLI option, configuration path/key, and user-visible output behavior.
 - Keep tests reproducible in local and CI environments.
 - Standardize all e2e scenarios on a single custom test-only agent.
 
@@ -24,6 +25,7 @@
 ### Scope
 
 - In scope: CLI invocation behavior, file-based config/prompt loading, completion loop behavior, logging side effects, and command exit semantics.
+- In scope: exhaustive option/config/output coverage requirements and traceability from each supported surface to one or more e2e scenarios.
 - In scope: one dedicated test-only agent used by every e2e scenario.
 - Out of scope: upstream agent provider reliability, remote API latency profiling, and long-running soak/perf tests.
 
@@ -157,6 +159,34 @@ test/
 | `--agent`               | Select test-only agent name    | Fixed for all e2e scenarios               |
 | `RALPH_TEST_AGENT_MODE` | Control test-only behavior     | Scenario-specific (`complete_once`, etc.) |
 
+## Coverage Requirements
+
+### Option coverage (CLI flags/args)
+
+- Every supported CLI option must have at least one e2e case that validates expected success behavior.
+- Every option that can fail must have at least one e2e case that validates expected failure behavior (stderr + non-zero exit).
+- Every option with boundaries or enums must include boundary/invalid-value scenarios.
+- Coverage includes both direct invocation and interactions with related options when semantics change in combination.
+
+### Configuration coverage (file/env/default/flag)
+
+- Every supported configuration key must be covered by e2e scenarios for applied behavior.
+- Precedence paths must be covered where applicable: defaults, config file, environment variables, and CLI flags.
+- Invalid configuration shape/value for each key category must be covered by failure-path e2e scenarios.
+- Missing-file and unreadable-file configuration behaviors must be covered.
+
+### Output coverage (observable results)
+
+- Every user-visible output channel must be asserted in e2e: stdout, stderr, exit code, and filesystem side effects (for example, log files).
+- For each major workflow, assert outputs for success, failure, and edge-case execution.
+- Logging scenarios must validate expected entries and validate absence of sensitive output leaks.
+
+### Traceability and completeness
+
+- Maintain an e2e coverage matrix that maps each option/config key/output behavior to concrete test names.
+- A supported option/config key/output behavior without a mapped e2e scenario is a spec violation.
+- CI must execute the full e2e suite and fail when required coverage entries are missing.
+
 ## Permissions
 
 - Requires permission to execute subprocesses.
@@ -189,10 +219,11 @@ test/
 - `go test ./test/e2e -run TestE2EMissingPromptFile` returns non-zero exit behavior as specified.
 - `go test ./test/e2e -run TestE2ELogging` confirms log file creation and expected entries.
 - Full suite execution is stable across repeated runs with no flaky failures.
+- Coverage matrix includes every supported option/config key/output behavior with at least one mapped e2e test.
 
 ## Appendices
 
-### Scenario matrix (minimum coverage)
+### Scenario matrix (comprehensive coverage)
 
 | Area              | Scenario                      | Expected Result                   |
 | ----------------- | ----------------------------- | --------------------------------- |
@@ -210,6 +241,11 @@ test/
 | Logging           | Logging enabled               | Log file contains expected events |
 | Logging           | Logging disabled              | No log file created               |
 | Debug mode        | `DEBUG=1` enabled             | Single-iteration behavior         |
+| CLI options       | Every supported option        | At least one success-path case    |
+| CLI options       | Every fail-capable option     | At least one failure-path case    |
+| Configuration     | Every supported config key    | Applied and observable behavior   |
+| Configuration     | Precedence paths              | Defaults < file < env < flag      |
+| Output channels   | stdout/stderr/exit/files      | Expected outputs per workflow     |
 
 ### Determinism rules
 
