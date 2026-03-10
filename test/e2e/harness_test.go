@@ -175,14 +175,35 @@ func verifyForbidden(t *testing.T, tc TestCase, res RunResult) {
 
 func verifyFiles(t *testing.T, workDir string, tc TestCase) {
 	t.Helper()
-	for _, filename := range tc.ExpectedFiles {
+	verifyExpectedFiles(t, workDir, tc.ExpectedFiles)
+	verifyForbiddenFiles(t, workDir, tc.ForbiddenFiles)
+	verifyExpectedFileContent(t, workDir, tc.ExpectedFileContent)
+	verifyForbiddenFileContent(t, workDir, tc.ForbiddenFileContent)
+}
+
+func verifyExpectedFiles(t *testing.T, workDir string, files []string) {
+	t.Helper()
+	for _, filename := range files {
 		path := filepath.Join(workDir, filename)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
 			t.Errorf("expected file missing: %s", filename)
 		}
 	}
+}
 
-	for filename, content := range tc.ExpectedFileContent {
+func verifyForbiddenFiles(t *testing.T, workDir string, files []string) {
+	t.Helper()
+	for _, filename := range files {
+		path := filepath.Join(workDir, filename)
+		if _, err := os.Stat(path); err == nil {
+			t.Errorf("forbidden file exists: %s", filename)
+		}
+	}
+}
+
+func verifyExpectedFileContent(t *testing.T, workDir string, contentMap map[string][]string) {
+	t.Helper()
+	for filename, content := range contentMap {
 		path := filepath.Join(workDir, filename)
 		data, err := os.ReadFile(path)
 		if err != nil {
@@ -195,6 +216,34 @@ func verifyFiles(t *testing.T, workDir string, tc TestCase) {
 		for _, substr := range content {
 			if !strings.Contains(fileContent, substr) {
 				t.Errorf("file %s missing expected content: %q", filename, substr)
+			}
+		}
+	}
+}
+
+func verifyForbiddenFileContent(t *testing.T, workDir string, contentMap map[string][]string) {
+	t.Helper()
+	for filename, forbidden := range contentMap {
+		path := filepath.Join(workDir, filename)
+		// If file doesn't exist, this check is implicitly passed (or irrelevant), unless it was expected to exist.
+		// If it's expected to exist, ExpectedFiles check covers that.
+		// If it's forbidden to exist, ForbiddenFiles check covers that.
+		// Here we only check content if file exists.
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			continue
+		}
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("failed to read file for forbidden content check %s: %v", filename, err)
+
+			continue
+		}
+
+		fileContent := string(data)
+		for _, substr := range forbidden {
+			if strings.Contains(fileContent, substr) {
+				t.Errorf("file %s contains forbidden content: %q", filename, substr)
 			}
 		}
 	}
