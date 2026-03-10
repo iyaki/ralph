@@ -6,7 +6,20 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"sync"
 )
+
+type synchronizedWriter struct {
+	mu sync.Mutex
+	w  io.Writer
+}
+
+func (w *synchronizedWriter) Write(p []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	return w.w.Write(p)
+}
 
 // ExecuteCommand executes a command and returns its output.
 func ExecuteCommand(command string, args []string, output io.Writer) (string, error) {
@@ -14,16 +27,19 @@ func ExecuteCommand(command string, args []string, output io.Writer) (string, er
 
 	// Create buffers to capture stdout and stderr
 	var outBuf, errBuf bytes.Buffer
+	if output == nil {
+		output = io.Discard
+	}
+	streamOutput := &synchronizedWriter{w: output}
 
-	cmd.Stdout = &outBuf
-	cmd.Stderr = &errBuf
+	cmd.Stdout = io.MultiWriter(&outBuf, streamOutput)
+	cmd.Stderr = io.MultiWriter(&errBuf, streamOutput)
 
 	// Run the command
 	err := cmd.Run()
 
 	// Combine stdout and stderr for result
 	result := outBuf.String() + errBuf.String()
-	_, _ = io.WriteString(output, result)
 
 	if err != nil {
 		// Return the output even on error (non-fatal)
