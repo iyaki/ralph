@@ -16,6 +16,7 @@ Design docs and technical specifications
 - [prompts.md](prompts.md)
 - [logging.md](logging.md)
 - [development-testing.md](development-testing.md)
+- [e2e-testing.md](e2e-testing.md)
 - [release-workflow.md](release-workflow.md)
 
 ## Feature Specs
