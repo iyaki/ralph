@@ -35,23 +35,30 @@ type envValues struct {
 
 // Config holds all Ralph configuration.
 type Config struct {
-	ConfigFile             string `toml:"config-file"`
-	MaxIterations          int    `toml:"max-iterations"`
-	PromptFile             string `toml:"prompt-file"`
-	SpecsDir               string `toml:"specs-dir"`
-	SpecsIndexFile         string `toml:"specs-index-file"`
-	NoSpecsIndex           bool   `toml:"no-specs-index"`
-	ImplementationPlanName string `toml:"implementation-plan-name"`
-	LogFile                string `toml:"log-file"`
-	NoLog                  bool   `toml:"no-log"`
-	LogTruncate            bool   `toml:"log-truncate"`
-	CustomPrompt           string `toml:"custom-prompt"`
-	PromptsDir             string `toml:"prompts-dir"`
-	AgentName              string `toml:"agent"`
-	Model                  string `toml:"model"`
-	AgentMode              string `toml:"agent-mode"`
+	ConfigFile             string                          `toml:"config-file"`
+	MaxIterations          int                             `toml:"max-iterations"`
+	PromptFile             string                          `toml:"prompt-file"`
+	SpecsDir               string                          `toml:"specs-dir"`
+	SpecsIndexFile         string                          `toml:"specs-index-file"`
+	NoSpecsIndex           bool                            `toml:"no-specs-index"`
+	ImplementationPlanName string                          `toml:"implementation-plan-name"`
+	LogFile                string                          `toml:"log-file"`
+	NoLog                  bool                            `toml:"no-log"`
+	LogTruncate            bool                            `toml:"log-truncate"`
+	CustomPrompt           string                          `toml:"custom-prompt"`
+	PromptsDir             string                          `toml:"prompts-dir"`
+	AgentName              string                          `toml:"agent"`
+	Model                  string                          `toml:"model"`
+	AgentMode              string                          `toml:"agent-mode"`
+	PromptOverrides        map[string]PromptConfigOverride `toml:"prompt-overrides"`
 
 	configLoaded bool
+}
+
+// PromptConfigOverride defines per-prompt configuration overrides.
+type PromptConfigOverride struct {
+	Model     string `toml:"model"`
+	AgentMode string `toml:"agent-mode"`
 }
 
 // LoadConfig loads configuration with proper precedence: flags > env vars > config file > defaults.
@@ -136,6 +143,11 @@ func (c *Config) applyConfigValues(fileCfg *Config, env envValues) {
 	c.AgentName = resolveString(c.AgentName, env.agentName, fileCfg.AgentName, defaultAgentName)
 	c.Model = resolveString(c.Model, env.model, fileCfg.Model, "")
 	c.AgentMode = resolveString(c.AgentMode, env.agentMode, fileCfg.AgentMode, "")
+
+	// Prompt overrides only come from the config file.
+	if len(fileCfg.PromptOverrides) > 0 {
+		c.PromptOverrides = fileCfg.PromptOverrides
+	}
 }
 
 func resolveInt(flagValue int, envValue string, fileValue int, defaultValue int) int {
