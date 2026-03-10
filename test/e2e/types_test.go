@@ -8,6 +8,9 @@ type TestCase struct {
 	// Args are the command-line arguments passed to the Ralph binary.
 	Args []string
 
+	// Stdin is the input string to pipe to the process standard input.
+	Stdin string
+
 	// Env is a map of environment variables to set for the process.
 	// These override the default environment.
 	Env map[string]string

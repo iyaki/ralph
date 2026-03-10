@@ -105,6 +105,10 @@ func executeRalph(t *testing.T, workDir string, tc TestCase) RunResult {
 	}
 	cmd.Env = env
 
+	if tc.Stdin != "" {
+		cmd.Stdin = strings.NewReader(tc.Stdin)
+	}
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
