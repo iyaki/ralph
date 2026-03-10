@@ -37,7 +37,7 @@ For extended documentation, examples, and configuration options, visit https://g
   ralph --prompt "Custom prompt text"
   echo "prompt from stdin" | ralph -`,
 		Args: cobra.MaximumNArgs(maxPositionalArgs),
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			promptName, scope := parsePositionalArgs(args)
 
 			// Load configuration with proper precedence
@@ -55,17 +55,20 @@ For extended documentation, examples, and configuration options, visit https://g
 			}()
 
 			// Write to both logger and stdout
-			writers := []io.Writer{os.Stdout}
+			writers := []io.Writer{cmd.OutOrStdout()}
 			if appLogger.Enabled() {
 				writers = append(writers, appLogger.File())
 			}
 			output := io.MultiWriter(writers...)
 
 			// Get the prompt
-			promptText, _, err := prompt.GetPrompt(&cfg, promptName, scope, output)
+			promptText, fmOverride, err := prompt.GetPrompt(&cfg, promptName, scope, output)
 			if err != nil {
 				return fmt.Errorf("failed to get prompt: %w", err)
 			}
+
+			// Apply configuration precedence
+			applyEffectiveSettings(&cfg, cmd, fmOverride, promptName)
 
 			// Run the main loop
 			return RunLoop(&cfg, promptText, promptName, output)
@@ -78,6 +81,60 @@ For extended documentation, examples, and configuration options, visit https://g
 	cmd.AddCommand(NewInitCommand())
 
 	return cmd
+}
+
+func applyEffectiveSettings(
+	cfg *config.Config,
+	cmd *cobra.Command,
+	fmOverride *config.PromptConfigOverride,
+	promptName string,
+) {
+	applyModelSettings(cfg, cmd, fmOverride, promptName)
+	applyAgentModeSettings(cfg, cmd, fmOverride, promptName)
+}
+
+func applyModelSettings(
+	cfg *config.Config,
+	cmd *cobra.Command,
+	fmOverride *config.PromptConfigOverride,
+	promptName string,
+) {
+	// Model Precedence: Flag > Env > Front Matter > Config Override > Global Config
+	if cmd.Flags().Changed("model") || os.Getenv("RALPH_MODEL") != "" {
+		return
+	}
+
+	if fmOverride != nil && fmOverride.Model != "" {
+		cfg.Model = fmOverride.Model
+
+		return
+	}
+
+	if promptOverride, ok := cfg.PromptOverrides[promptName]; ok && promptOverride.Model != "" {
+		cfg.Model = promptOverride.Model
+	}
+}
+
+func applyAgentModeSettings(
+	cfg *config.Config,
+	cmd *cobra.Command,
+	fmOverride *config.PromptConfigOverride,
+	promptName string,
+) {
+	// Agent Mode Precedence: Flag > Env > Front Matter > Config Override > Global Config
+	if cmd.Flags().Changed("agent-mode") || os.Getenv("RALPH_AGENT_MODE") != "" {
+		return
+	}
+
+	if fmOverride != nil && fmOverride.AgentMode != "" {
+		cfg.AgentMode = fmOverride.AgentMode
+
+		return
+	}
+
+	if promptOverride, ok := cfg.PromptOverrides[promptName]; ok && promptOverride.AgentMode != "" {
+		cfg.AgentMode = promptOverride.AgentMode
+	}
 }
 
 func parsePositionalArgs(args []string) (string, string) {
