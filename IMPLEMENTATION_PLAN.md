@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 started)
+**Status:** Core Scenarios Complete (Phase 1 & 2 done), Coverage Expansion In Progress (Phase 3 ~35% done)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -11,7 +11,7 @@
 | **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | ✅           |
 | **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | ✅           |
 | **Core Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | ✅           |
-| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
+| **Full Coverage**  | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `test/*.go`         | [ ]          |
 
 ## Phased Plan
 
@@ -102,8 +102,8 @@
 - [x] Implement `TestE2ESpecsFlags`:
   - [x] Test `--specs-dir` and `--specs-index`.
   - [x] Test `--no-specs-index`.
-- [ ] Implement `TestE2EPlanFlags`:
-  - [ ] Test `--implementation-plan-name`.
+- [x] Implement `TestE2EPlanFlags`:
+  - [x] Test `--implementation-plan-name`.
 - [ ] Implement `TestE2ELoggingFlags`:
   - [ ] Test `--no-log`.
   - [ ] Test `--log-truncate`.
@@ -141,6 +141,7 @@
 | 2026-03-10 | `go test -v ./test/e2e` (all scenarios)                          | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2E.*Prompt`                        | Passed |
 | 2026-03-10 | `go test ./test/e2e -run TestE2ESpecsFlags`                      | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2EPlanFlags`                       | Passed |
 
 ## Summary
 
@@ -148,8 +149,8 @@
 | :------------------------------ | :---------- | :--------- |
 | Phase 1: Test Infrastructure    | Done        | 100%       |
 | Phase 2: Core Scenarios         | Done        | 100%       |
-| Phase 3: Comprehensive Coverage | In Progress | 20%        |
-| **Remaining Effort**            | **Medium**  | **20%**    |
+| Phase 3: Comprehensive Coverage | In Progress | 35%        |
+| **Remaining Effort**            | **Medium**  | **15%**    |
 
 ## Known Existing Work
 
