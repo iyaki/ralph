@@ -8,7 +8,7 @@
 
 | System             | Spec                                | Package           | Artifacts           | Implemented? |
 | :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
-| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [ ]          |
+| **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [x]          |
 | **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [x]          |
 | **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
 
@@ -30,17 +30,17 @@
 
 #### 1.2 Harness & Types
 
-- [ ] Create `test/e2e/types.go` with `E2ETestCase`, `AgentFixture`, `E2ERunResult` structs.
-- [ ] Create `test/e2e/harness_test.go`.
-- [ ] Implement `TestMain` to:
-  - [ ] Build `ralph` binary to a temp location.
-  - [ ] Build `ralph-test-agent` binary to a temp location.
-  - [ ] Ensure cleanup of temp binaries on exit.
-- [ ] Implement `runTestCase(t *testing.T, tc E2ETestCase)` helper:
-  - [ ] Create temp test execution directory.
-  - [ ] Write fixture files.
-  - [ ] Execute `ralph` with correct `PATH` and environment variables.
-  - [ ] Capture output and exit code.
+- [x] Create `test/e2e/types.go` with `E2ETestCase`, `AgentFixture`, `E2ERunResult` structs.
+- [x] Create `test/e2e/harness_test.go`.
+- [x] Implement `TestMain` to:
+  - [x] Build `ralph` binary to a temp location.
+  - [x] Build `ralph-test-agent` binary to a temp location.
+  - [x] Ensure cleanup of temp binaries on exit.
+- [x] Implement `runTestCase(t *testing.T, tc E2ETestCase)` helper:
+  - [x] Create temp test execution directory.
+  - [x] Write fixture files.
+  - [x] Execute `ralph` with correct `PATH` and environment variables.
+  - [x] Capture output and exit code.
 
 **Definition of Done:**
 
@@ -91,14 +91,15 @@
 | 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=return_error ...`         | Passed |
 | 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=slow_complete ...`        | Passed |
 | 2026-03-10 | `go test ./test/e2e/agents/ralph-test-agent/... && lint && arch` | Passed |
+| 2026-03-10 | `go test ./test/e2e` (validates TestMain & build process)        | Passed |
 
 ## Summary
 
-| Phase                        | Status      | Completion |
-| :--------------------------- | :---------- | :--------- |
-| Phase 1: Test Infrastructure | In Progress | 25%        |
-| Phase 2: Core Scenarios      | Pending     | 0%         |
-| **Remaining Effort**         | **High**    | **75%**    |
+| Phase                        | Status     | Completion |
+| :--------------------------- | :--------- | :--------- |
+| Phase 1: Test Infrastructure | Done       | 100%       |
+| Phase 2: Core Scenarios      | Pending    | 0%         |
+| **Remaining Effort**         | **Medium** | **50%**    |
 
 ## Known Existing Work
 
