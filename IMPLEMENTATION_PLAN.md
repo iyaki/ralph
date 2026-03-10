@@ -1,6 +1,6 @@
 # Implementation Plan (e2e-testing)
 
-**Status:** In Progress (5/21)
+**Status:** In Progress (6/21)
 **Last Updated:** 2026-03-10
 **Primary Spec:** [specs/e2e-testing.md](specs/e2e-testing.md)
 
@@ -10,7 +10,7 @@
 | :----------------- | :---------------------------------- | :---------------- | :------------------ | :----------- |
 | **E2E Harness**    | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `harness_test.go`   | [x]          |
 | **Test Agent**     | [E2E Testing](specs/e2e-testing.md) | `test/e2e/agents` | `ralph-test-agent`  | [x]          |
-| **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [ ]          |
+| **Test Scenarios** | [E2E Testing](specs/e2e-testing.md) | `test/e2e`        | `scenarios_test.go` | [x]          |
 
 ## Phased Plan
 
@@ -54,11 +54,11 @@
 
 #### 2.1 Happy Path
 
-- [ ] Create `test/e2e/scenarios_test.go`.
-- [ ] Implement `TestE2ECompletionFlow`:
-  - [ ] Configure `complete_once` agent.
-  - [ ] Run with valid prompt.
-  - [ ] Assert zero exit code and completion signal.
+- [x] Create `test/e2e/scenarios_test.go`.
+- [x] Implement `TestE2ECompletionFlow`:
+  - [x] Configure `complete_once` agent.
+  - [x] Run with valid prompt.
+  - [x] Assert zero exit code and completion signal.
 
 #### 2.2 Failure Paths
 
@@ -92,14 +92,15 @@
 | 2026-03-10 | `go build ... && RALPH_TEST_AGENT_MODE=slow_complete ...`        | Passed |
 | 2026-03-10 | `go test ./test/e2e/agents/ralph-test-agent/... && lint && arch` | Passed |
 | 2026-03-10 | `go test ./test/e2e` (validates TestMain & build process)        | Passed |
+| 2026-03-10 | `go test ./test/e2e -run TestE2ECompletionFlow`                  | Passed |
 
 ## Summary
 
-| Phase                        | Status     | Completion |
-| :--------------------------- | :--------- | :--------- |
-| Phase 1: Test Infrastructure | Done       | 100%       |
-| Phase 2: Core Scenarios      | Pending    | 0%         |
-| **Remaining Effort**         | **Medium** | **50%**    |
+| Phase                        | Status      | Completion |
+| :--------------------------- | :---------- | :--------- |
+| Phase 1: Test Infrastructure | Done        | 100%       |
+| Phase 2: Core Scenarios      | In Progress | 25%        |
+| **Remaining Effort**         | **Medium**  | **50%**    |
 
 ## Known Existing Work
 
