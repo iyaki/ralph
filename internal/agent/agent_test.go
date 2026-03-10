@@ -2,13 +2,35 @@ package agent_test
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/iyaki/ralph/internal/agent"
 )
+
+type synchronizedBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *synchronizedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	return b.buf.Write(p)
+}
+
+func (b *synchronizedBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	return b.buf.String()
+}
 
 func writeExecutable(t *testing.T, dir, name, content string) string {
 	t.Helper()
@@ -18,6 +40,72 @@ func writeExecutable(t *testing.T, dir, name, content string) string {
 	}
 
 	return path
+}
+
+func testAgentExecutionStreamsOutputInRealTime(
+	t *testing.T,
+	commandName string,
+	execute func(string, io.Writer) (string, error),
+) {
+	t.Helper()
+
+	tmp := t.TempDir()
+	writeExecutable(t, tmp, commandName, "#!/bin/sh\nprintf 'first\\n'; sleep 1; printf 'second\\n'\n")
+	t.Setenv("PATH", tmp+":"+os.Getenv("PATH"))
+
+	out := &synchronizedBuffer{}
+
+	done := make(chan struct{})
+	var (
+		result string
+		err    error
+	)
+
+	go func() {
+		result, err = execute("prompt", out)
+		close(done)
+	}()
+
+	assertFirstLineStreamedBeforeCompletion(t, out, done)
+	waitForCommandCompletion(t, done)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(result, "first") || !strings.Contains(result, "second") {
+		t.Fatalf("expected complete output in result, got %q", result)
+	}
+}
+
+func assertFirstLineStreamedBeforeCompletion(t *testing.T, out *synchronizedBuffer, done <-chan struct{}) {
+	t.Helper()
+
+	deadline := time.Now().Add(400 * time.Millisecond)
+	for time.Now().Before(deadline) {
+		if strings.Contains(out.String(), "first") {
+			select {
+			case <-done:
+				t.Fatal("command completed before second line delay elapsed; output was not streamed in real time")
+			default:
+			}
+
+			return
+		}
+
+		time.Sleep(10 * time.Millisecond)
+	}
+
+	t.Fatalf("expected first line to be streamed before command completion, got %q", out.String())
+}
+
+func waitForCommandCompletion(t *testing.T, done <-chan struct{}) {
+	t.Helper()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for command completion")
+	}
 }
 
 func TestGetAgentReturnsExpectedType(t *testing.T) {
@@ -128,4 +216,14 @@ func TestOpencodeExecuteAndAvailability(t *testing.T) {
 	if a.IsAvailable() {
 		t.Fatal("expected opencode to be unavailable")
 	}
+}
+
+func TestOpencodeExecuteStreamsOutputInRealTime(t *testing.T) {
+	a := &agent.OpencodeAgent{}
+	testAgentExecutionStreamsOutputInRealTime(t, "opencode", a.Execute)
+}
+
+func TestCursorExecuteStreamsOutputInRealTime(t *testing.T) {
+	a := &agent.CursorAgent{}
+	testAgentExecutionStreamsOutputInRealTime(t, "cursor", a.Execute)
 }
