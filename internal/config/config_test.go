@@ -267,3 +267,54 @@ func TestLoadConfigLegacyFileDiscovery(t *testing.T) {
 		t.Fatalf("expected .ralphrc.toml value, got %q", c.SpecsDir)
 	}
 }
+
+func TestLoadConfigPromptOverrides(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	content := `
+[prompt-overrides.my-prompt]
+model = "gpt-4"
+agent-mode = "planner"
+
+[prompt-overrides.another-prompt]
+model = "claude-3-opus"
+agent-mode = "code"
+`
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{
+		ConfigFile: configFile,
+	}
+
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(c.PromptOverrides) != 2 {
+		t.Fatalf("expected 2 prompt overrides, got %d", len(c.PromptOverrides))
+	}
+
+	p1, ok := c.PromptOverrides["my-prompt"]
+	if !ok {
+		t.Fatal("expected override for 'my-prompt'")
+	}
+	if p1.Model != "gpt-4" {
+		t.Errorf("expected model 'gpt-4', got %q", p1.Model)
+	}
+	if p1.AgentMode != "planner" {
+		t.Errorf("expected agent-mode 'planner', got %q", p1.AgentMode)
+	}
+
+	p2, ok := c.PromptOverrides["another-prompt"]
+	if !ok {
+		t.Fatal("expected override for 'another-prompt'")
+	}
+	if p2.Model != "claude-3-opus" {
+		t.Errorf("expected model 'claude-3-opus', got %q", p2.Model)
+	}
+	if p2.AgentMode != "code" {
+		t.Errorf("expected agent-mode 'code', got %q", p2.AgentMode)
+	}
+}
