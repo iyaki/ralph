@@ -62,7 +62,7 @@ For extended documentation, examples, and configuration options, visit https://g
 			output := io.MultiWriter(writers...)
 
 			// Get the prompt
-			promptText, err := prompt.GetPrompt(&cfg, promptName, scope, output)
+			promptText, _, err := prompt.GetPrompt(&cfg, promptName, scope, output)
 			if err != nil {
 				return fmt.Errorf("failed to get prompt: %w", err)
 			}
