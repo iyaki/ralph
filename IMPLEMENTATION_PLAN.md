@@ -1,14 +1,14 @@
 # Implementation Plan (config-by-prompt)
 
-**Status:** Planning
-**Last Updated:** 2026-03-09
+**Status:** In Progress
+**Last Updated:** 2026-03-10
 **Primary Spec:** [specs/config-by-prompt.md](specs/config-by-prompt.md)
 
 ## Quick Reference
 
 | System                  | Spec                                          | Package           | Artifacts        | Implemented? |
 | :---------------------- | :-------------------------------------------- | :---------------- | :--------------- | :----------- |
-| **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [ ]          |
+| **Config Data Model**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/config` | `config.go`      | [x]          |
 | **Front Matter Parser** | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `frontmatter.go` | [ ]          |
 | **Prompt Resolution**   | [Config by Prompt](specs/config-by-prompt.md) | `internal/prompt` | `prompts.go`     | [ ]          |
 | **CLI Integration**     | [Config by Prompt](specs/config-by-prompt.md) | `internal/cli`    | `cmd.go`         | [ ]          |
@@ -22,9 +22,9 @@
 
 #### 1.1 Add Override Structures
 
-- [ ] Define `PromptConfigOverride` struct (Model, AgentMode).
-- [ ] Add `PromptOverrides` map to `Config` struct (`[prompt-overrides.<name>]`).
-- [ ] Update `config_test.go` to verify TOML parsing of the new section.
+- [x] Define `PromptConfigOverride` struct (Model, AgentMode).
+- [x] Add `PromptOverrides` map to `Config` struct (`[prompt-overrides.<name>]`).
+- [x] Update `config_test.go` to verify TOML parsing of the new section.
 
 **Definition of Done:**
 
@@ -84,17 +84,18 @@
 
 ## Verification Log
 
-| Date | Verification Step | Result |
-| :--- | :---------------- | :----- |
+| Date       | Verification Step              | Result |
+| :--------- | :----------------------------- | :----- |
+| 2026-03-10 | `go test -v ./internal/config` | PASS   |
 
 ## Summary
 
 | Phase                             | Status     | Completion |
 | :-------------------------------- | :--------- | :--------- |
-| Phase 1: Config Data Model        | Pending    | 0%         |
+| Phase 1: Config Data Model        | Completed  | 100%       |
 | Phase 2: Front Matter Parsing     | Pending    | 0%         |
 | Phase 3: Integration & Precedence | Pending    | 0%         |
-| **Remaining Effort**              | **Medium** | **100%**   |
+| **Remaining Effort**              | **Medium** | **66%**    |
 
 ## Known Existing Work
 
