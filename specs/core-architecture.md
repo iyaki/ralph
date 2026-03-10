@@ -187,4 +187,3 @@ specs/
 ## Appendices
 
 - Future: add a prompt source for remote templates or registries.
-- Compatibility: designed to match the behavior of the legacy shell script.
