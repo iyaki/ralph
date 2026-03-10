@@ -17,24 +17,30 @@ const (
 )
 
 // GetPrompt returns the prompt to use based on configuration and arguments.
-func GetPrompt(cfg *config.Config, promptName, scope string, output io.Writer) (string, error) {
+func GetPrompt(
+	cfg *config.Config,
+	promptName, scope string,
+	output io.Writer,
+) (string, *config.PromptConfigOverride, error) {
 	if promptText, ok, err := customPrompt(cfg, output); ok || err != nil {
-		return promptText, err
+		return promptText, nil, err
 	}
 
 	if promptText, ok, err := stdinPrompt(cfg, promptName, output); ok || err != nil {
-		return promptText, err
+		return promptText, nil, err
 	}
 
-	if promptText, ok, err := explicitPromptFile(cfg, output); ok || err != nil {
-		return promptText, err
+	if promptText, override, ok, err := explicitPromptFile(cfg, output); ok || err != nil {
+		return promptText, override, err
 	}
 
-	if promptText, ok, err := promptFromDir(cfg, promptName, output); ok || err != nil {
-		return promptText, err
+	if promptText, override, ok, err := promptFromDir(cfg, promptName, output); ok || err != nil {
+		return promptText, override, err
 	}
 
-	return bundledPrompt(cfg, promptName, scope, output)
+	promptText, err := bundledPrompt(cfg, promptName, scope, output)
+
+	return promptText, nil, err
 }
 
 func customPrompt(cfg *config.Config, output io.Writer) (string, bool, error) {
@@ -62,36 +68,60 @@ func stdinPrompt(cfg *config.Config, promptName string, output io.Writer) (strin
 	return string(content), true, nil
 }
 
-func explicitPromptFile(cfg *config.Config, output io.Writer) (string, bool, error) {
+func explicitPromptFile(cfg *config.Config, output io.Writer) (string, *config.PromptConfigOverride, bool, error) {
 	if cfg.PromptFile == "" {
-		return "", false, nil
+		return "", nil, false, nil
 	}
 
 	content, err := os.ReadFile(cfg.PromptFile)
 	if err != nil {
-		return "", true, fmt.Errorf("failed to read prompt file %s: %w", cfg.PromptFile, err)
+		return "", nil, true, fmt.Errorf("failed to read prompt file %s: %w", cfg.PromptFile, err)
 	}
 
 	writePromptFileBanner(output, cfg.PromptFile)
 
-	return string(content), true, nil
+	fm, body, err := ParseFrontMatter(string(content))
+	if err != nil {
+		return "", nil, true, fmt.Errorf("failed to parse front matter in %s: %w", cfg.PromptFile, err)
+	}
+
+	override := &config.PromptConfigOverride{
+		Model:     fm.Model,
+		AgentMode: fm.AgentMode,
+	}
+
+	return body, override, true, nil
 }
 
-func promptFromDir(cfg *config.Config, promptName string, output io.Writer) (string, bool, error) {
+func promptFromDir(
+	cfg *config.Config,
+	promptName string,
+	output io.Writer,
+) (string, *config.PromptConfigOverride, bool, error) {
 	promptFilePath := filepath.Join(cfg.PromptsDir, promptName+".md")
 	foundPath := findFileUpwards(promptFilePath)
 	if foundPath == "" {
-		return "", false, nil
+		return "", nil, false, nil
 	}
 
 	content, err := os.ReadFile(foundPath) // #nosec G304 -- path is discovered within project tree
 	if err != nil {
-		return "", true, fmt.Errorf("failed to read prompt file %s: %w", foundPath, err)
+		return "", nil, true, fmt.Errorf("failed to read prompt file %s: %w", foundPath, err)
 	}
 
 	writePromptFileBanner(output, foundPath)
 
-	return string(content), true, nil
+	fm, body, err := ParseFrontMatter(string(content))
+	if err != nil {
+		return "", nil, true, fmt.Errorf("failed to parse front matter in %s: %w", foundPath, err)
+	}
+
+	override := &config.PromptConfigOverride{
+		Model:     fm.Model,
+		AgentMode: fm.AgentMode,
+	}
+
+	return body, override, true, nil
 }
 
 func bundledPrompt(cfg *config.Config, promptName, scope string, output io.Writer) (string, error) {
