@@ -1,4 +1,4 @@
-name: quality
+name: security
 
 on:
   pull_request:
@@ -32,8 +32,8 @@ jobs:
     container:
       image: semgrep/semgrep
 
-    # Skip any PR created by dependabot to avoid permission issues:
-    if: (github.actor != 'dependabot[bot]')
+    # Skip dependabot PRs and cases where token is unavailable (common on forks).
+    if: (github.actor != 'dependabot[bot]' && secrets.SEMGREP_APP_TOKEN != '')
 
     steps:
       - uses: actions/checkout@v6
