@@ -177,7 +177,7 @@ specs/
 | Specs index file                          | `specs-index-file`         | input   | `README.md`              | Non-empty file name             |
 | Implementation plan file                  | `implementation-plan-name` | input   | `IMPLEMENTATION_PLAN.md` | Non-empty file name             |
 | Prompts directory                         | `prompts-dir`              | input   | `.ralph/prompts`         | Non-empty path                  |
-| Enable logging?                           | `no-log` (inverted)        | confirm | `yes`                    | Boolean                         |
+| Enable logging?                           | `no-log` (inverted)        | confirm | `no`                     | Boolean                         |
 | Log file path (when logging enabled)      | `log-file`                 | input   | `./ralph.log`            | Non-empty path                  |
 | Truncate log file on each run?            | `log-truncate`             | confirm | `no`                     | Boolean                         |
 
@@ -231,7 +231,5 @@ specs-dir = "specs"
 specs-index-file = "README.md"
 implementation-plan-name = "IMPLEMENTATION_PLAN.md"
 prompts-dir = "/home/user/.ralph"
-no-log = false
-log-file = "./ralph.log"
-log-truncate = false
+no-log = true
 ```

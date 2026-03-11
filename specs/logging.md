@@ -52,7 +52,7 @@ internal/
 ### Data flow summary
 
 1. CLI initializes a logger after configuration is loaded.
-2. If logging is enabled, the logger opens/creates a log file.
+2. Logging is disabled by default. If logging is enabled, the logger opens/creates a log file.
 3. A run header and git metadata are written at startup.
 4. CLI writes output to stdout and the log file via a multi-writer.
 
@@ -77,9 +77,9 @@ internal/
 
 - Log output is stored as plain text on disk.
 
-| Store | Format     | Location                 | Notes                                                      |
-| ----- | ---------- | ------------------------ | ---------------------------------------------------------- |
-| Logs  | Plain text | `./ralph.log` by default | Header includes timestamp and git metadata when available. |
+| Store | Format     | Location                   | Notes                                                      |
+| ----- | ---------- | -------------------------- | ---------------------------------------------------------- |
+| Logs  | Plain text | `./ralph.log` when enabled | Header includes timestamp and git metadata when available. |
 
 ## Workflows
 
@@ -93,8 +93,9 @@ internal/
 
 ### Initialize logging (disabled)
 
-1. If `NoLog` is true or `RALPH_LOG_ENABLED=0`, logging is disabled.
-2. Logger returns without a file.
+1. Logging is disabled by default (`NoLog=true`).
+2. If `NoLog` is true or `RALPH_LOG_ENABLED=0`, logging is disabled.
+3. Logger returns without a file.
 
 ### Close logging
 
@@ -138,6 +139,7 @@ internal/
 
 ## Verifications
 
+- With default configuration, no log file is created.
 - With `RALPH_LOG_ENABLED=0`, no log file is created.
 - With `RALPH_LOG_APPEND=0`, log file is truncated on start.
 - Log header includes timestamp and git branch/commit when available.
