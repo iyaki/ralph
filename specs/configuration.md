@@ -166,7 +166,7 @@ internal/
 | `no-specs-index`           | `NoSpecsIndex`           | `no-specs-index = true`                               |
 | `implementation-plan-name` | `ImplementationPlanName` | `implementation-plan-name = "IMPLEMENTATION_PLAN.md"` |
 | `log-file`                 | `LogFile`                | `log-file = "./ralph.log"`                            |
-| `no-log`                   | `NoLog`                  | `no-log = false`                                      |
+| `no-log`                   | `NoLog`                  | `no-log = true`                                       |
 | `log-truncate`             | `LogTruncate`            | `log-truncate = false`                                |
 | `custom-prompt`            | `CustomPrompt`           | `custom-prompt = "..."`                               |
 | `prompts-dir`              | `PromptsDir`             | `prompts-dir = "./prompts"`                           |
@@ -183,6 +183,7 @@ internal/
 | `SpecsIndexFile`         | `README.md`              |
 | `ImplementationPlanName` | `IMPLEMENTATION_PLAN.md` |
 | `PromptsDir`             | `$HOME/.ralph`           |
+| `NoLog`                  | `true`                   |
 | `LogFile`                | `./ralph.log`            |
 | `AgentName`              | `opencode`               |
 | `Model`                  | none (optional)          |
