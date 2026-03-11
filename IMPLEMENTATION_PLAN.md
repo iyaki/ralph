@@ -1,79 +1,88 @@
-# Implementation Plan (config-local)
+# Implementation Plan (Logging)
 
-**Status:** In Progress (5/10)
-**Last Updated:** 2026-03-10
-**Reference:** `specs/config-local-overlay.md`
+**Status:** Implementation Complete / Verification Needed (90%)
+**Last Updated:** 2026-03-11
+**Reference:** `specs/logging.md`
 
 ## Quick Reference
 
-| System          | Spec                                                       | Package           | Tests                            |
-| :-------------- | :--------------------------------------------------------- | :---------------- | :------------------------------- |
-| Config Loader   | [config-local-overlay.md](./specs/config-local-overlay.md) | `internal/config` | `internal/config/config_test.go` |
-| CLI Integration | [config-local-overlay.md](./specs/config-local-overlay.md) | `internal/cli`    | `test/e2e`                       |
+| System             | Spec                             | Package           | Tests                            |
+| :----------------- | :------------------------------- | :---------------- | :------------------------------- |
+| Logger Logic       | [logging.md](./specs/logging.md) | `internal/logger` | `internal/logger/logger_test.go` |
+| Config Integration | [logging.md](./specs/logging.md) | `internal/config` | `internal/config/config_test.go` |
+| CLI Integration    | [logging.md](./specs/logging.md) | `internal/cli`    | `test/e2e`                       |
 
 ## Phased Plan
 
-### Phase 1: Config Loading & Overlay Logic
+### Phase 1: Configuration Defaults Alignment
 
-**Goal:** Implement discovery, loading, and merging of `ralph-local.toml`.
+**Goal:** Ensure logging is disabled by default as per spec, and configuration overrides work correctly.
 
 **Paths:**
 
 - `internal/config/config.go`
-- `internal/config/config_test.go`
+- `internal/cli/run.go`
+- `internal/logger/logger.go`
 
 **Checklist:**
 
-- [x] Refactor `resolveFileConfig` to return base config path alongside the config object
-- [x] Implement `resolveLocalOverlayPath(baseConfigPath string) string`
-- [x] Implement `mergeConfig(base *Config, overlay *Config) *Config` - [x] Scalar overrides - [x] Map/Table deep merge - [x] Array/List full replacement - [x] `prompt-overrides` deep merge
-- [x] Update `LoadConfig` to apply the overlay if present
-- [x] Add unit tests for: - [x] Overlay discovery (same dir as base) - [x] Merge semantics (scalars, arrays, tables) - [x] Missing overlay (no error) - [x] Invalid overlay (fail fast)
+- [ ] Verify `NoLog` default value logic (Currently enabled by default, Spec says disabled)
+- [ ] Update `resolveBool` or defaults in `internal/config/config.go` if necessary to match "Disabled by default"
+- [ ] Verify `RALPH_LOG_ENABLED` env var precedence overrides config defaults
+- [ ] Verify `LogTruncate` defaults to `false` (Append mode)
 
 **Definition of Done:**
 
-- `go test ./internal/config/...` passes.
-- Unit tests cover all merge scenarios defined in the spec.
+- Running `ralph` without flags/config does NOT create `ralph.log`.
+- Running `ralph --no-log=false` (or equivalent enablement) creates `ralph.log`.
+- `RALPH_LOG_ENABLED=1` enables logging.
 
 ### Phase 2: End-to-End Verification
 
-**Goal:** Verify complete precedence chain and CLI integration.
+**Goal:** Verify file creation, permissions, headers, and content.
 
 **Paths:**
 
-- `test/e2e/config_local_test.go` (New)
+- `test/e2e/logging_test.go` (New or existing)
 
 **Checklist:**
 
-- [ ] Create E2E test: `ralph.toml` + `ralph-local.toml` (happy path)
-- [ ] Create E2E test: `RALPH_CONFIG` env var pointing to a dir with both files
-- [ ] Create E2E test: Precedence check (Flag > Env > Local > Base)
-- [ ] Create E2E test: Array replacement verification
-- [ ] Create E2E test: `prompt-overrides` merging verification
+- [ ] Create/Update E2E test for logging lifecycle:
+  - [ ] Default state (No log file)
+  - [ ] Enabled via Env (`RALPH_LOG_ENABLED=1`)
+  - [ ] Enabled via Config (`no-log = false`)
+  - [ ] File creation at `ralph.log` (default) or custom path
+  - [ ] Header presence (Timestamp, Git metadata)
+  - [ ] File content matches stdout (via MultiWriter)
+  - [ ] File permissions (`0600`)
+- [ ] Verify Truncate vs Append behavior (`RALPH_LOG_APPEND=0`)
 
 **Definition of Done:**
 
 - `make test-e2e` passes.
+- Log file behaviors confirmed on disk.
 
 ## Verification Log
 
-| Date       | Verification Step               | Result |
-| :--------- | :------------------------------ | :----- |
-| 2026-03-10 | `go test ./internal/config/...` | PASS   |
+| Date       | Verification Step | Result                                                                                                  |
+| :--------- | :---------------- | :------------------------------------------------------------------------------------------------------ |
+| 2026-03-11 | Codebase Scan     | `internal/logger` and `internal/config` implementation exists. Gap identified in default `NoLog` state. |
 
 ## Summary
 
-| Phase   | Goal                           | Status    |
-| :------ | :----------------------------- | :-------- |
-| Phase 1 | Config Loading & Overlay Logic | Completed |
-| Phase 2 | End-to-End Verification        | Pending   |
+| Phase   | Goal                             | Status  |
+| :------ | :------------------------------- | :------ |
+| Phase 1 | Configuration Defaults Alignment | Pending |
+| Phase 2 | End-to-End Verification          | Pending |
 
-**Remaining effort:** Implement E2E tests.
+**Remaining effort:** Fix default `NoLog` value and add E2E tests.
 
 ## Known Existing Work
 
-- Basic config loading from single file exists in `internal/config/config.go`.
-- `BurntSushi/toml` is already used for parsing.
+- `internal/logger` package is fully implemented (`NewLogger`, `openLogFile`, `getGitBranch`).
+- `internal/config` includes `LogFile`, `NoLog`, `LogTruncate` fields.
+- `internal/cli` integrates logger via `io.MultiWriter`.
+- Unit tests exist in `internal/logger/logger_test.go`.
 
 ## Manual Deployment Tasks
 
