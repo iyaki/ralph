@@ -46,6 +46,13 @@ func TestLoadConfigDefaults(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	assertDefaultCoreFields(t, c, home)
+	assertDefaultLoggingFields(t, c)
+}
+
+func assertDefaultCoreFields(t *testing.T, c *config.Config, home string) {
+	t.Helper()
+
 	if c.MaxIterations != 25 {
 		t.Fatalf("expected default max iterations 25, got %d", c.MaxIterations)
 	}
@@ -63,6 +70,36 @@ func TestLoadConfigDefaults(t *testing.T) {
 	}
 	if c.PromptsDir != filepath.Join(home, ".ralph") {
 		t.Fatalf("expected default prompts dir in HOME, got %q", c.PromptsDir)
+	}
+}
+
+func assertDefaultLoggingFields(t *testing.T, c *config.Config) {
+	t.Helper()
+
+	if !c.NoLog {
+		t.Fatalf("expected default NoLog=true, got %v", c.NoLog)
+	}
+	if c.LogTruncate {
+		t.Fatalf("expected default LogTruncate=false, got %v", c.LogTruncate)
+	}
+}
+
+func TestLoadConfigLogEnabledEnvCanEnableLogging(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte("no-log = true\n"), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	t.Setenv("RALPH_LOG_ENABLED", "1")
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.NoLog {
+		t.Fatalf("expected env RALPH_LOG_ENABLED=1 to enable logging, got NoLog=%v", c.NoLog)
 	}
 }
 

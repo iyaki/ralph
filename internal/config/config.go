@@ -33,6 +33,11 @@ type envValues struct {
 	agentMode              string
 }
 
+const (
+	defaultNoLog       = true
+	defaultLogTruncate = false
+)
+
 // Config holds all Ralph configuration.
 type Config struct {
 	ConfigFile             string                          `toml:"config-file"`
@@ -91,7 +96,10 @@ func (c *Config) LoadConfig() error {
 }
 
 func (c *Config) resolveFileConfig() (*Config, string, error) {
-	configFromFile := &Config{}
+	configFromFile := &Config{
+		NoLog:       defaultNoLog,
+		LogTruncate: defaultLogTruncate,
+	}
 
 	// Priority 1: Config file path from flag (c.ConfigFile is already set by flag parsing)
 	configPath := c.ConfigFile
@@ -163,8 +171,8 @@ func (c *Config) applyConfigValues(fileCfg *Config, env envValues) {
 	c.CustomPrompt = resolveString(c.CustomPrompt, env.customPrompt, fileCfg.CustomPrompt, "")
 	c.PromptsDir = resolveString(c.PromptsDir, env.promptsDir, fileCfg.PromptsDir, defaultPromptsDir())
 	c.LogFile = resolveString(c.LogFile, env.logFile, fileCfg.LogFile, defaultLogFile())
-	c.NoLog = resolveBool(c.NoLog, env.logEnabled, fileCfg.NoLog, true)
-	c.LogTruncate = resolveBool(c.LogTruncate, env.logAppend, fileCfg.LogTruncate, true)
+	c.NoLog = resolveNoLog(c.NoLog, env.logEnabled, fileCfg.NoLog)
+	c.LogTruncate = resolveLogTruncate(c.LogTruncate, env.logAppend, fileCfg.LogTruncate)
 	c.AgentName = resolveString(c.AgentName, env.agentName, fileCfg.AgentName, defaultAgentName)
 	c.Model = resolveString(c.Model, env.model, fileCfg.Model, "")
 	c.AgentMode = resolveString(c.AgentMode, env.agentMode, fileCfg.AgentMode, "")
@@ -209,20 +217,32 @@ func resolveString(flagValue, envValue, fileValue, defaultValue string) string {
 	return defaultValue
 }
 
-func resolveBool(flagValue bool, envValue string, fileValue bool, envDisableIsZero bool) bool {
+func resolveNoLog(flagValue bool, envValue string, fileValue bool) bool {
 	if flagValue {
 		return true
 	}
 
-	if envDisableIsZero && envValue == "0" {
+	if envValue != "" {
+		if parsed, err := strconv.ParseBool(envValue); err == nil {
+			return !parsed
+		}
+	}
+
+	return fileValue
+}
+
+func resolveLogTruncate(flagValue bool, envValue string, fileValue bool) bool {
+	if flagValue {
 		return true
 	}
 
-	if fileValue {
-		return true
+	if envValue != "" {
+		if parsed, err := strconv.ParseBool(envValue); err == nil {
+			return !parsed
+		}
 	}
 
-	return false
+	return fileValue
 }
 
 func defaultPromptsDir() string {

@@ -29,10 +29,6 @@ func NewLogger(cfg *config.Config) (*Logger, error) {
 		enabled: !cfg.NoLog,
 	}
 
-	if logEnabled := os.Getenv("RALPH_LOG_ENABLED"); logEnabled == "0" {
-		logger.enabled = false
-	}
-
 	if !logger.enabled {
 		return logger, nil
 	}
@@ -75,9 +71,6 @@ func NewLogger(cfg *config.Config) (*Logger, error) {
 
 func openLogFile(logFile string, truncate bool) (*os.File, error) {
 	logAppend := !truncate
-	if logAppendEnv := os.Getenv("RALPH_LOG_APPEND"); logAppendEnv == "0" {
-		logAppend = false
-	}
 
 	if logAppend {
 		// #nosec G304 -- log path is trusted configuration input
