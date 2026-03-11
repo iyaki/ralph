@@ -1,6 +1,6 @@
 # Implementation Plan (Logging)
 
-**Status:** Implementation Complete / Verification Needed (90%)
+**Status:** In Progress (Logging defaults alignment underway)
 **Last Updated:** 2026-03-11
 **Reference:** `specs/logging.md`
 
@@ -14,6 +14,16 @@
 
 ## Phased Plan
 
+### Selected Task (This Run)
+
+**Task:** Preserve explicit boolean logging flag overrides during config loading.
+
+**Why this is most important now:**
+
+- The Phase 1 definition of done requires explicit CLI enablement behavior to work.
+- Current failures showed explicit boolean false values were being dropped during config resolution.
+- This breaks deterministic precedence for the logging controls in real CLI usage.
+
 ### Phase 1: Configuration Defaults Alignment
 
 **Goal:** Ensure logging is disabled by default as per spec, and configuration overrides work correctly.
@@ -26,6 +36,7 @@
 
 **Checklist:**
 
+- [x] Preserve explicit boolean logging flag values by reading changed bool flags before config load and re-applying after config resolution.
 - [ ] Verify `NoLog` default value logic (Currently enabled by default, Spec says disabled)
 - [ ] Update `resolveBool` or defaults in `internal/config/config.go` if necessary to match "Disabled by default"
 - [ ] Verify `RALPH_LOG_ENABLED` env var precedence overrides config defaults
@@ -64,16 +75,16 @@
 
 ## Verification Log
 
-| Date       | Verification Step | Result                                                                                                  |
-| :--------- | :---------------- | :------------------------------------------------------------------------------------------------------ |
-| 2026-03-11 | Codebase Scan     | `internal/logger` and `internal/config` implementation exists. Gap identified in default `NoLog` state. |
+2026-03-11: `go test ./internal/cli -run 'TestRunCommandNoLogFalseFlagOverridesConfig|TestRunCommandNoLogFalseFlagOverridesEnv' -count=1` - failed initially, confirming explicit false flag values were not preserved through config load.
+2026-03-11: `go test ./internal/cli -run 'TestRunCommandNoLogFalseFlagOverridesConfig|TestRunCommandNoLogFalseFlagOverridesEnv|TestRunCommandNoLogFlagTracksExplicitFalse' -count=1` - pass.
+2026-03-11: `go test ./test/e2e -run 'TestE2ELoggingFlags/(NoLogFalseOverridesConfig|NoLogFalseOverridesEnv)' -count=1` - pass.
 
 ## Summary
 
-| Phase   | Goal                             | Status  |
-| :------ | :------------------------------- | :------ |
-| Phase 1 | Configuration Defaults Alignment | Pending |
-| Phase 2 | End-to-End Verification          | Pending |
+| Phase   | Goal                             | Status      |
+| :------ | :------------------------------- | :---------- |
+| Phase 1 | Configuration Defaults Alignment | In Progress |
+| Phase 2 | End-to-End Verification          | Pending     |
 
 **Remaining effort:** Fix default `NoLog` value and add E2E tests.
 
