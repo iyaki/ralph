@@ -24,15 +24,18 @@ func TestNewLoggerDisabledByConfig(t *testing.T) {
 	}
 }
 
-func TestNewLoggerDisabledByEnv(t *testing.T) {
+func TestNewLoggerDoesNotApplyEnvOverridesDirectly(t *testing.T) {
 	t.Setenv("RALPH_LOG_ENABLED", "0")
 	cfg := &config.Config{NoLog: false}
 	l, err := logger.NewLogger(cfg)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if l.Enabled() {
-		t.Fatal("expected logger to be disabled by env")
+	if !l.Enabled() {
+		t.Fatal("expected logger to use resolved config and remain enabled")
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("close failed: %v", err)
 	}
 }
 
@@ -40,9 +43,6 @@ func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "logs", "ralph.log")
 	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: false}
-
-	t.Setenv("RALPH_LOG_ENABLED", "")
-	t.Setenv("RALPH_LOG_APPEND", "")
 
 	l, err := logger.NewLogger(cfg)
 	if err != nil {
@@ -67,15 +67,14 @@ func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
 	}
 }
 
-func TestNewLoggerTruncatesWhenAppendDisabledByEnv(t *testing.T) {
+func TestNewLoggerTruncatesWhenConfigured(t *testing.T) {
 	dir := t.TempDir()
 	logPath := filepath.Join(dir, "ralph.log")
 	if err := os.WriteFile(logPath, []byte("old-content\n"), 0600); err != nil {
 		t.Fatalf("failed to seed log file: %v", err)
 	}
 
-	t.Setenv("RALPH_LOG_APPEND", "0")
-	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: false}
+	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: true}
 
 	l, err := logger.NewLogger(cfg)
 	if err != nil {
@@ -95,8 +94,6 @@ func TestNewLoggerTruncatesWhenAppendDisabledByEnv(t *testing.T) {
 }
 
 func TestNewLoggerUsesTempFileWhenLogPathEmpty(t *testing.T) {
-	t.Setenv("RALPH_LOG_ENABLED", "")
-	t.Setenv("RALPH_LOG_APPEND", "")
 	cfg := &config.Config{NoLog: false, LogFile: ""}
 
 	l, err := logger.NewLogger(cfg)

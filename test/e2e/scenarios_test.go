@@ -60,10 +60,11 @@ func TestE2EMissingPromptFile(t *testing.T) {
 
 func TestE2ELogging(t *testing.T) {
 	tc := TestCase{
-		Name: "Logging: Enabled",
+		Name: "Logging: Enabled via env",
 		Args: []string{"--log-file", "ralph.log", "--prompt-file", "prompt.txt"},
 		Env: map[string]string{
 			"RALPH_TEST_AGENT_MODE": "complete_once",
+			"RALPH_LOG_ENABLED":     "1",
 		},
 		Files: map[string]string{
 			"prompt.txt": "Just a simple prompt",
