@@ -37,10 +37,21 @@ func NewRunCommand() *cobra.Command {
 func runCommandLogic(cmd *cobra.Command, args []string, cfg *config.Config) error {
 	promptName, scope := parsePositionalArgs(args)
 
+	noLogOverride, err := readBoolFlagOverride(cmd, "no-log")
+	if err != nil {
+		return err
+	}
+
+	logTruncateOverride, err := readBoolFlagOverride(cmd, "log-truncate")
+	if err != nil {
+		return err
+	}
+
 	// Load configuration with proper precedence
 	if err := cfg.LoadConfig(); err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
+	applyBoolFlagOverrides(cfg, noLogOverride, logTruncateOverride)
 
 	// Initialize logger
 	appLogger, err := logger.NewLogger(cfg)
@@ -69,6 +80,34 @@ func runCommandLogic(cmd *cobra.Command, args []string, cfg *config.Config) erro
 
 	// Run the main loop
 	return RunLoop(cfg, promptText, promptName, output)
+}
+
+type boolFlagOverride struct {
+	changed bool
+	value   bool
+}
+
+func readBoolFlagOverride(cmd *cobra.Command, flagName string) (boolFlagOverride, error) {
+	if !cmd.Flags().Changed(flagName) {
+		return boolFlagOverride{}, nil
+	}
+
+	value, err := cmd.Flags().GetBool(flagName)
+	if err != nil {
+		return boolFlagOverride{}, fmt.Errorf("failed to read --%s flag: %w", flagName, err)
+	}
+
+	return boolFlagOverride{changed: true, value: value}, nil
+}
+
+func applyBoolFlagOverrides(cfg *config.Config, noLogOverride, logTruncateOverride boolFlagOverride) {
+	if noLogOverride.changed {
+		cfg.NoLog = noLogOverride.value
+	}
+
+	if logTruncateOverride.changed {
+		cfg.LogTruncate = logTruncateOverride.value
+	}
 }
 
 func applyEffectiveSettings(
