@@ -23,6 +23,28 @@ jobs:
         with:
           version: v2.10
 
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "~1.25.8"
+      - name: test
+        if: ${{ hashFiles('**/*.go') != '' }}
+        run: make test
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "~1.25.8"
+      - name: coverage gate
+        if: ${{ hashFiles('**/*.go') != '' }}
+        run: make coverage
+
   arch:
     runs-on: ubuntu-latest
     steps:

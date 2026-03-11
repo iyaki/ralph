@@ -24,8 +24,7 @@
 
 - Build the CLI binary: `make build`.
 - Run from source (no build): `make run ARGS='<command> [flags]'`.
-- Example with test data (config + fixture): `make analyze-example`.
-- Example with failing config (failOn): `make analyze-fail`.
+- Get help for available targets: `make help`.
 
 ## Tooling Expectations
 
