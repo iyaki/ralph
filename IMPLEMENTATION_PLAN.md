@@ -1,6 +1,6 @@
 # Implementation Plan (Logging)
 
-**Status:** In Progress (Logging defaults alignment underway)
+**Status:** In Progress (Phase 1 complete; Phase 2 coverage hardening pending)
 **Last Updated:** 2026-03-11
 **Reference:** `specs/logging.md`
 
@@ -16,13 +16,13 @@
 
 ### Selected Task (This Run)
 
-**Task:** Preserve explicit boolean logging flag overrides during config loading.
+**Task:** Align logging defaults and precedence so enablement is resolved in config (not logger internals).
 
-**Why this is most important now:**
+**Why this was most important:**
 
-- The Phase 1 definition of done requires explicit CLI enablement behavior to work.
-- Current failures showed explicit boolean false values were being dropped during config resolution.
-- This breaks deterministic precedence for the logging controls in real CLI usage.
+- `specs/logging.md` and `specs/configuration.md` require logging to be disabled by default.
+- Logger-level env checks created precedence drift and bypassed resolved config values.
+- E2E logging behavior depended on fixing this before broader lifecycle assertions.
 
 ### Phase 1: Configuration Defaults Alignment
 
@@ -37,16 +37,18 @@
 **Checklist:**
 
 - [x] Preserve explicit boolean logging flag values by reading changed bool flags before config load and re-applying after config resolution.
-- [ ] Verify `NoLog` default value logic (Currently enabled by default, Spec says disabled)
-- [ ] Update `resolveBool` or defaults in `internal/config/config.go` if necessary to match "Disabled by default"
-- [ ] Verify `RALPH_LOG_ENABLED` env var precedence overrides config defaults
-- [ ] Verify `LogTruncate` defaults to `false` (Append mode)
+- [x] Verify `NoLog` default value logic (Currently enabled by default, Spec says disabled)
+- [x] Update `resolveBool` or defaults in `internal/config/config.go` if necessary to match "Disabled by default"
+- [x] Verify `RALPH_LOG_ENABLED` env var precedence overrides config defaults
+- [x] Verify `LogTruncate` defaults to `false` (Append mode)
 
 **Definition of Done:**
 
 - Running `ralph` without flags/config does NOT create `ralph.log`.
 - Running `ralph --no-log=false` (or equivalent enablement) creates `ralph.log`.
 - `RALPH_LOG_ENABLED=1` enables logging.
+
+**Status:** Completed
 
 ### Phase 2: End-to-End Verification
 
@@ -59,14 +61,14 @@
 **Checklist:**
 
 - [ ] Create/Update E2E test for logging lifecycle:
-  - [ ] Default state (No log file)
-  - [ ] Enabled via Env (`RALPH_LOG_ENABLED=1`)
+  - [x] Default state (No log file)
+  - [x] Enabled via Env (`RALPH_LOG_ENABLED=1`)
   - [ ] Enabled via Config (`no-log = false`)
-  - [ ] File creation at `ralph.log` (default) or custom path
-  - [ ] Header presence (Timestamp, Git metadata)
+  - [x] File creation at `ralph.log` (default) or custom path
+  - [x] Header presence (Timestamp, Git metadata)
   - [ ] File content matches stdout (via MultiWriter)
   - [ ] File permissions (`0600`)
-- [ ] Verify Truncate vs Append behavior (`RALPH_LOG_APPEND=0`)
+- [x] Verify Truncate vs Append behavior (`RALPH_LOG_APPEND=0`)
 
 **Definition of Done:**
 
@@ -78,15 +80,18 @@
 2026-03-11: `go test ./internal/cli -run 'TestRunCommandNoLogFalseFlagOverridesConfig|TestRunCommandNoLogFalseFlagOverridesEnv' -count=1` - failed initially, confirming explicit false flag values were not preserved through config load.
 2026-03-11: `go test ./internal/cli -run 'TestRunCommandNoLogFalseFlagOverridesConfig|TestRunCommandNoLogFalseFlagOverridesEnv|TestRunCommandNoLogFlagTracksExplicitFalse' -count=1` - pass.
 2026-03-11: `go test ./test/e2e -run 'TestE2ELoggingFlags/(NoLogFalseOverridesConfig|NoLogFalseOverridesEnv)' -count=1` - pass.
+2026-03-11: `go test ./internal/config ./internal/logger ./internal/cli ./test/e2e -count=1` - failed initially (logger/env precedence + e2e defaults mismatch), then pass after precedence/default alignment and test updates.
+2026-03-11: `make lint` - pass.
+2026-03-11: `make test` - pass.
 
 ## Summary
 
 | Phase   | Goal                             | Status      |
 | :------ | :------------------------------- | :---------- |
-| Phase 1 | Configuration Defaults Alignment | In Progress |
-| Phase 2 | End-to-End Verification          | Pending     |
+| Phase 1 | Configuration Defaults Alignment | Completed   |
+| Phase 2 | End-to-End Verification          | In Progress |
 
-**Remaining effort:** Fix default `NoLog` value and add E2E tests.
+**Remaining effort:** Add E2E assertions for config-file enablement (`no-log = false`), stdout/log parity, and file permission checks.
 
 ## Known Existing Work
 
