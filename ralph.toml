@@ -1,7 +1,7 @@
 agent = "opencode"
 # model = "gpt-4"
 # Optional agent mode/sub-agent (if supported by the CLI)
-# agent-mode = "ralph"
+agent-mode = "ralph"
 
 # Iteration Settings
 max-iterations = 25
