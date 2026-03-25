@@ -27,7 +27,8 @@ set -eu
 
 ralph() ( # Subshell function used to give a scope to code
 	# shellcheck disable=SC2034
-	OPENCODE_EXPERIMENTAL_PLAN_MODE=0 # Disabled because the opencode experimental plan mode causes hangs on non interactive sessions
+	export OPENCODE_EXPERIMENTAL_PLAN_MODE=0 # Disabled because the opencode experimental plan mode causes hangs on non interactive sessions
+	export OPENCODE_DISABLE_AUTOCOMPACT=true # Avoid losing context
 
 	# Function to search for file recursively upwards
 	find_file() {
