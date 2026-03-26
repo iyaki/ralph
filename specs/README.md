@@ -29,3 +29,4 @@ Design docs and technical specifications
 - [run-command.md](run-command.md)
 - [config-by-prompt.md](config-by-prompt.md)
 - [config-local-overlay.md](config-local-overlay.md)
+- [agent-env-overrides.md](agent-env-overrides.md)
