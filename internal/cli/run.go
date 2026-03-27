@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -14,6 +15,8 @@ import (
 	"github.com/iyaki/ralph/internal/logger"
 	"github.com/iyaki/ralph/internal/prompt"
 )
+
+var envKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // NewRunCommand creates the run command for Ralph.
 func NewRunCommand() *cobra.Command {
@@ -47,11 +50,17 @@ func runCommandLogic(cmd *cobra.Command, args []string, cfg *config.Config) erro
 		return err
 	}
 
+	envFlagOverrides, err := readEnvFlagOverrides(cmd)
+	if err != nil {
+		return err
+	}
+
 	// Load configuration with proper precedence
 	if err := cfg.LoadConfig(); err != nil {
 		return fmt.Errorf("failed to load config: %w", err)
 	}
 	applyBoolFlagOverrides(cfg, noLogOverride, logTruncateOverride)
+	applyEnvFlagOverrides(cfg, envFlagOverrides)
 
 	// Initialize logger
 	appLogger, err := logger.NewLogger(cfg)
@@ -107,6 +116,46 @@ func applyBoolFlagOverrides(cfg *config.Config, noLogOverride, logTruncateOverri
 
 	if logTruncateOverride.changed {
 		cfg.LogTruncate = logTruncateOverride.value
+	}
+}
+
+func readEnvFlagOverrides(cmd *cobra.Command) (map[string]string, error) {
+	rawEntries, err := cmd.Flags().GetStringArray("env")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read --env flag: %w", err)
+	}
+
+	if len(rawEntries) == 0 {
+		return nil, nil
+	}
+
+	overrides := make(map[string]string, len(rawEntries))
+	for i, entry := range rawEntries {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
+			return nil, fmt.Errorf("invalid --env entry #%d: expected KEY=VALUE", i+1)
+		}
+		if !envKeyPattern.MatchString(key) {
+			return nil, fmt.Errorf("invalid --env key %q at entry #%d", key, i+1)
+		}
+
+		overrides[key] = value
+	}
+
+	return overrides, nil
+}
+
+func applyEnvFlagOverrides(cfg *config.Config, overrides map[string]string) {
+	if len(overrides) == 0 {
+		return
+	}
+
+	if cfg.Env == nil {
+		cfg.Env = make(map[string]string, len(overrides))
+	}
+
+	for key, value := range overrides {
+		cfg.Env[key] = value
 	}
 }
 
@@ -266,4 +315,5 @@ func setupSharedFlags(cmd *cobra.Command, cfg *config.Config) {
 	flags.StringVarP(&cfg.AgentName, "agent", "a", "", "AI agent to use: opencode, claude, cursor (default: opencode)")
 	flags.StringVar(&cfg.Model, "model", "", "AI model to use (e.g., claude-sonnet-4, gpt-4)")
 	flags.StringVar(&cfg.AgentMode, "agent-mode", "", "Agent mode/sub-agent to use (e.g., reviewer, planner)")
+	flags.StringArray("env", nil, "Set/override an agent environment variable (KEY=VALUE). Repeatable")
 }
