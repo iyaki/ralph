@@ -93,6 +93,30 @@ func TestNewLoggerTruncatesWhenConfigured(t *testing.T) {
 	}
 }
 
+func TestNewLoggerTruncateCreatesSecureFilePermissions(t *testing.T) {
+	dir := t.TempDir()
+	logPath := filepath.Join(dir, "new-ralph.log")
+
+	cfg := &config.Config{NoLog: false, LogFile: logPath, LogTruncate: true}
+
+	l, err := logger.NewLogger(cfg)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := l.Close(); err != nil {
+		t.Fatalf("close failed: %v", err)
+	}
+
+	info, err := os.Stat(logPath)
+	if err != nil {
+		t.Fatalf("failed to stat log file: %v", err)
+	}
+
+	if got := info.Mode().Perm(); got != 0600 {
+		t.Fatalf("expected log permissions 0600, got %04o", got)
+	}
+}
+
 func TestNewLoggerUsesTempFileWhenLogPathEmpty(t *testing.T) {
 	cfg := &config.Config{NoLog: false, LogFile: ""}
 

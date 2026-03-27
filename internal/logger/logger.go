@@ -77,7 +77,8 @@ func openLogFile(logFile string, truncate bool) (*os.File, error) {
 		return os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, logFilePerm)
 	}
 
-	return os.Create(logFile) // #nosec G304 -- log path is trusted configuration input
+	// #nosec G304 -- log path is trusted configuration input
+	return os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, logFilePerm)
 }
 
 // Close closes the logger.
