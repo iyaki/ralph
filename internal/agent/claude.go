@@ -8,6 +8,7 @@ import (
 type ClaudeAgent struct {
 	Model     string
 	AgentMode string
+	Env       []string
 }
 
 // Execute runs claude with the given prompt.
@@ -22,7 +23,7 @@ func (a *ClaudeAgent) Execute(prompt string, output io.Writer) (string, error) {
 	}
 	args = append(args, prompt)
 
-	return executeAgentCommand("claude", args, output, "claude")
+	return executeAgentCommand("claude", args, a.Env, output, "claude")
 }
 
 // Name returns the name of the agent.

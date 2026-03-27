@@ -8,6 +8,7 @@ import (
 type OpencodeAgent struct {
 	Model     string
 	AgentMode string
+	Env       []string
 }
 
 // Execute runs opencode with the given prompt.
@@ -22,7 +23,7 @@ func (a *OpencodeAgent) Execute(prompt string, output io.Writer) (string, error)
 	}
 	args = append(args, prompt)
 
-	return executeAgentCommand("opencode", args, output, "opencode")
+	return executeAgentCommand("opencode", args, a.Env, output, "opencode")
 }
 
 // Name returns the name of the agent.

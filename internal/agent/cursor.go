@@ -8,6 +8,7 @@ import (
 type CursorAgent struct {
 	Model     string
 	AgentMode string
+	Env       []string
 }
 
 // Execute runs cursor with the given prompt.
@@ -19,7 +20,7 @@ func (a *CursorAgent) Execute(prompt string, output io.Writer) (string, error) {
 	}
 	args = append(args, prompt)
 
-	return executeAgentCommand("cursor", args, output, "cursor")
+	return executeAgentCommand("cursor", args, a.Env, output, "cursor")
 }
 
 // Name returns the name of the agent.

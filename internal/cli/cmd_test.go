@@ -166,6 +166,76 @@ func TestRunLoopWarnsWhenAgentUnavailable(t *testing.T) {
 	}
 }
 
+func TestRunLoopAppliesEffectiveEnvOverridesToAgentProcess(t *testing.T) {
+	tmp := t.TempDir()
+	script := "#!/bin/sh\n" +
+		"printf 'INHERITED_ONLY:%s\\n' \"$INHERITED_ONLY\"\n" +
+		"printf 'OVERRIDE_ME:%s\\n' \"$OVERRIDE_ME\"\n" +
+		"printf 'COMPLEX:%s\\n' \"$COMPLEX\"\n" +
+		"printf '<promise>COMPLETE</promise>\\n'\n"
+	writeExecutable(t, tmp, "opencode", script)
+	t.Setenv("PATH", tmp)
+	t.Setenv("DEBUG", "")
+	t.Setenv("INHERITED_ONLY", "from-parent")
+	t.Setenv("OVERRIDE_ME", "from-parent")
+
+	cfg := &config.Config{
+		MaxIterations: 1,
+		AgentName:     "opencode",
+		Env: map[string]string{
+			"OVERRIDE_ME": "from-config",
+			"COMPLEX":     "a=b=c",
+		},
+	}
+
+	var out bytes.Buffer
+	err := cli.RunLoop(cfg, "task", "build", &out)
+	if err != nil {
+		t.Fatalf("expected completion success, got %v", err)
+	}
+
+	output := out.String()
+	if !strings.Contains(output, "INHERITED_ONLY:from-parent") {
+		t.Fatalf("expected inherited environment variable in output, got %q", output)
+	}
+	if !strings.Contains(output, "OVERRIDE_ME:from-config") {
+		t.Fatalf("expected config env override in output, got %q", output)
+	}
+	if !strings.Contains(output, "COMPLEX:a=b=c") {
+		t.Fatalf("expected env value containing '=' to be preserved, got %q", output)
+	}
+}
+
+func TestRunLoopRejectsInvalidAgentEnvKeyBeforeExecution(t *testing.T) {
+	tmp := t.TempDir()
+	writeExecutable(t, tmp, "opencode", "#!/bin/sh\nprintf 'agent-ran\\n'\nprintf '<promise>COMPLETE</promise>\\n'\n")
+	t.Setenv("PATH", tmp)
+	t.Setenv("DEBUG", "")
+
+	cfg := &config.Config{
+		MaxIterations: 1,
+		AgentName:     "opencode",
+		Env: map[string]string{
+			"1INVALID": "super-secret-token",
+		},
+	}
+
+	var out bytes.Buffer
+	err := cli.RunLoop(cfg, "task", "build", &out)
+	if err == nil {
+		t.Fatal("expected invalid environment key error")
+	}
+	if !strings.Contains(err.Error(), "invalid environment key") {
+		t.Fatalf("expected invalid environment key error, got %v", err)
+	}
+	if strings.Contains(err.Error(), "super-secret-token") {
+		t.Fatalf("expected error to redact env value, got %v", err)
+	}
+	if strings.Contains(out.String(), "agent-ran") {
+		t.Fatalf("expected agent process not to start, got %q", out.String())
+	}
+}
+
 func TestRunLoopHandlesExecutionWarningAndMaxIterations(t *testing.T) {
 	tmp := t.TempDir()
 	writeExecutable(t, tmp, "opencode", "#!/bin/sh\necho \"partial\"\nexit 1\n")

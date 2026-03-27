@@ -16,7 +16,7 @@ import (
 	"github.com/iyaki/ralph/internal/prompt"
 )
 
-var envKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+var envFlagKeyPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 // NewRunCommand creates the run command for Ralph.
 func NewRunCommand() *cobra.Command {
@@ -135,7 +135,7 @@ func readEnvFlagOverrides(cmd *cobra.Command) (map[string]string, error) {
 		if !ok {
 			return nil, fmt.Errorf("invalid --env entry #%d: expected KEY=VALUE", i+1)
 		}
-		if !envKeyPattern.MatchString(key) {
+		if !envFlagKeyPattern.MatchString(key) {
 			return nil, fmt.Errorf("invalid --env key %q at entry #%d", key, i+1)
 		}
 
@@ -226,8 +226,13 @@ func RunLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 	// Replace placeholders in prompt
 	promptText = strings.ReplaceAll(promptText, "<COMPLETION_SIGNAL>", completionSignal)
 
+	effectiveEnv, err := agent.BuildEffectiveEnv(cfg.Env)
+	if err != nil {
+		return fmt.Errorf("failed to build agent environment: %w", err)
+	}
+
 	// Get the configured agent
-	agentInstance := agent.GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode)
+	agentInstance := agent.GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode, effectiveEnv)
 
 	// Check if agent is available
 	if !agentInstance.IsAvailable() {

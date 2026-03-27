@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -122,11 +123,52 @@ func TestGetAgentReturnsExpectedType(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			a := agent.GetAgent(tc.agentName, "model-x", "reviewer")
+			a := agent.GetAgent(tc.agentName, "model-x", "reviewer", nil)
 			if a.Name() != tc.expected {
 				t.Fatalf("expected %q, got %q", tc.expected, a.Name())
 			}
 		})
+	}
+}
+
+func TestBuildEffectiveEnvAppliesOverridesOnTopOfInheritedEnvironment(t *testing.T) {
+	t.Setenv("INHERITED_ONLY", "from-parent")
+	t.Setenv("OVERRIDE_ME", "from-parent")
+
+	effectiveEnv, err := agent.BuildEffectiveEnv(map[string]string{
+		"OVERRIDE_ME": "from-override",
+		"COMPLEX":     "a=b=c",
+	})
+	if err != nil {
+		t.Fatalf("expected no error building effective env, got %v", err)
+	}
+
+	parsed := parseEnvironmentEntries(t, effectiveEnv)
+	if got := parsed["INHERITED_ONLY"]; got != "from-parent" {
+		t.Fatalf("expected inherited env to be preserved, got %q", got)
+	}
+	if got := parsed["OVERRIDE_ME"]; got != "from-override" {
+		t.Fatalf("expected override env value, got %q", got)
+	}
+	if got := parsed["COMPLEX"]; got != "a=b=c" {
+		t.Fatalf("expected env value with '=' preserved, got %q", got)
+	}
+
+	assertEnvironmentEntriesAreSorted(t, effectiveEnv)
+}
+
+func TestBuildEffectiveEnvRejectsInvalidKeyWithoutLeakingValue(t *testing.T) {
+	_, err := agent.BuildEffectiveEnv(map[string]string{
+		"1INVALID": "super-secret-token",
+	})
+	if err == nil {
+		t.Fatal("expected invalid env key error")
+	}
+	if !strings.Contains(err.Error(), "invalid environment key") {
+		t.Fatalf("expected invalid key error, got %v", err)
+	}
+	if strings.Contains(err.Error(), "super-secret-token") {
+		t.Fatalf("expected error to redact env value, got %v", err)
 	}
 }
 
@@ -218,6 +260,52 @@ func TestOpencodeExecuteAndAvailability(t *testing.T) {
 	}
 }
 
+func TestAllAgentsExecuteWithProvidedEnvironment(t *testing.T) {
+	tests := []struct {
+		name      string
+		command   string
+		executeFn func(prompt string, output io.Writer) (string, error)
+	}{
+		{
+			name:    "opencode",
+			command: "opencode",
+			executeFn: (&agent.OpencodeAgent{
+				Env: []string{"OVERRIDE_ME=from-agent"},
+			}).Execute,
+		},
+		{
+			name:    "claude",
+			command: "claude",
+			executeFn: (&agent.ClaudeAgent{
+				Env: []string{"OVERRIDE_ME=from-agent"},
+			}).Execute,
+		},
+		{
+			name:    "cursor",
+			command: "cursor",
+			executeFn: (&agent.CursorAgent{
+				Env: []string{"OVERRIDE_ME=from-agent"},
+			}).Execute,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tmp := t.TempDir()
+			writeExecutable(t, tmp, tc.command, "#!/bin/sh\nprintf 'OVERRIDE_ME:%s\\n' \"$OVERRIDE_ME\"\n")
+			t.Setenv("PATH", tmp)
+
+			result, err := tc.executeFn("prompt", &bytes.Buffer{})
+			if err != nil {
+				t.Fatalf("expected successful execute, got %v", err)
+			}
+			if !strings.Contains(result, "OVERRIDE_ME:from-agent") {
+				t.Fatalf("expected provided environment override in result, got %q", result)
+			}
+		})
+	}
+}
+
 func TestOpencodeExecuteStreamsOutputInRealTime(t *testing.T) {
 	a := &agent.OpencodeAgent{}
 	testAgentExecutionStreamsOutputInRealTime(t, "opencode", a.Execute)
@@ -226,4 +314,55 @@ func TestOpencodeExecuteStreamsOutputInRealTime(t *testing.T) {
 func TestCursorExecuteStreamsOutputInRealTime(t *testing.T) {
 	a := &agent.CursorAgent{}
 	testAgentExecutionStreamsOutputInRealTime(t, "cursor", a.Execute)
+}
+
+func parseEnvironmentEntries(t *testing.T, entries []string) map[string]string {
+	t.Helper()
+
+	result := make(map[string]string, len(entries))
+	for _, entry := range entries {
+		key, value, ok := strings.Cut(entry, "=")
+		if !ok {
+			t.Fatalf("expected KEY=VALUE environment entry, got %q", entry)
+		}
+
+		result[key] = value
+	}
+
+	return result
+}
+
+func assertEnvironmentEntriesAreSorted(t *testing.T, entries []string) {
+	t.Helper()
+
+	keys := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		key, _, ok := strings.Cut(entry, "=")
+		if !ok {
+			t.Fatalf("expected KEY=VALUE environment entry, got %q", entry)
+		}
+
+		keys = append(keys, key)
+	}
+
+	sorted := append([]string(nil), keys...)
+	sort.Strings(sorted)
+
+	if !equalStringSlices(keys, sorted) {
+		t.Fatalf("expected sorted environment keys, got %v", keys)
+	}
+}
+
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+
+	return true
 }
