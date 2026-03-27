@@ -155,6 +155,7 @@
 
 - `internal/config/config_test.go`
 - `internal/cli/run_internal_test.go`
+- `internal/cli/cmd_config_test.go`
 - `internal/agent/agent_test.go`
 
 **Reference pattern:** `internal/config/config_test.go` and `internal/cli/run_internal_test.go` (focused precedence tests)
@@ -165,7 +166,7 @@
 - [x] Add parsing/validation tests for valid, invalid, and duplicate `--env` entries.
 - [ ] Add config tests for `[env]` TOML decode and overlay merge behavior.
 - [ ] Add runner/agent tests asserting effective env propagation to subprocess.
-- [ ] Add regression tests ensuring env-override logic does not alter non-env config precedence.
+- [x] Add regression tests ensuring env-override logic does not alter non-env config precedence.
 
 #### 11.2 E2E verification matrix for agent env overrides
 
@@ -276,6 +277,10 @@
 - 2026-03-27: `go test ./test/e2e -run 'TestE2E.*Env.*' -count=1` - pass; env-focused matrix now verifies flag-only, config-only, precedence, repeated-key, and invalid-entry/no-leak behaviors.
 - 2026-03-27: `go test ./test/e2e -count=1` - pass; full e2e suite remains stable after env matrix additions.
 - 2026-03-27: `git commit -m "test(e2e): add agent env override matrix coverage"` - committed Phase 11.2 implementation as `553011c`.
+- 2026-03-27: `go test ./internal/cli -run TestConfigPrecedence_AgentEnvOverridesDoNotAffectModelOrAgentModePrecedence -count=1` - failed first (red) due missing regression coverage proving agent env overrides do not alter model/agent-mode precedence.
+- 2026-03-27: `go test ./internal/cli -run TestConfigPrecedence_AgentEnvOverridesDoNotAffectModelOrAgentModePrecedence -count=1` - pass after adding regression test in `internal/cli/cmd_config_test.go`.
+- 2026-03-27: `go test ./internal/cli -count=1` - pass; full CLI suite remains green with added non-env precedence guard.
+- 2026-03-27: `git commit -m "test(cli): guard model precedence from agent env overrides"` - committed Phase 11.1 regression safety test as `be2e767`.
 
 ## Summary
 
@@ -296,6 +301,7 @@
 - `internal/agent/agent.go` and all concrete agents now receive and pass explicit effective env slices during execution.
 - `internal/cli/run.go` now builds effective agent env once per run and fails fast on invalid env keys before starting agent subprocess execution.
 - `internal/agent/agent_test.go` and `internal/cli/cmd_test.go` now cover precedence, value preservation (`=` in values), cross-agent env propagation, and redacted invalid-key failures.
+- `internal/cli/cmd_config_test.go` now includes a regression test proving `[env]`/`--env` agent overrides do not affect `model`/`agent-mode` precedence (flags/env/front matter/prompt-overrides/global config order remains intact).
 - `internal/config/config.go` already implements deterministic precedence and local overlay merge for existing fields.
 - `test/e2e/harness_test.go` already builds a deterministic fixture agent and supports per-test environment setup.
 - `test/e2e/agent_env_overrides_test.go` now covers the full env-override verification matrix (flag-only, config-only, combined precedence, repeated key last-wins, invalid entry fail-fast/no-secret-leak).
