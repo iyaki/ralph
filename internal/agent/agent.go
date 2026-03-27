@@ -16,16 +16,16 @@ type Agent interface {
 }
 
 // GetAgent returns the appropriate agent based on configuration.
-func GetAgent(agentName, model, agentMode string) Agent {
+func GetAgent(agentName, model, agentMode string, env []string) Agent {
 	switch agentName {
 	case "claude":
-		return &ClaudeAgent{Model: model, AgentMode: agentMode}
+		return &ClaudeAgent{Model: model, AgentMode: agentMode, Env: env}
 	case "cursor":
-		return &CursorAgent{Model: model, AgentMode: agentMode}
+		return &CursorAgent{Model: model, AgentMode: agentMode, Env: env}
 	case "opencode":
-		return &OpencodeAgent{Model: model, AgentMode: agentMode}
+		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: env}
 	default:
 		// Default to opencode for backward compatibility
-		return &OpencodeAgent{Model: model, AgentMode: agentMode}
+		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: env}
 	}
 }
