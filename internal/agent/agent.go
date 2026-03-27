@@ -17,15 +17,17 @@ type Agent interface {
 
 // GetAgent returns the appropriate agent based on configuration.
 func GetAgent(agentName, model, agentMode string, env []string) Agent {
+	effectiveEnv := cloneStringSlice(env)
+
 	switch agentName {
 	case "claude":
-		return &ClaudeAgent{Model: model, AgentMode: agentMode, Env: env}
+		return &ClaudeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
 	case "cursor":
-		return &CursorAgent{Model: model, AgentMode: agentMode, Env: env}
+		return &CursorAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
 	case "opencode":
-		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: env}
+		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
 	default:
 		// Default to opencode for backward compatibility
-		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: env}
+		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
 	}
 }

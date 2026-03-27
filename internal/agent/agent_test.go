@@ -131,6 +131,41 @@ func TestGetAgentReturnsExpectedType(t *testing.T) {
 	}
 }
 
+func TestGetAgentCapturesEnvironmentSnapshot(t *testing.T) {
+	tests := []struct {
+		name      string
+		agentName string
+		command   string
+	}{
+		{name: "opencode", agentName: "opencode", command: "opencode"},
+		{name: "claude", agentName: "claude", command: "claude"},
+		{name: "cursor", agentName: "cursor", command: "cursor"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			tmp := t.TempDir()
+			writeExecutable(t, tmp, tc.command, "#!/bin/sh\nprintf 'SNAPSHOT:%s\\n' \"$SNAPSHOT\"\n")
+			t.Setenv("PATH", tmp)
+
+			env := []string{"SNAPSHOT=original"}
+			a := agent.GetAgent(tc.agentName, "", "", env)
+			env[0] = "SNAPSHOT=mutated"
+
+			result, err := a.Execute("prompt", &bytes.Buffer{})
+			if err != nil {
+				t.Fatalf("expected successful execute, got %v", err)
+			}
+			if !strings.Contains(result, "SNAPSHOT:original") {
+				t.Fatalf("expected original environment snapshot in result, got %q", result)
+			}
+			if strings.Contains(result, "SNAPSHOT:mutated") {
+				t.Fatalf("did not expect mutated environment value in result, got %q", result)
+			}
+		})
+	}
+}
+
 func TestBuildEffectiveEnvAppliesOverridesOnTopOfInheritedEnvironment(t *testing.T) {
 	t.Setenv("INHERITED_ONLY", "from-parent")
 	t.Setenv("OVERRIDE_ME", "from-parent")
