@@ -3,6 +3,7 @@ package e2e_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -162,5 +163,39 @@ func TestE2ELoggingPermissions(t *testing.T) {
 
 	if got := logInfo.Mode().Perm(); got != 0o600 {
 		t.Fatalf("expected log file mode 0600, got %04o", got)
+	}
+}
+
+func TestE2ELoggingStdoutParity(t *testing.T) {
+	tc := TestCase{
+		Name: "Logging: Log file contains stdout stream",
+		Args: []string{"--log-file", "ralph.log", "--prompt-file", "prompt.txt"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "complete_once",
+			"RALPH_LOG_ENABLED":     "1",
+		},
+		Files: map[string]string{
+			"prompt.txt": "Just a simple prompt",
+		},
+		ExpectedExitCode: 0,
+		ExpectedFiles:    []string{"ralph.log"},
+		ExpectedStdoutContains: []string{
+			"Starting Ralph - Max iterations",
+			"Using agent: opencode",
+			"<promise>COMPLETE</promise>",
+		},
+	}
+
+	workDir := prepareTestEnv(t, tc)
+	res := executeRalph(t, workDir, tc)
+	verifyResult(t, workDir, tc, res)
+
+	logContent, err := os.ReadFile(filepath.Join(workDir, "ralph.log"))
+	if err != nil {
+		t.Fatalf("failed to read log file: %v", err)
+	}
+
+	if !strings.Contains(string(logContent), res.Stdout) {
+		t.Fatalf("expected log file to contain full stdout stream")
 	}
 }
