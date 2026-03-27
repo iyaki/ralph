@@ -1,6 +1,6 @@
 # Implementation Plan (agent-env-overrides)
 
-**Status:** In Progress (Phases 9-10 complete; Phase 11 in progress; Phase 12 pending)
+**Status:** In Progress (Phases 9-10 complete; Phases 11-12 in progress)
 **Last Updated:** 2026-03-27
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
@@ -12,7 +12,7 @@
 | Config loading and merge         | `specs/agent-env-overrides.md`, `specs/configuration.md`, `specs/config-local-overlay.md` | `internal/config/config.go` ✅, `internal/config/config_local_test.go` ✅                                                                                  | None         | `ralph.toml`, `ralph-local.toml` overlay behavior ✅              | `[env]` table decode + deterministic overlay merge implemented      |
 | CLI flag plumbing                | `specs/agent-env-overrides.md`, `specs/run-command.md`                                    | `internal/cli/run.go` ✅ (`setupSharedFlags`)                                                                                                              | None         | CLI root and `run` command share flags ✅                         | Repeatable `--env` implemented with validation and override merge   |
 | E2E harness and precedence tests | `specs/e2e-testing.md`                                                                    | `test/e2e/harness_test.go` ✅, `test/e2e/config_precedence_test.go` ✅, `test/e2e/agent_env_overrides_test.go` ✅                                          | None         | deterministic fixture agent symlink setup ✅, env echo support ✅ | Harness now validates full env-override scenario matrix             |
-| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                                                        | None         | Spec commit `d3461d1` ✅                                          | Proposed spec exists; implementation gap confirmed                  |
+| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                                                        | None         | Spec commit `d3461d1` ✅                                          | Scope spec status updated to Implemented and docs aligned           |
 
 ## Phased Plan
 
@@ -199,7 +199,7 @@
 ### Phase 12: Documentation Alignment and Final Quality Gates
 
 **Goal:** Align user-facing docs/spec status with implemented behavior and close quality gates.
-**Status:** Not started
+**Status:** In Progress (12.1 complete; 12.2 pending)
 **Paths:**
 
 - `specs/agent-env-overrides.md`
@@ -221,9 +221,9 @@
 **Checklist:**
 
 - [x] Verified scope spec exists and describes required precedence/validation behaviors.
-- [ ] Update configuration tables/docs to include `--env` and `[env]` semantics.
-- [ ] Add redacted examples for CLI and TOML usage in docs.
-- [ ] Mark scope spec status and verification section as implemented only after code/tests pass.
+- [x] Update configuration tables/docs to include `--env` and `[env]` semantics.
+- [x] Add redacted examples for CLI and TOML usage in docs.
+- [x] Mark scope spec status and verification section as implemented only after code/tests pass.
 
 #### 12.2 Quality gates and release-readiness verification
 
@@ -281,6 +281,10 @@
 - 2026-03-27: `go test ./internal/cli -run TestConfigPrecedence_AgentEnvOverridesDoNotAffectModelOrAgentModePrecedence -count=1` - pass after adding regression test in `internal/cli/cmd_config_test.go`.
 - 2026-03-27: `go test ./internal/cli -count=1` - pass; full CLI suite remains green with added non-env precedence guard.
 - 2026-03-27: `git commit -m "test(cli): guard model precedence from agent env overrides"` - committed Phase 11.1 regression safety test as `be2e767`.
+- 2026-03-27: `go test ./internal/config -run 'TestLoadConfigEnvTable|TestLoadConfigWithOverlayEnvDeepMerge' -count=1` - pass; validated `[env]` TOML decode and local overlay merge behavior remains stable before docs/spec sync.
+- 2026-03-27: `go test ./internal/agent -run 'TestBuildEffectiveEnvAppliesOverridesOnTopOfInheritedEnvironment|TestAllAgentsExecuteWithProvidedEnvironment' -count=1` - pass; validated deterministic env construction and cross-agent subprocess env propagation.
+- 2026-03-27: `go test ./test/e2e -run 'TestE2EEnvOverrides' -count=1` - pass; env override end-to-end matrix remains green.
+- 2026-03-27: `git commit -m "docs(config): align env override docs with implemented behavior"` - committed Phase 12.1 doc/spec sync changes as `dcc4b76`.
 
 ## Summary
 
@@ -289,9 +293,9 @@
 | Phase 9  | Config and CLI input surfaces                       | Complete    |
 | Phase 10 | Effective environment construction and agent wiring | Complete    |
 | Phase 11 | End-to-end coverage and safety validation           | In Progress |
-| Phase 12 | Documentation alignment and final quality gates     | Not started |
+| Phase 12 | Documentation alignment and final quality gates     | In Progress |
 
-**Remaining effort:** Complete remaining Phase 11.1 unit/integration safety checks and finish Phase 12 docs/quality gates.
+**Remaining effort:** Complete remaining Phase 11.1 unit/integration safety checks and finish Phase 12.2 quality gates.
 
 ## Known Existing Work
 
@@ -306,7 +310,7 @@
 - `test/e2e/harness_test.go` already builds a deterministic fixture agent and supports per-test environment setup.
 - `test/e2e/agent_env_overrides_test.go` now covers the full env-override verification matrix (flag-only, config-only, combined precedence, repeated key last-wins, invalid entry fail-fast/no-secret-leak).
 - `test/e2e/agents/ralph-test-agent/main.go` now supports deterministic opt-in env echo via `RALPH_TEST_AGENT_ECHO_ENV_KEYS` to assert child-process environment values in e2e tests.
-- `specs/agent-env-overrides.md` already defines exact precedence and validation expectations for this scope.
+- `specs/agent-env-overrides.md` is now marked Implemented, and `README.md`, `specs/configuration.md`, and `examples/ralph.toml` now document `--env` and `[env]` precedence and redacted usage examples.
 
 ## Manual Deployment Tasks
 
