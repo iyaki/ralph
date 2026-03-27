@@ -39,12 +39,6 @@
 			"source": "${localWorkspaceFolder}/.devcontainer/pull-git-lfs-artifacts-override.sh",
 			"target": "/usr/local/share/pull-git-lfs-artifacts.sh",
 			"type": "bind"
-		},
-		// Cache Go modules in a volume to speed up builds and avoid redownloading dependencies.
-		{
-			"source": "${localWorkspaceFolderBasename}-gopath",
-			"target": "/go",
-			"type": "volume"
 		}
 	],
 
@@ -69,7 +63,8 @@
 		"XDG_CONFIG_HOME": "/home/codespace/.config",
 		"XDG_CACHE_HOME": "/home/codespace/.cache",
 		"XDG_DATA_HOME": "/home/codespace/.local/share",
-		"XDG_STATE_HOME": "/home/codespace/.local/state"
+		"XDG_STATE_HOME": "/home/codespace/.local/state",
+		"GOTOOLCHAIN": "go1.25.7+auto"
 	},
 
 	"features": {
@@ -80,7 +75,8 @@
 			"username": "automatic"
 		},
 		"ghcr.io/devcontainers/features/go:": {
-			"version": "1.25"
+			"version": "1.25",
+			"golangciLintVersion": "latest"
 		},
 		"ghcr.io/devcontainers-extra/features/shfmt:1": {},
 		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
