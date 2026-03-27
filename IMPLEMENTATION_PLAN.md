@@ -165,7 +165,7 @@
 - [x] Verified existing test structure supports focused precedence tests.
 - [x] Add parsing/validation tests for valid, invalid, and duplicate `--env` entries.
 - [ ] Add config tests for `[env]` TOML decode and overlay merge behavior.
-- [ ] Add runner/agent tests asserting effective env propagation to subprocess.
+- [x] Add runner/agent tests asserting effective env propagation to subprocess.
 - [x] Add regression tests ensuring env-override logic does not alter non-env config precedence.
 
 #### 11.2 E2E verification matrix for agent env overrides
@@ -285,6 +285,10 @@
 - 2026-03-27: `go test ./internal/agent -run 'TestBuildEffectiveEnvAppliesOverridesOnTopOfInheritedEnvironment|TestAllAgentsExecuteWithProvidedEnvironment' -count=1` - pass; validated deterministic env construction and cross-agent subprocess env propagation.
 - 2026-03-27: `go test ./test/e2e -run 'TestE2EEnvOverrides' -count=1` - pass; env override end-to-end matrix remains green.
 - 2026-03-27: `git commit -m "docs(config): align env override docs with implemented behavior"` - committed Phase 12.1 doc/spec sync changes as `dcc4b76`.
+- 2026-03-27: `go test ./internal/agent -run TestGetAgentCapturesEnvironmentSnapshot -count=1` - failed first (red) because `GetAgent` retained a mutable env slice reference, allowing post-selection mutation to change subprocess env values.
+- 2026-03-27: `go test ./internal/agent -run TestGetAgentCapturesEnvironmentSnapshot -count=1` - pass after cloning env slices in `GetAgent`, ensuring deterministic environment snapshot semantics.
+- 2026-03-27: `go test ./internal/agent -count=1` - pass; full agent suite remains green after snapshot hardening.
+- 2026-03-27: `git commit -m "fix(agent): snapshot env overrides at selection time"` - committed Phase 11.1 runner/agent propagation hardening as `4471112`.
 
 ## Summary
 
@@ -303,6 +307,7 @@
 - `internal/cli/run.go` now includes repeatable `--env` parsing/validation (`KEY=VALUE`, split-on-first-`=`, key regex guard, last value wins) and applies CLI env overrides to `Config.Env`.
 - `internal/agent/runner.go` now centralizes effective env construction from `os.Environ()` plus validated overrides and injects deterministic `cmd.Env`.
 - `internal/agent/agent.go` and all concrete agents now receive and pass explicit effective env slices during execution.
+- `internal/agent/agent.go` now snapshots env slices during agent selection so later caller-side mutations cannot alter subprocess environment unexpectedly.
 - `internal/cli/run.go` now builds effective agent env once per run and fails fast on invalid env keys before starting agent subprocess execution.
 - `internal/agent/agent_test.go` and `internal/cli/cmd_test.go` now cover precedence, value preservation (`=` in values), cross-agent env propagation, and redacted invalid-key failures.
 - `internal/cli/cmd_config_test.go` now includes a regression test proving `[env]`/`--env` agent overrides do not affect `model`/`agent-mode` precedence (flags/env/front matter/prompt-overrides/global config order remains intact).
