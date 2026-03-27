@@ -3,6 +3,7 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/iyaki/ralph/internal/config"
@@ -193,5 +194,44 @@ func TestLoadConfigInvalidOverlay(t *testing.T) {
 	c := &config.Config{ConfigFile: configFile}
 	if err := c.LoadConfig(); err == nil {
 		t.Fatal("expected error for invalid overlay config")
+	}
+}
+
+func TestLoadConfigWithOverlayEnvDeepMerge(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	overlayFile := filepath.Join(dir, "ralph-local.toml")
+
+	baseContent := `
+[env]
+OPENAI_API_KEY = "from-base"
+HTTP_PROXY = "http://127.0.0.1:8080"
+`
+	if err := os.WriteFile(configFile, []byte(baseContent), 0644); err != nil {
+		t.Fatalf("failed to write base config: %v", err)
+	}
+
+	overlayContent := `
+[env]
+OPENAI_API_KEY = "from-overlay"
+HTTPS_PROXY = "http://127.0.0.1:8081"
+`
+	if err := os.WriteFile(overlayFile, []byte(overlayContent), 0644); err != nil {
+		t.Fatalf("failed to write overlay config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := map[string]string{
+		"OPENAI_API_KEY": "from-overlay",
+		"HTTP_PROXY":     "http://127.0.0.1:8080",
+		"HTTPS_PROXY":    "http://127.0.0.1:8081",
+	}
+
+	if !reflect.DeepEqual(c.Env, expected) {
+		t.Fatalf("expected merged env map %+v, got %+v", expected, c.Env)
 	}
 }

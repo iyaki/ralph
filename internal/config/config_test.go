@@ -3,6 +3,7 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/iyaki/ralph/internal/config"
@@ -353,5 +354,34 @@ agent-mode = "code"
 	}
 	if p2.AgentMode != "code" {
 		t.Errorf("expected agent-mode 'code', got %q", p2.AgentMode)
+	}
+}
+
+func TestLoadConfigEnvTable(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	content := `
+[env]
+OPENAI_API_KEY = "from-file"
+HTTP_PROXY = "http://127.0.0.1:8080"
+EMPTY_VALUE = ""
+`
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := map[string]string{
+		"OPENAI_API_KEY": "from-file",
+		"HTTP_PROXY":     "http://127.0.0.1:8080",
+		"EMPTY_VALUE":    "",
+	}
+
+	if !reflect.DeepEqual(c.Env, expected) {
+		t.Fatalf("expected env map %+v, got %+v", expected, c.Env)
 	}
 }

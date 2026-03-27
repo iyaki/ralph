@@ -55,6 +55,7 @@ type Config struct {
 	AgentName              string                          `toml:"agent"`
 	Model                  string                          `toml:"model"`
 	AgentMode              string                          `toml:"agent-mode"`
+	Env                    map[string]string               `toml:"env"`
 	PromptOverrides        map[string]PromptConfigOverride `toml:"prompt-overrides"`
 
 	configLoaded bool
@@ -176,6 +177,7 @@ func (c *Config) applyConfigValues(fileCfg *Config, env envValues) {
 	c.AgentName = resolveString(c.AgentName, env.agentName, fileCfg.AgentName, defaultAgentName)
 	c.Model = resolveString(c.Model, env.model, fileCfg.Model, "")
 	c.AgentMode = resolveString(c.AgentMode, env.agentMode, fileCfg.AgentMode, "")
+	c.Env = cloneStringMap(fileCfg.Env)
 
 	// Prompt overrides only come from the config file.
 	if len(fileCfg.PromptOverrides) > 0 {
@@ -263,6 +265,7 @@ func (c *Config) loadConfigFile(path string, target *Config) (toml.MetaData, err
 func mergeConfig(base *Config, overlay *Config, meta toml.MetaData) {
 	mergeScalars(base, overlay, meta)
 	mergePromptOverrides(base, overlay, meta)
+	mergeEnv(base, overlay)
 }
 
 func mergeScalars(base *Config, overlay *Config, meta toml.MetaData) {
@@ -339,4 +342,31 @@ func mergePromptOverrides(base *Config, overlay *Config, meta toml.MetaData) {
 			base.PromptOverrides[k] = v
 		}
 	}
+}
+
+func mergeEnv(base *Config, overlay *Config) {
+	if len(overlay.Env) == 0 {
+		return
+	}
+
+	if base.Env == nil {
+		base.Env = make(map[string]string)
+	}
+
+	for k, v := range overlay.Env {
+		base.Env[k] = v
+	}
+}
+
+func cloneStringMap(source map[string]string) map[string]string {
+	if len(source) == 0 {
+		return nil
+	}
+
+	cloned := make(map[string]string, len(source))
+	for k, v := range source {
+		cloned[k] = v
+	}
+
+	return cloned
 }
