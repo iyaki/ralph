@@ -1,7 +1,7 @@
 # Implementation Plan (Logging)
 
-**Status:** In Progress (Phase 1 complete; Phase 2 coverage hardening pending)
-**Last Updated:** 2026-03-11
+**Status:** In Progress (Phase 1 complete; Phase 2 permission coverage now complete, remaining assertions pending)
+**Last Updated:** 2026-03-27
 **Reference:** `specs/logging.md`
 
 ## Quick Reference
@@ -16,13 +16,13 @@
 
 ### Selected Task (This Run)
 
-**Task:** Align logging defaults and precedence so enablement is resolved in config (not logger internals).
+**Task:** Enforce and verify secure log file permissions (`0600`) for truncate mode.
 
 **Why this was most important:**
 
-- `specs/logging.md` and `specs/configuration.md` require logging to be disabled by default.
-- Logger-level env checks created precedence drift and bypassed resolved config values.
-- E2E logging behavior depended on fixing this before broader lifecycle assertions.
+- `specs/logging.md` requires log files to be treated as sensitive and written with restrictive permissions.
+- Truncate mode used a file creation path that produced `0644` under default umask, violating expected security posture.
+- Permission correctness is a foundational lifecycle assertion before deeper stdout/log parity checks.
 
 ### Phase 1: Configuration Defaults Alignment
 
@@ -67,7 +67,7 @@
   - [x] File creation at `ralph.log` (default) or custom path
   - [x] Header presence (Timestamp, Git metadata)
   - [ ] File content matches stdout (via MultiWriter)
-  - [ ] File permissions (`0600`)
+  - [x] File permissions (`0600`)
 - [x] Verify Truncate vs Append behavior (`RALPH_LOG_APPEND=0`)
 
 **Definition of Done:**
@@ -83,6 +83,10 @@
 2026-03-11: `go test ./internal/config ./internal/logger ./internal/cli ./test/e2e -count=1` - failed initially (logger/env precedence + e2e defaults mismatch), then pass after precedence/default alignment and test updates.
 2026-03-11: `make lint` - pass.
 2026-03-11: `make test` - pass.
+2026-03-27: `go test ./internal/logger -run TestNewLoggerTruncateCreatesSecureFilePermissions -count=1` - failed initially (expected `0600`, got `0644`), confirming truncate mode permission drift.
+2026-03-27: `go test ./internal/logger -run TestNewLoggerTruncateCreatesSecureFilePermissions -count=1` - pass after replacing truncate open path with explicit `os.OpenFile(..., 0600)`.
+2026-03-27: `go test ./internal/logger -count=1` - pass.
+2026-03-27: `go test ./test/e2e -run 'TestE2ELogging|TestE2ELoggingFlags|TestE2ELoggingPermissions' -count=1` - pass.
 
 ## Summary
 
@@ -91,7 +95,7 @@
 | Phase 1 | Configuration Defaults Alignment | Completed   |
 | Phase 2 | End-to-End Verification          | In Progress |
 
-**Remaining effort:** Add E2E assertions for config-file enablement (`no-log = false`), stdout/log parity, and file permission checks.
+**Remaining effort:** Add E2E assertions for config-file enablement (`no-log = false`) and stdout/log parity.
 
 ## Known Existing Work
 
