@@ -14,6 +14,7 @@ func TestE2ELoggingFlags(t *testing.T) {
 	}{
 		{name: "DefaultNoLog", tc: loggingDefaultNoLogCase()},
 		{name: "EnabledViaEnv", tc: loggingEnabledViaEnvCase()},
+		{name: "EnabledViaConfig", tc: loggingEnabledViaConfigCase()},
 		{name: "NoLogFalseOverridesConfig", tc: loggingNoLogFalseOverridesConfigCase()},
 		{name: "NoLogFalseOverridesEnv", tc: loggingNoLogFalseOverridesEnvCase()},
 		{name: "NoLog", tc: loggingNoLogFlagCase()},
@@ -52,6 +53,25 @@ func loggingEnabledViaEnvCase() TestCase {
 		},
 		Files: map[string]string{
 			"prompt.txt": "Just a simple prompt",
+		},
+		ExpectedExitCode: 0,
+		ExpectedFiles:    []string{"ralph.log"},
+	}
+}
+
+func loggingEnabledViaConfigCase() TestCase {
+	return TestCase{
+		Name: "Logging: Enabled via config no-log=false",
+		Args: []string{
+			"--config", "ralph.toml",
+			"--prompt-file", "prompt.txt",
+		},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "complete_once",
+		},
+		Files: map[string]string{
+			"prompt.txt": "Just a simple prompt",
+			"ralph.toml": "no-log = false\n",
 		},
 		ExpectedExitCode: 0,
 		ExpectedFiles:    []string{"ralph.log"},
