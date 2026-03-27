@@ -56,6 +56,43 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestEmitRequestedEnv(t *testing.T) {
+	t.Run("NoKeysConfigured", func(t *testing.T) {
+		stderr := &bytes.Buffer{}
+
+		emitRequestedEnv(func(string) string { return "" }, stderr)
+
+		if stderr.Len() != 0 {
+			t.Fatalf("expected no output when no env keys configured, got %q", stderr.String())
+		}
+	})
+
+	t.Run("CommaSeparatedKeys", func(t *testing.T) {
+		stderr := &bytes.Buffer{}
+		values := map[string]string{
+			"RALPH_TEST_AGENT_ECHO_ENV_KEYS": " KEY_ONE,KEY_TWO , ,KEY_THREE",
+			"KEY_ONE":                        "one",
+			"KEY_TWO":                        "two",
+			"KEY_THREE":                      "",
+		}
+
+		emitRequestedEnv(func(key string) string {
+			return values[key]
+		}, stderr)
+
+		output := stderr.String()
+		if !strings.Contains(output, "[ralph-test-agent] Env KEY_ONE=one") {
+			t.Fatalf("expected KEY_ONE in output, got %q", output)
+		}
+		if !strings.Contains(output, "[ralph-test-agent] Env KEY_TWO=two") {
+			t.Fatalf("expected KEY_TWO in output, got %q", output)
+		}
+		if !strings.Contains(output, "[ralph-test-agent] Env KEY_THREE=") {
+			t.Fatalf("expected KEY_THREE in output, got %q", output)
+		}
+	})
+}
+
 func runTest(t *testing.T, tt runTestCase) {
 	t.Helper()
 
