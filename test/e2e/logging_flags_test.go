@@ -1,6 +1,10 @@
 package e2e_test
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestE2ELoggingFlags(t *testing.T) {
 	testCases := []struct {
@@ -129,5 +133,34 @@ func loggingTruncateCase() TestCase {
 		ForbiddenFileContent: map[string][]string{
 			"ralph.log": {"OLD LOG CONTENT"},
 		},
+	}
+}
+
+func TestE2ELoggingPermissions(t *testing.T) {
+	tc := TestCase{
+		Name: "Logging: File permissions are 0600",
+		Args: []string{"--log-file", "ralph.log", "--prompt-file", "prompt.txt"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "complete_once",
+			"RALPH_LOG_ENABLED":     "1",
+		},
+		Files: map[string]string{
+			"prompt.txt": "Just a simple prompt",
+		},
+		ExpectedExitCode: 0,
+		ExpectedFiles:    []string{"ralph.log"},
+	}
+
+	workDir := prepareTestEnv(t, tc)
+	res := executeRalph(t, workDir, tc)
+	verifyResult(t, workDir, tc, res)
+
+	logInfo, err := os.Stat(filepath.Join(workDir, "ralph.log"))
+	if err != nil {
+		t.Fatalf("failed to stat log file: %v", err)
+	}
+
+	if got := logInfo.Mode().Perm(); got != 0o600 {
+		t.Fatalf("expected log file mode 0600, got %04o", got)
 	}
 }
