@@ -140,7 +140,7 @@ internal/
 
 | Dependency | Purpose                        |
 | ---------- | ------------------------------ |
-| Go 1.21    | Build and test toolchain       |
+| Go 1.25    | Build and test toolchain       |
 | Make       | Build/test convenience targets |
 
 ## Verifications
