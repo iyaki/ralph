@@ -1,6 +1,6 @@
 # Implementation Plan (Logging)
 
-**Status:** In Progress (Phase 1 complete; Phase 2 permission + stdout parity coverage complete, one assertion pending)
+**Status:** Completed (Phase 1 + Phase 2 complete)
 **Last Updated:** 2026-03-27
 **Reference:** `specs/logging.md`
 
@@ -16,13 +16,13 @@
 
 ### Selected Task (This Run)
 
-**Task:** Add end-to-end assertion that log file content includes the stdout stream (MultiWriter parity).
+**Task:** Add end-to-end assertion that logging is enabled via config file (`no-log = false`).
 
 **Why this was most important:**
 
-- `specs/logging.md` requires CLI output to be written through a multi-writer when logging is enabled.
-- Verifying on-disk parity with stdout is the strongest behavioral check that logging captures real runtime output, not just headers.
-- This closes a key lifecycle gap before the final config-file enablement assertion.
+- `specs/logging.md` and `specs/configuration.md` require config-driven log enablement behavior.
+- This was the final unchecked lifecycle assertion in Phase 2.
+- Closing this task completes logging lifecycle coverage for default, env, config, permissions, truncate/append, and multi-writer parity.
 
 ### Phase 1: Configuration Defaults Alignment
 
@@ -60,10 +60,10 @@
 
 **Checklist:**
 
-- [ ] Create/Update E2E test for logging lifecycle:
+- [x] Create/Update E2E test for logging lifecycle:
   - [x] Default state (No log file)
   - [x] Enabled via Env (`RALPH_LOG_ENABLED=1`)
-  - [ ] Enabled via Config (`no-log = false`)
+  - [x] Enabled via Config (`no-log = false`)
   - [x] File creation at `ralph.log` (default) or custom path
   - [x] Header presence (Timestamp, Git metadata)
   - [x] File content matches stdout (via MultiWriter)
@@ -90,15 +90,18 @@
 2026-03-27: `go test ./test/e2e -run TestE2ELoggingStdoutParity -count=1` - pass.
 2026-03-27: `go test ./test/e2e -run 'TestE2ELogging$|TestE2ELoggingFlags|TestE2ELoggingPermissions|TestE2ELoggingStdoutParity' -count=1` - pass.
 2026-03-27: `go test ./test/e2e -count=1` - pass.
+2026-03-27: `go test ./test/e2e -run 'TestE2ELoggingFlags/EnabledViaConfig' -count=1` - pass.
+2026-03-27: `go test ./test/e2e -run TestE2ELoggingFlags -count=1` - pass.
+2026-03-27: `go test ./test/e2e -count=1` - pass.
 
 ## Summary
 
-| Phase   | Goal                             | Status      |
-| :------ | :------------------------------- | :---------- |
-| Phase 1 | Configuration Defaults Alignment | Completed   |
-| Phase 2 | End-to-End Verification          | In Progress |
+| Phase   | Goal                             | Status    |
+| :------ | :------------------------------- | :-------- |
+| Phase 1 | Configuration Defaults Alignment | Completed |
+| Phase 2 | End-to-End Verification          | Completed |
 
-**Remaining effort:** Add E2E assertion for config-file enablement (`no-log = false`).
+**Remaining effort:** None.
 
 ## Known Existing Work
 
