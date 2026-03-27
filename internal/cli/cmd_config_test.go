@@ -153,3 +153,37 @@ agent-mode = "override-mode"
 		"--model override-model --agent override-mode",
 	)
 }
+
+func TestConfigPrecedence_AgentEnvOverridesDoNotAffectModelOrAgentModePrecedence(t *testing.T) {
+	configContent := `
+model = "global-model"
+agent-mode = "global-mode"
+
+[prompt-overrides.build]
+model = "config-override-model"
+agent-mode = "config-override-mode"
+
+[env]
+RALPH_MODEL = "config-env-model"
+RALPH_AGENT_MODE = "config-env-agent-mode"
+`
+	promptContent := `---
+model: frontmatter-model
+agent-mode: frontmatter-mode
+---
+# Task
+`
+
+	runPrecedenceTest(
+		t,
+		configContent,
+		promptContent,
+		nil,
+		[]string{
+			"--env", "RALPH_MODEL=cli-env-model",
+			"--env", "RALPH_AGENT_MODE=cli-env-agent-mode",
+			"build",
+		},
+		"--model frontmatter-model --agent frontmatter-mode",
+	)
+}
