@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -32,6 +33,7 @@ func run(args []string, getEnv func(string) string, stdout, stderr io.Writer) in
 	// Basic logging to stderr for debugging
 	_, _ = fmt.Fprintf(stderr, "[ralph-test-agent] Starting in mode: %s\n", mode)
 	_, _ = fmt.Fprintf(stderr, "[ralph-test-agent] Args: %v\n", args)
+	emitRequestedEnv(getEnv, stderr)
 
 	switch mode {
 	case modeCompleteOnce:
@@ -58,5 +60,21 @@ func run(args []string, getEnv func(string) string, stdout, stderr io.Writer) in
 		_, _ = fmt.Fprintf(stderr, "Unknown mode: %s\n", mode)
 
 		return exitCodeUnknown
+	}
+}
+
+func emitRequestedEnv(getEnv func(string) string, stderr io.Writer) {
+	rawKeys := strings.TrimSpace(getEnv("RALPH_TEST_AGENT_ECHO_ENV_KEYS"))
+	if rawKeys == "" {
+		return
+	}
+
+	for _, rawKey := range strings.Split(rawKeys, ",") {
+		key := strings.TrimSpace(rawKey)
+		if key == "" {
+			continue
+		}
+
+		_, _ = fmt.Fprintf(stderr, "[ralph-test-agent] Env %s=%s\n", key, getEnv(key))
 	}
 }
