@@ -14,6 +14,7 @@ Status: Implemented
 - Specify precedence rules and default values.
 - Enumerate CLI flags, environment variables, and TOML keys.
 - Describe config file discovery and supported filenames.
+- Document child-process environment override behavior for agent execution.
 
 ### Non-Goals
 
@@ -69,13 +70,14 @@ internal/
 ### Core Entities
 
 - Config
-  - Fields: `ConfigFile`, `MaxIterations`, `PromptFile`, `SpecsDir`, `SpecsIndexFile`, `NoSpecsIndex`, `ImplementationPlanName`, `LogFile`, `NoLog`, `LogTruncate`, `CustomPrompt`, `PromptsDir`, `AgentName`, `Model`, `AgentMode`.
+  - Fields: `ConfigFile`, `MaxIterations`, `PromptFile`, `SpecsDir`, `SpecsIndexFile`, `NoSpecsIndex`, `ImplementationPlanName`, `LogFile`, `NoLog`, `LogTruncate`, `CustomPrompt`, `PromptsDir`, `AgentName`, `Model`, `AgentMode`, `Env`.
   - Each field may be set by flag, env var, or config file key.
 
 ### Relationships
 
 - `CLI` owns a single `Config` per run.
 - `Config` values are resolved once before execution.
+- `Config.Env` is used to build child agent process environment overrides.
 
 ### Persistence Notes
 
@@ -118,24 +120,32 @@ internal/
 - Flags > environment variables > config file > defaults.
 - Local overlay behavior for `ralph-local.toml` is defined in [specs/config-local-overlay.md](config-local-overlay.md).
 
+### Agent process environment overrides
+
+- Child process env precedence is: inherited process env (`os.Environ()`) < config file `[env]` < repeated CLI `--env` flags.
+- `--env` entries use split-on-first-`=` parsing; values may include additional `=` characters and may be empty (`KEY=`).
+- Duplicate `--env` keys are resolved in command-line order (last value wins).
+- Keys must match `^[A-Za-z_][A-Za-z0-9_]*$`.
+
 ### CLI flags
 
-| Flag                               | Field                    | Description                                  |
-| ---------------------------------- | ------------------------ | -------------------------------------------- |
-| `--config`, `-c`                   | `ConfigFile`             | Config file to source                        |
-| `--max-iterations`, `-m`           | `MaxIterations`          | Max iterations                               |
-| `--prompt-file`, `-p`              | `PromptFile`             | Prompt file path or `-` for stdin            |
-| `--specs-dir`, `-s`                | `SpecsDir`               | Specs directory                              |
-| `--specs-index`, `-i`              | `SpecsIndexFile`         | Specs index file name                        |
-| `--no-specs-index`                 | `NoSpecsIndex`           | Disable specs index file                     |
-| `--implementation-plan-name`, `-n` | `ImplementationPlanName` | Implementation plan file name                |
-| `--log-file`, `-l`                 | `LogFile`                | Log file path                                |
-| `--no-log`                         | `NoLog`                  | Disable logs                                 |
-| `--log-truncate`                   | `LogTruncate`            | Truncate log file before writing             |
-| `--prompt`                         | `CustomPrompt`           | Inline custom prompt                         |
-| `--agent`, `-a`                    | `AgentName`              | Agent name (`opencode`, `claude`, `cursor`)  |
-| `--model`                          | `Model`                  | Model name passed to the agent CLI           |
-| `--agent-mode`                     | `AgentMode`              | Agent mode/sub-agent passed to the agent CLI |
+| Flag                               | Field                    | Description                                     |
+| ---------------------------------- | ------------------------ | ----------------------------------------------- |
+| `--config`, `-c`                   | `ConfigFile`             | Config file to source                           |
+| `--max-iterations`, `-m`           | `MaxIterations`          | Max iterations                                  |
+| `--prompt-file`, `-p`              | `PromptFile`             | Prompt file path or `-` for stdin               |
+| `--specs-dir`, `-s`                | `SpecsDir`               | Specs directory                                 |
+| `--specs-index`, `-i`              | `SpecsIndexFile`         | Specs index file name                           |
+| `--no-specs-index`                 | `NoSpecsIndex`           | Disable specs index file                        |
+| `--implementation-plan-name`, `-n` | `ImplementationPlanName` | Implementation plan file name                   |
+| `--log-file`, `-l`                 | `LogFile`                | Log file path                                   |
+| `--no-log`                         | `NoLog`                  | Disable logs                                    |
+| `--log-truncate`                   | `LogTruncate`            | Truncate log file before writing                |
+| `--prompt`                         | `CustomPrompt`           | Inline custom prompt                            |
+| `--agent`, `-a`                    | `AgentName`              | Agent name (`opencode`, `claude`, `cursor`)     |
+| `--model`                          | `Model`                  | Model name passed to the agent CLI              |
+| `--agent-mode`                     | `AgentMode`              | Agent mode/sub-agent passed to the agent CLI    |
+| `--env`                            | `Env`                    | Repeatable `KEY=VALUE` child agent env override |
 
 ### Environment variables
 
@@ -153,6 +163,10 @@ internal/
 | `RALPH_AGENT`                    | `AgentName`              | Agent name                      |
 | `RALPH_MODEL`                    | `Model`                  | Model name                      |
 | `RALPH_AGENT_MODE`               | `AgentMode`              | Agent mode                      |
+
+Notes:
+
+- Child agent env overrides do not have a `RALPH_*` source; use config `[env]` and/or CLI `--env`.
 
 ### Config file keys (TOML)
 
@@ -173,21 +187,23 @@ internal/
 | `agent`                    | `AgentName`              | `agent = "opencode"`                                  |
 | `model`                    | `Model`                  | `model = "gpt-4"`                                     |
 | `agent-mode`               | `AgentMode`              | `agent-mode = "planner"`                              |
+| `[env]`                    | `Env`                    | `[env] OPENAI_API_KEY = "<redacted>"`                 |
 
 ### Defaults
 
-| Field                    | Default                  |
-| ------------------------ | ------------------------ |
-| `MaxIterations`          | `25`                     |
-| `SpecsDir`               | `specs`                  |
-| `SpecsIndexFile`         | `README.md`              |
-| `ImplementationPlanName` | `IMPLEMENTATION_PLAN.md` |
-| `PromptsDir`             | `$HOME/.ralph`           |
-| `NoLog`                  | `true`                   |
-| `LogFile`                | `./ralph.log`            |
-| `AgentName`              | `opencode`               |
-| `Model`                  | none (optional)          |
-| `AgentMode`              | none (optional)          |
+| Field                    | Default                    |
+| ------------------------ | -------------------------- |
+| `MaxIterations`          | `25`                       |
+| `SpecsDir`               | `specs`                    |
+| `SpecsIndexFile`         | `README.md`                |
+| `ImplementationPlanName` | `IMPLEMENTATION_PLAN.md`   |
+| `PromptsDir`             | `$HOME/.ralph`             |
+| `NoLog`                  | `true`                     |
+| `LogFile`                | `./ralph.log`              |
+| `AgentName`              | `opencode`                 |
+| `Model`                  | none (optional)            |
+| `AgentMode`              | none (optional)            |
+| `Env`                    | none (inherits parent env) |
 
 ## Permissions
 
@@ -219,6 +235,8 @@ internal/
 - `ralph run build --max-iterations 1` uses `1`.
 - `RALPH_MAX_ITERATIONS=2 ralph run build` uses `2`.
 - `ralph` applies the same config precedence as `ralph run build`.
+- `ralph --env FOO=bar build` passes `FOO=bar` to the child agent process.
+- `ralph --config ./ralph.toml --env FOO=flag build` resolves `FOO` as flag value over config `[env]`.
 
 ## Appendices
 

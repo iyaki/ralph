@@ -36,7 +36,6 @@ Simply copy the built `bin/ralph` binary to a directory in your PATH.
 
 This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for usage in the first phase of the Ralph Wiggum methodology (see [below](#about-the-ralph-wiggum-methodology)).
 
-
 To install it using Vercel's skills CLI, run:
 
 ```sh
@@ -62,6 +61,9 @@ ralph --prompt "Custom prompt text"
 echo "prompt from stdin" | ralph -
 
 ralph --agent claude --agent-mode planner
+
+# Override child agent environment variables
+ralph --env OPENAI_API_KEY=<redacted> --env HTTP_PROXY=http://127.0.0.1:8080 build
 
 # Show help
 ralph --help
@@ -175,6 +177,18 @@ For `model` and `agent-mode`, effective precedence is:
 5. global `model` / `agent-mode` in config
 6. defaults (empty)
 
+For child agent environment variables, effective precedence is:
+
+1. inherited process env (`os.Environ()`)
+2. config `[env]`
+3. repeated `--env KEY=VALUE` flags
+
+Notes:
+
+- `--env` is repeatable and uses split-on-first-`=` parsing.
+- Empty values are allowed (`KEY=`).
+- Duplicate `--env` keys are resolved by command-line order (last value wins).
+
 ### Config File Selection
 
 Ralph picks a single base config file in this order:
@@ -203,6 +217,7 @@ If `ralph-local.toml` exists in the same directory as the selected base file, it
 | Agent                    | `--agent`, `-a`                    | `RALPH_AGENT`                    | `agent`                    | `opencode`                                                          |
 | Model                    | `--model`                          | `RALPH_MODEL`                    | `model`                    | unset                                                               |
 | Agent mode               | `--agent-mode`                     | `RALPH_AGENT_MODE`               | `agent-mode`               | unset                                                               |
+| Agent env overrides      | `--env KEY=VALUE` (repeatable)     | n/a                              | `[env]`                    | inherited process env only                                          |
 
 ### TOML Examples
 
@@ -246,6 +261,20 @@ Local personal overrides (kept untracked):
 # ralph-local.toml
 [prompt-overrides.build]
 agent-mode = "architect"
+```
+
+Agent env overrides (redacted example):
+
+```toml
+# ralph.toml or ralph-local.toml
+[env]
+OPENAI_API_KEY = "<redacted>"
+ANTHROPIC_API_KEY = "<redacted>"
+HTTP_PROXY = "http://127.0.0.1:8080"
+```
+
+```bash
+ralph --config ./ralph.toml --env OPENAI_API_KEY=<redacted> build
 ```
 
 Prompt front matter override:

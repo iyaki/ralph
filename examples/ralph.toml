@@ -22,3 +22,9 @@ prompts-dir = ".ralph/prompts"
 log-file = "ralph.log"
 no-log = false
 log-truncate = false
+
+# Child agent environment overrides (optional)
+# CLI --env flags override these values per run.
+[env]
+OPENAI_API_KEY = "<redacted>"
+HTTP_PROXY = "http://127.0.0.1:8080"
