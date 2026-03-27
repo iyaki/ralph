@@ -1,25 +1,25 @@
 # Implementation Plan (agent-env-overrides)
 
-**Status:** In Progress (Phase 9 started; 9.1 complete)
+**Status:** In Progress (Phase 9 complete; Phase 10 pending)
 **Last Updated:** 2026-03-27
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
 ## Quick Reference
 
-| System/Subsystem                 | Specs                                                                                     | Modules/Packages                                                                                                             | Web Packages | Migrations/Artifacts                                 | Current State                                                  |
-| -------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------- | -------------------------------------------------------------- |
-| Agent command execution          | `specs/agent-env-overrides.md`, `specs/agents.md`                                         | `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None         | `test/e2e/agents/ralph-test-agent/main.go` ✅        | Shared runner exists; no explicit `cmd.Env` override path yet  |
-| Config loading and merge         | `specs/agent-env-overrides.md`, `specs/configuration.md`, `specs/config-local-overlay.md` | `internal/config/config.go` ✅, `internal/config/config_local_test.go` ✅                                                    | None         | `ralph.toml`, `ralph-local.toml` overlay behavior ✅ | `[env]` table decode + deterministic overlay merge implemented |
-| CLI flag plumbing                | `specs/agent-env-overrides.md`, `specs/run-command.md`                                    | `internal/cli/run.go` ✅ (`setupSharedFlags`)                                                                                | None         | CLI root and `run` command share flags ✅            | `--env` repeatable flag missing                                |
-| E2E harness and precedence tests | `specs/e2e-testing.md`                                                                    | `test/e2e/harness_test.go` ✅, `test/e2e/config_precedence_test.go` ✅                                                       | None         | deterministic fixture agent symlink setup ✅         | Harness ready; agent-env override scenarios missing            |
-| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                          | None         | Spec commit `d3461d1` ✅                             | Proposed spec exists; implementation gap confirmed             |
+| System/Subsystem                 | Specs                                                                                     | Modules/Packages                                                                                                             | Web Packages | Migrations/Artifacts                                 | Current State                                                     |
+| -------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------- | ----------------------------------------------------------------- |
+| Agent command execution          | `specs/agent-env-overrides.md`, `specs/agents.md`                                         | `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None         | `test/e2e/agents/ralph-test-agent/main.go` ✅        | Shared runner exists; no explicit `cmd.Env` override path yet     |
+| Config loading and merge         | `specs/agent-env-overrides.md`, `specs/configuration.md`, `specs/config-local-overlay.md` | `internal/config/config.go` ✅, `internal/config/config_local_test.go` ✅                                                    | None         | `ralph.toml`, `ralph-local.toml` overlay behavior ✅ | `[env]` table decode + deterministic overlay merge implemented    |
+| CLI flag plumbing                | `specs/agent-env-overrides.md`, `specs/run-command.md`                                    | `internal/cli/run.go` ✅ (`setupSharedFlags`)                                                                                | None         | CLI root and `run` command share flags ✅            | Repeatable `--env` implemented with validation and override merge |
+| E2E harness and precedence tests | `specs/e2e-testing.md`                                                                    | `test/e2e/harness_test.go` ✅, `test/e2e/config_precedence_test.go` ✅                                                       | None         | deterministic fixture agent symlink setup ✅         | Harness ready; agent-env override scenarios missing               |
+| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                          | None         | Spec commit `d3461d1` ✅                             | Proposed spec exists; implementation gap confirmed                |
 
 ## Phased Plan
 
 ### Phase 9: Config and CLI Input Surfaces
 
 **Goal:** Add config and flag inputs for child-process environment overrides without changing existing non-env precedence rules.
-**Status:** In progress (9.1 complete; 9.2 not started)
+**Status:** Complete (9.1 and 9.2 complete)
 **Paths:**
 
 - `internal/config/config.go`
@@ -59,10 +59,10 @@
 **Checklist:**
 
 - [x] Verified single shared flag registration point in `setupSharedFlags` (`internal/cli/run.go`) used by both root and `run` commands.
-- [ ] Add repeatable `--env` flag (`string[]`) with raw `KEY=VALUE` entries.
-- [ ] Parse each entry with split-on-first-`=` semantics and allow empty values (`KEY=`).
-- [ ] Validate keys against `^[A-Za-z_][A-Za-z0-9_]*$` and fail before agent execution.
-- [ ] Preserve command-line order for duplicate keys (last value wins).
+- [x] Add repeatable `--env` flag (`string[]`) with raw `KEY=VALUE` entries.
+- [x] Parse each entry with split-on-first-`=` semantics and allow empty values (`KEY=`).
+- [x] Validate keys against `^[A-Za-z_][A-Za-z0-9_]*$` and fail before agent execution.
+- [x] Preserve command-line order for duplicate keys (last value wins).
 
 **Definition of Done:**
 
@@ -160,7 +160,7 @@
 **Checklist:**
 
 - [x] Verified existing test structure supports focused precedence tests.
-- [ ] Add parsing/validation tests for valid, invalid, and duplicate `--env` entries.
+- [x] Add parsing/validation tests for valid, invalid, and duplicate `--env` entries.
 - [ ] Add config tests for `[env]` TOML decode and overlay merge behavior.
 - [ ] Add runner/agent tests asserting effective env propagation to subprocess.
 - [ ] Add regression tests ensuring env-override logic does not alter non-env config precedence.
@@ -256,21 +256,28 @@
 - 2026-03-27: `go test ./internal/config -run 'TestLoadConfigEnvTable|TestLoadConfigWithOverlayEnvDeepMerge' -count=1` - failed first due missing `Config.Env` field, confirming scope gap before implementation.
 - 2026-03-27: `go test ./internal/config -run 'TestLoadConfig.*Env|TestLoadConfigWithOverlay.*' -count=1` - pass after adding `[env]` decode support and deterministic local overlay merge.
 - 2026-03-27: `go test ./internal/config -count=1` - pass; existing config precedence/logging/prompt-override tests remain green.
+- 2026-03-27: `go test ./internal/cli -run 'TestReadEnvFlagOverrides' -count=1` - failed first due missing `readEnvFlagOverrides` implementation, confirming Phase 9.2 gap before implementation.
+- 2026-03-27: `go test ./internal/cli -run 'TestRead.*Env|TestApply.*Env' -count=1` - pass after adding repeatable `--env` flag parsing/validation and `Config.Env` override application.
+- 2026-03-27: `go test ./internal/cli -count=1` - pass; existing run-command behavior remains green after env flag plumbing changes.
+- 2026-03-27: `go test ./internal/config -run 'TestLoadConfig.*Env|TestLoadConfigWithOverlay.*' -count=1` - pass; config env decoding/overlay behavior remains stable with CLI updates.
+- 2026-03-27: `go test ./internal/config -count=1` - pass; full config package remains green.
+- 2026-03-27: `git commit -m "feat(cli): support validated --env overrides for agent config"` - committed Phase 9.2 implementation as `298990d`.
 
 ## Summary
 
 | Phase    | Goal                                                | Status      |
 | -------- | --------------------------------------------------- | ----------- |
-| Phase 9  | Config and CLI input surfaces                       | In progress |
+| Phase 9  | Config and CLI input surfaces                       | Complete    |
 | Phase 10 | Effective environment construction and agent wiring | Not started |
 | Phase 11 | End-to-end coverage and safety validation           | Not started |
 | Phase 12 | Documentation alignment and final quality gates     | Not started |
 
-**Remaining effort:** Complete Phase 9.2 (`--env` CLI parsing/validation), then implement effective env wiring to agent subprocesses (`cmd.Env`), add e2e coverage, and finish docs/quality gates.
+**Remaining effort:** Implement Phase 10 effective env construction and runner wiring (`cmd.Env`), then add Phase 11 e2e coverage and complete Phase 12 docs/quality gates.
 
 ## Known Existing Work
 
 - `setupSharedFlags` in `internal/cli/run.go` already centralizes flag registration for root and `run` commands.
+- `internal/cli/run.go` now includes repeatable `--env` parsing/validation (`KEY=VALUE`, split-on-first-`=`, key regex guard, last value wins) and applies CLI env overrides to `Config.Env`.
 - `internal/agent/runner.go` already centralizes subprocess execution and output streaming for all supported agents.
 - `internal/config/config.go` already implements deterministic precedence and local overlay merge for existing fields.
 - `test/e2e/harness_test.go` already builds a deterministic fixture agent and supports per-test environment setup.
