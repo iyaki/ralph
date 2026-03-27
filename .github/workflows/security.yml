@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - main_go-cli
   workflow_dispatch:
 
 permissions:
