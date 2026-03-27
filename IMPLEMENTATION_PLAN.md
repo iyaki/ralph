@@ -1,6 +1,6 @@
 # Implementation Plan (Logging)
 
-**Status:** In Progress (Phase 1 complete; Phase 2 permission coverage now complete, remaining assertions pending)
+**Status:** In Progress (Phase 1 complete; Phase 2 permission + stdout parity coverage complete, one assertion pending)
 **Last Updated:** 2026-03-27
 **Reference:** `specs/logging.md`
 
@@ -16,13 +16,13 @@
 
 ### Selected Task (This Run)
 
-**Task:** Enforce and verify secure log file permissions (`0600`) for truncate mode.
+**Task:** Add end-to-end assertion that log file content includes the stdout stream (MultiWriter parity).
 
 **Why this was most important:**
 
-- `specs/logging.md` requires log files to be treated as sensitive and written with restrictive permissions.
-- Truncate mode used a file creation path that produced `0644` under default umask, violating expected security posture.
-- Permission correctness is a foundational lifecycle assertion before deeper stdout/log parity checks.
+- `specs/logging.md` requires CLI output to be written through a multi-writer when logging is enabled.
+- Verifying on-disk parity with stdout is the strongest behavioral check that logging captures real runtime output, not just headers.
+- This closes a key lifecycle gap before the final config-file enablement assertion.
 
 ### Phase 1: Configuration Defaults Alignment
 
@@ -56,7 +56,7 @@
 
 **Paths:**
 
-- `test/e2e/logging_test.go` (New or existing)
+- `test/e2e/logging_flags_test.go`
 
 **Checklist:**
 
@@ -66,7 +66,7 @@
   - [ ] Enabled via Config (`no-log = false`)
   - [x] File creation at `ralph.log` (default) or custom path
   - [x] Header presence (Timestamp, Git metadata)
-  - [ ] File content matches stdout (via MultiWriter)
+  - [x] File content matches stdout (via MultiWriter)
   - [x] File permissions (`0600`)
 - [x] Verify Truncate vs Append behavior (`RALPH_LOG_APPEND=0`)
 
@@ -87,6 +87,9 @@
 2026-03-27: `go test ./internal/logger -run TestNewLoggerTruncateCreatesSecureFilePermissions -count=1` - pass after replacing truncate open path with explicit `os.OpenFile(..., 0600)`.
 2026-03-27: `go test ./internal/logger -count=1` - pass.
 2026-03-27: `go test ./test/e2e -run 'TestE2ELogging|TestE2ELoggingFlags|TestE2ELoggingPermissions' -count=1` - pass.
+2026-03-27: `go test ./test/e2e -run TestE2ELoggingStdoutParity -count=1` - pass.
+2026-03-27: `go test ./test/e2e -run 'TestE2ELogging$|TestE2ELoggingFlags|TestE2ELoggingPermissions|TestE2ELoggingStdoutParity' -count=1` - pass.
+2026-03-27: `go test ./test/e2e -count=1` - pass.
 
 ## Summary
 
@@ -95,7 +98,7 @@
 | Phase 1 | Configuration Defaults Alignment | Completed   |
 | Phase 2 | End-to-End Verification          | In Progress |
 
-**Remaining effort:** Add E2E assertions for config-file enablement (`no-log = false`) and stdout/log parity.
+**Remaining effort:** Add E2E assertion for config-file enablement (`no-log = false`).
 
 ## Known Existing Work
 
