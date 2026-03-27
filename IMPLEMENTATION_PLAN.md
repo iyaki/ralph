@@ -1,6 +1,6 @@
 # Implementation Plan (agent-env-overrides)
 
-**Status:** In Progress (Phases 9-11 complete; Phase 12.2 in progress)
+**Status:** Complete (Phases 9-12 complete)
 **Last Updated:** 2026-03-27
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
@@ -199,7 +199,7 @@
 ### Phase 12: Documentation Alignment and Final Quality Gates
 
 **Goal:** Align user-facing docs/spec status with implemented behavior and close quality gates.
-**Status:** In Progress (12.1 complete; 12.2 pending)
+**Status:** Complete (12.1 and 12.2 complete)
 **Paths:**
 
 - `specs/agent-env-overrides.md`
@@ -233,10 +233,10 @@
 
 **Checklist:**
 
-- [ ] Run `make lint` and address findings.
-- [ ] Run `make test` and address failures.
-- [ ] Run `make test-e2e` and address failures.
-- [ ] Run `make quality` as final gate and record result.
+- [x] Run `make lint` and address findings.
+- [x] Run `make test` and address failures.
+- [x] Run `make test-e2e` and address failures.
+- [x] Run `make quality` as final gate and record result.
 
 **Definition of Done:**
 
@@ -292,17 +292,21 @@
 - 2026-03-27: `go test ./internal/config -run 'TestLoadConfig.*Env|TestLoadConfigWithOverlay.*' -count=1` - pass; expanded `[env]` config tests now cover decode behavior, complex values, and no-table nil semantics.
 - 2026-03-27: `go test ./internal/config -count=1` - pass; full config suite remains green with the new `[env]` safety coverage.
 - 2026-03-27: `git commit -m "test(config): extend env table coverage for decode behavior"` - committed remaining Phase 11.1 config safety checks as `d55e84d`.
+- 2026-03-27: `make lint` - pass; `golangci-lint` reported 0 issues.
+- 2026-03-27: `make test` - pass; full repository test suite (`go test -v ./...`) succeeded.
+- 2026-03-27: `make test-e2e` - pass; end-to-end suite (`go test -v ./test/e2e`) succeeded.
+- 2026-03-27: `make quality` - pass; combined gates (test, lint, race, coverage, mutation, security, arch) all succeeded.
 
 ## Summary
 
-| Phase    | Goal                                                | Status      |
-| -------- | --------------------------------------------------- | ----------- |
-| Phase 9  | Config and CLI input surfaces                       | Complete    |
-| Phase 10 | Effective environment construction and agent wiring | Complete    |
-| Phase 11 | End-to-end coverage and safety validation           | Complete    |
-| Phase 12 | Documentation alignment and final quality gates     | In Progress |
+| Phase    | Goal                                                | Status   |
+| -------- | --------------------------------------------------- | -------- |
+| Phase 9  | Config and CLI input surfaces                       | Complete |
+| Phase 10 | Effective environment construction and agent wiring | Complete |
+| Phase 11 | End-to-end coverage and safety validation           | Complete |
+| Phase 12 | Documentation alignment and final quality gates     | Complete |
 
-**Remaining effort:** Finish Phase 12.2 quality gates.
+**Remaining effort:** None.
 
 ## Known Existing Work
 
