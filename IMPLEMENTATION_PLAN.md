@@ -1,6 +1,6 @@
 # Implementation Plan (agent-env-overrides)
 
-**Status:** In Progress (Phases 9-10 complete; Phases 11-12 in progress)
+**Status:** In Progress (Phases 9-11 complete; Phase 12.2 in progress)
 **Last Updated:** 2026-03-27
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
@@ -140,7 +140,7 @@
 ### Phase 11: End-to-End Coverage and Safety Validation
 
 **Goal:** Add deterministic E2E scenarios for all spec verification paths, including precedence and invalid input behavior.
-**Status:** In Progress (11.2 complete; 11.1 remaining)
+**Status:** Complete (11.1 and 11.2 complete)
 **Paths:**
 
 - `test/e2e/harness_test.go`
@@ -164,7 +164,7 @@
 
 - [x] Verified existing test structure supports focused precedence tests.
 - [x] Add parsing/validation tests for valid, invalid, and duplicate `--env` entries.
-- [ ] Add config tests for `[env]` TOML decode and overlay merge behavior.
+- [x] Add config tests for `[env]` TOML decode and overlay merge behavior.
 - [x] Add runner/agent tests asserting effective env propagation to subprocess.
 - [x] Add regression tests ensuring env-override logic does not alter non-env config precedence.
 
@@ -289,6 +289,9 @@
 - 2026-03-27: `go test ./internal/agent -run TestGetAgentCapturesEnvironmentSnapshot -count=1` - pass after cloning env slices in `GetAgent`, ensuring deterministic environment snapshot semantics.
 - 2026-03-27: `go test ./internal/agent -count=1` - pass; full agent suite remains green after snapshot hardening.
 - 2026-03-27: `git commit -m "fix(agent): snapshot env overrides at selection time"` - committed Phase 11.1 runner/agent propagation hardening as `4471112`.
+- 2026-03-27: `go test ./internal/config -run 'TestLoadConfig.*Env|TestLoadConfigWithOverlay.*' -count=1` - pass; expanded `[env]` config tests now cover decode behavior, complex values, and no-table nil semantics.
+- 2026-03-27: `go test ./internal/config -count=1` - pass; full config suite remains green with the new `[env]` safety coverage.
+- 2026-03-27: `git commit -m "test(config): extend env table coverage for decode behavior"` - committed remaining Phase 11.1 config safety checks as `d55e84d`.
 
 ## Summary
 
@@ -296,10 +299,10 @@
 | -------- | --------------------------------------------------- | ----------- |
 | Phase 9  | Config and CLI input surfaces                       | Complete    |
 | Phase 10 | Effective environment construction and agent wiring | Complete    |
-| Phase 11 | End-to-end coverage and safety validation           | In Progress |
+| Phase 11 | End-to-end coverage and safety validation           | Complete    |
 | Phase 12 | Documentation alignment and final quality gates     | In Progress |
 
-**Remaining effort:** Complete remaining Phase 11.1 unit/integration safety checks and finish Phase 12.2 quality gates.
+**Remaining effort:** Finish Phase 12.2 quality gates.
 
 ## Known Existing Work
 
@@ -311,6 +314,7 @@
 - `internal/cli/run.go` now builds effective agent env once per run and fails fast on invalid env keys before starting agent subprocess execution.
 - `internal/agent/agent_test.go` and `internal/cli/cmd_test.go` now cover precedence, value preservation (`=` in values), cross-agent env propagation, and redacted invalid-key failures.
 - `internal/cli/cmd_config_test.go` now includes a regression test proving `[env]`/`--env` agent overrides do not affect `model`/`agent-mode` precedence (flags/env/front matter/prompt-overrides/global config order remains intact).
+- `internal/config/config_test.go` now includes focused `[env]` decode coverage for complex values and nil behavior when the `[env]` table is absent.
 - `internal/config/config.go` already implements deterministic precedence and local overlay merge for existing fields.
 - `test/e2e/harness_test.go` already builds a deterministic fixture agent and supports per-test environment setup.
 - `test/e2e/agent_env_overrides_test.go` now covers the full env-override verification matrix (flag-only, config-only, combined precedence, repeated key last-wins, invalid entry fail-fast/no-secret-leak).
