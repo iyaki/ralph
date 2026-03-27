@@ -385,3 +385,41 @@ EMPTY_VALUE = ""
 		t.Fatalf("expected env map %+v, got %+v", expected, c.Env)
 	}
 }
+
+func TestLoadConfigEnvTablePreservesComplexValues(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	content := `
+[env]
+DATABASE_URL = "postgres://user:pass@127.0.0.1:5432/app?sslmode=disable&x=a=b"
+`
+	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if got := c.Env["DATABASE_URL"]; got != "postgres://user:pass@127.0.0.1:5432/app?sslmode=disable&x=a=b" {
+		t.Fatalf("expected DATABASE_URL to preserve complex value, got %q", got)
+	}
+}
+
+func TestLoadConfigWithoutEnvTableLeavesEnvNil(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`model = "gpt-4"`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.Env != nil {
+		t.Fatalf("expected Env to be nil when [env] is not defined, got %+v", c.Env)
+	}
+}
