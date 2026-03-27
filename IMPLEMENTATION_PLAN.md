@@ -1,18 +1,18 @@
 # Implementation Plan (agent-env-overrides)
 
-**Status:** In Progress (Phase 10 complete; Phases 11-12 pending)
+**Status:** In Progress (Phases 9-10 complete; Phase 11 in progress; Phase 12 pending)
 **Last Updated:** 2026-03-27
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
 ## Quick Reference
 
-| System/Subsystem                 | Specs                                                                                     | Modules/Packages                                                                                                                                           | Web Packages | Migrations/Artifacts                                 | Current State                                                       |
-| -------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------------- | ------------------------------------------------------------------- |
-| Agent command execution          | `specs/agent-env-overrides.md`, `specs/agents.md`                                         | `internal/agent/runner.go` ✅, `internal/agent/agent.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None         | `test/e2e/agents/ralph-test-agent/main.go` ✅        | Shared runner now injects deterministic effective env via `cmd.Env` |
-| Config loading and merge         | `specs/agent-env-overrides.md`, `specs/configuration.md`, `specs/config-local-overlay.md` | `internal/config/config.go` ✅, `internal/config/config_local_test.go` ✅                                                                                  | None         | `ralph.toml`, `ralph-local.toml` overlay behavior ✅ | `[env]` table decode + deterministic overlay merge implemented      |
-| CLI flag plumbing                | `specs/agent-env-overrides.md`, `specs/run-command.md`                                    | `internal/cli/run.go` ✅ (`setupSharedFlags`)                                                                                                              | None         | CLI root and `run` command share flags ✅            | Repeatable `--env` implemented with validation and override merge   |
-| E2E harness and precedence tests | `specs/e2e-testing.md`                                                                    | `test/e2e/harness_test.go` ✅, `test/e2e/config_precedence_test.go` ✅                                                                                     | None         | deterministic fixture agent symlink setup ✅         | Harness ready; agent-env override scenarios missing                 |
-| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                                                        | None         | Spec commit `d3461d1` ✅                             | Proposed spec exists; implementation gap confirmed                  |
+| System/Subsystem                 | Specs                                                                                     | Modules/Packages                                                                                                                                           | Web Packages | Migrations/Artifacts                                              | Current State                                                       |
+| -------------------------------- | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Agent command execution          | `specs/agent-env-overrides.md`, `specs/agents.md`                                         | `internal/agent/runner.go` ✅, `internal/agent/agent.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None         | `test/e2e/agents/ralph-test-agent/main.go` ✅                     | Shared runner now injects deterministic effective env via `cmd.Env` |
+| Config loading and merge         | `specs/agent-env-overrides.md`, `specs/configuration.md`, `specs/config-local-overlay.md` | `internal/config/config.go` ✅, `internal/config/config_local_test.go` ✅                                                                                  | None         | `ralph.toml`, `ralph-local.toml` overlay behavior ✅              | `[env]` table decode + deterministic overlay merge implemented      |
+| CLI flag plumbing                | `specs/agent-env-overrides.md`, `specs/run-command.md`                                    | `internal/cli/run.go` ✅ (`setupSharedFlags`)                                                                                                              | None         | CLI root and `run` command share flags ✅                         | Repeatable `--env` implemented with validation and override merge   |
+| E2E harness and precedence tests | `specs/e2e-testing.md`                                                                    | `test/e2e/harness_test.go` ✅, `test/e2e/config_precedence_test.go` ✅, `test/e2e/agent_env_overrides_test.go` ✅                                          | None         | deterministic fixture agent symlink setup ✅, env echo support ✅ | Harness now validates full env-override scenario matrix             |
+| Scope spec artifact              | `specs/agent-env-overrides.md` ✅                                                         | n/a                                                                                                                                                        | None         | Spec commit `d3461d1` ✅                                          | Proposed spec exists; implementation gap confirmed                  |
 
 ## Phased Plan
 
@@ -140,7 +140,7 @@
 ### Phase 11: End-to-End Coverage and Safety Validation
 
 **Goal:** Add deterministic E2E scenarios for all spec verification paths, including precedence and invalid input behavior.
-**Status:** Not started
+**Status:** In Progress (11.2 complete; 11.1 remaining)
 **Paths:**
 
 - `test/e2e/harness_test.go`
@@ -178,11 +178,11 @@
 **Checklist:**
 
 - [x] Verified harness supports per-test environment injection and deterministic fixture agent behavior.
-- [ ] Add `--env` flag-only scenario (`ralph --env FOO=bar ...`) proving child process receives value.
-- [ ] Add config-only `[env]` scenario (`ralph --config ...`) proving table values are applied.
-- [ ] Add combined precedence scenario proving flag value overrides config value.
-- [ ] Add repeated flag key scenario proving last value wins.
-- [ ] Add invalid entry scenario proving failure before agent execution and no value leak.
+- [x] Add `--env` flag-only scenario (`ralph --env FOO=bar ...`) proving child process receives value.
+- [x] Add config-only `[env]` scenario (`ralph --config ...`) proving table values are applied.
+- [x] Add combined precedence scenario proving flag value overrides config value.
+- [x] Add repeated flag key scenario proving last value wins.
+- [x] Add invalid entry scenario proving failure before agent execution and no value leak.
 
 **Definition of Done:**
 
@@ -271,6 +271,11 @@
 - 2026-03-27: `go test ./internal/cli -count=1` - pass; no regressions in run-loop/config/logging flag behavior.
 - 2026-03-27: `go test ./internal/config -count=1` - pass; non-env precedence and config behavior remain stable.
 - 2026-03-27: `git commit -m "feat(agent): apply deterministic env overrides to agent subprocesses"` - committed Phase 10 implementation as `9e58d1d`.
+- 2026-03-27: `go test ./test/e2e -run TestE2EEnvOverrides -count=1` - failed first (red) because fixture agent did not emit child-process env values, confirming missing e2e observability for env override assertions.
+- 2026-03-27: `go test ./test/e2e/agents/ralph-test-agent -count=1` - pass after adding deterministic `RALPH_TEST_AGENT_ECHO_ENV_KEYS` output coverage to the fixture agent.
+- 2026-03-27: `go test ./test/e2e -run 'TestE2E.*Env.*' -count=1` - pass; env-focused matrix now verifies flag-only, config-only, precedence, repeated-key, and invalid-entry/no-leak behaviors.
+- 2026-03-27: `go test ./test/e2e -count=1` - pass; full e2e suite remains stable after env matrix additions.
+- 2026-03-27: `git commit -m "test(e2e): add agent env override matrix coverage"` - committed Phase 11.2 implementation as `553011c`.
 
 ## Summary
 
@@ -278,10 +283,10 @@
 | -------- | --------------------------------------------------- | ----------- |
 | Phase 9  | Config and CLI input surfaces                       | Complete    |
 | Phase 10 | Effective environment construction and agent wiring | Complete    |
-| Phase 11 | End-to-end coverage and safety validation           | Not started |
+| Phase 11 | End-to-end coverage and safety validation           | In Progress |
 | Phase 12 | Documentation alignment and final quality gates     | Not started |
 
-**Remaining effort:** Add Phase 11 e2e env-override coverage matrix and complete Phase 12 docs/quality gates.
+**Remaining effort:** Complete remaining Phase 11.1 unit/integration safety checks and finish Phase 12 docs/quality gates.
 
 ## Known Existing Work
 
@@ -293,6 +298,8 @@
 - `internal/agent/agent_test.go` and `internal/cli/cmd_test.go` now cover precedence, value preservation (`=` in values), cross-agent env propagation, and redacted invalid-key failures.
 - `internal/config/config.go` already implements deterministic precedence and local overlay merge for existing fields.
 - `test/e2e/harness_test.go` already builds a deterministic fixture agent and supports per-test environment setup.
+- `test/e2e/agent_env_overrides_test.go` now covers the full env-override verification matrix (flag-only, config-only, combined precedence, repeated key last-wins, invalid entry fail-fast/no-secret-leak).
+- `test/e2e/agents/ralph-test-agent/main.go` now supports deterministic opt-in env echo via `RALPH_TEST_AGENT_ECHO_ENV_KEYS` to assert child-process environment values in e2e tests.
 - `specs/agent-env-overrides.md` already defines exact precedence and validation expectations for this scope.
 
 ## Manual Deployment Tasks
