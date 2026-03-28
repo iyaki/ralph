@@ -63,7 +63,10 @@
 		"XDG_CONFIG_HOME": "/home/codespace/.config",
 		"XDG_CACHE_HOME": "/home/codespace/.cache",
 		"XDG_DATA_HOME": "/home/codespace/.local/share",
-		"XDG_STATE_HOME": "/home/codespace/.local/state",
+		"XDG_STATE_HOME": "/home/codespace/.local/state"
+	},
+
+	"containerEnv": {
 		"GOTOOLCHAIN": "go1.25.7+auto"
 	},
 
