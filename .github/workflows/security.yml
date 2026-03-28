@@ -34,7 +34,7 @@ jobs:
       image: semgrep/semgrep
 
     # Skip dependabot PRs and cases where token is unavailable (common on forks).
-    if: (github.actor != 'dependabot[bot]' && ${{ secrets.SEMGREP_APP_TOKEN }} != '')
+    if: (github.actor != 'dependabot[bot]')
 
     steps:
       - uses: actions/checkout@v6
