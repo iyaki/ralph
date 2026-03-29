@@ -15,7 +15,6 @@ A cross-platform AI agentic loop runner for spec-driven development workflows.
 - `cursor`
 - **Codex, Copilot, Gemini, and more agents, coming soon**
 
-
 <details>
 <summary><strong>Adding support for new agents</strong></summary>
 
@@ -36,7 +35,30 @@ Agent support Pull Requests are always welcomed. To add or update agent integrat
 
 ### Pre-built Binaries
 
-Coming soon.
+Install the latest pre-built binary from [GitHub Releases](https://github.com/iyaki/ralph/releases):
+
+```bash
+# 1) Download the archive for your OS/architecture from:
+#    https://github.com/iyaki/ralph/releases/latest
+
+# 2) Extract and install the `ralph` binary
+tar -xzf ralph_<version>_<os>_<arch>.tar.gz
+sudo install -m 0755 ralph /usr/local/bin/ralph
+```
+
+### Dev Containers
+
+Install Ralph in a [devcontainer](https://containers.dev/) using the feature `ghcr.io/iyaki/devcontainer-features/ralph:1`:
+
+```json
+{
+	"features": {
+		"ghcr.io/iyaki/devcontainer-features/ralph:1": {}
+	}
+}
+```
+
+Add this to your `.devcontainer/devcontainer.json`, then rebuild the container.
 
 ### From Source
 
