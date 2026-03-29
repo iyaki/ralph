@@ -17,12 +17,17 @@ A cross-platform AI agentic loop runner for spec-driven development workflows.
 
 Agent selection fallback is deterministic: unknown agent names resolve to `opencode`.
 
+<details>
+<summary><strong>Adding support for new agents</strong></summary>
+
 ### Adding Support for New Agents
 
 Agent support Pull Requests are always welcomed. To add or update agent integrations, follow the workflow in [`CONTRIBUTING.md` ("Adding Support for a New Agent")](CONTRIBUTING.md#adding-support-for-a-new-agent):
 
-- `agent-spec-creation` for spec definition
-- `agent-implementation` for TDD-based code changes
+1. `agent-spec-creation` for spec definition
+2. `agent-implementation` for TDD-based code changes
+
+</details>
 
 ## Installation
 
@@ -105,6 +110,9 @@ Ralph exposes the root command and a `run` subcommand with shared behavior.
 ralph [subcommand] [options] [prompt] [scope]
 ```
 
+<details>
+<summary><strong>Show command examples</strong></summary>
+
 Examples:
 
 ```bash
@@ -132,6 +140,8 @@ ralph --env OPENAI_API_KEY=<redacted> --env HTTP_PROXY=http://127.0.0.1:8080 bui
 # Show help
 ralph --help
 ```
+
+</details>
 
 ## Prompt Sources
 
@@ -189,6 +199,9 @@ If a base config is selected and a sibling `ralph-local.toml` exists, it is merg
 
 ## Flags, Env Vars, and TOML Keys
 
+<details>
+<summary><strong>Show full settings reference table</strong></summary>
+
 | Setting                  | Flag                               | Env var                          | TOML key                   | Default                               |
 | ------------------------ | ---------------------------------- | -------------------------------- | -------------------------- | ------------------------------------- |
 | Config path              | `--config`, `-c`                   | `RALPH_CONFIG`                   | n/a                        | Auto-discover `ralph.toml` in cwd     |
@@ -208,7 +221,12 @@ If a base config is selected and a sibling `ralph-local.toml` exists, it is merg
 | Agent mode               | `--agent-mode`                     | `RALPH_AGENT_MODE`               | `agent-mode`               | unset                                 |
 | Agent env overrides      | `--env KEY=VALUE` (repeatable)     | n/a                              | `[env]`                    | inherited process env only            |
 
+</details>
+
 ## Configuration Examples
+
+<details>
+<summary><strong>Repository defaults</strong></summary>
 
 Repository baseline:
 
@@ -226,9 +244,14 @@ implementation-plan-name = "IMPLEMENTATION_PLAN.md"
 prompts-dir = ".ralph/prompts"
 
 log-file = "logs/ralph.log"
-no-log = false
+no-log = true
 log-truncate = false
 ```
+
+</details>
+
+<details>
+<summary><strong>Per-prompt overrides</strong></summary>
 
 Per-prompt overrides:
 
@@ -239,10 +262,15 @@ model = "gpt-5"
 [prompt-overrides.plan]
 agent-mode = "planner"
 
-[prompt-overrides.build]
+[prompt-overrides.custom-prompt-name]
 model = "gpt-5.3-codex"
 agent-mode = "reviewer"
 ```
+
+</details>
+
+<details>
+<summary><strong>Local overlay (keep untracked)</strong></summary>
 
 Local overlay (keep untracked):
 
@@ -251,6 +279,11 @@ Local overlay (keep untracked):
 [prompt-overrides.build]
 agent-mode = "architect"
 ```
+
+</details>
+
+<details>
+<summary><strong>Child agent env overrides</strong></summary>
 
 Child agent env overrides:
 
@@ -266,6 +299,11 @@ HTTP_PROXY = "http://127.0.0.1:8080"
 ralph --config ./ralph.toml --env OPENAI_API_KEY=<redacted> --env HTTP_PROXY=http://127.0.0.1:8080 build
 ```
 
+</details>
+
+<details>
+<summary><strong>Prompt front matter override</strong></summary>
+
 Prompt front matter override:
 
 ```md
@@ -274,6 +312,8 @@ model: claude-sonnet-4
 agent-mode: planner
 ---
 ```
+
+</details>
 
 ## Spec Creator Skill
 
@@ -284,6 +324,10 @@ To install it using Vercel's skills CLI, run:
 ```sh
 npx skills add https://github.com/iyaki/ralph/ --skill spec-creator
 ```
+
+## Contributing
+
+[See CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## License
 
