@@ -81,9 +81,9 @@ internal/
 
 ### Persistence Notes
 
-| Store  | Format | Location                                  | Notes                                      |
-| ------ | ------ | ----------------------------------------- | ------------------------------------------ |
-| Config | TOML   | `ralph.toml`, `.ralphrc.toml`, `.ralphrc` | First existing file in this order is used. |
+| Store  | Format | Location     | Notes                                     |
+| ------ | ------ | ------------ | ----------------------------------------- |
+| Config | TOML   | `ralph.toml` | Loaded from current directory if present. |
 
 ## Workflows
 
@@ -96,8 +96,8 @@ internal/
 ### Config file resolution
 
 1. If `--config` is provided, that file is used.
-2. Otherwise, the loader checks in order: `ralph.toml`, `.ralphrc.toml`, `.ralphrc` (current directory only).
-3. The first existing file is parsed as TOML.
+2. Otherwise, the loader checks for `ralph.toml` (current directory only).
+3. If present, the file is parsed as TOML.
 
 ### Command routing interaction
 

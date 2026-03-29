@@ -279,7 +279,7 @@ func TestLoadConfigRelativeConfigPath(t *testing.T) {
 	}
 }
 
-func TestLoadConfigLegacyFileDiscovery(t *testing.T) {
+func TestLoadConfigIgnoresLegacyFileNames(t *testing.T) {
 	dir := t.TempDir()
 	wd, err := os.Getwd()
 	if err != nil {
@@ -296,13 +296,16 @@ func TestLoadConfigLegacyFileDiscovery(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, ".ralphrc.toml"), []byte("specs-dir = \"legacy\"\n"), 0644); err != nil {
 		t.Fatalf("failed to write legacy config: %v", err)
 	}
+	if err := os.WriteFile(filepath.Join(dir, ".ralphrc"), []byte("specs-dir = \"legacy-no-ext\"\n"), 0644); err != nil {
+		t.Fatalf("failed to write legacy no-extension config: %v", err)
+	}
 
 	c := &config.Config{}
 	if err := c.LoadConfig(); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if c.SpecsDir != "legacy" {
-		t.Fatalf("expected .ralphrc.toml value, got %q", c.SpecsDir)
+	if c.SpecsDir != "specs" {
+		t.Fatalf("expected default specs-dir when only legacy config exists, got %q", c.SpecsDir)
 	}
 }
 

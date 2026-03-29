@@ -130,15 +130,12 @@ func (c *Config) resolveFileConfig() (*Config, string, error) {
 
 func loadDefaultConfig(c *Config, target *Config) string {
 	cwd, _ := os.Getwd()
-	configNames := []string{"ralph.toml", ".ralphrc.toml", ".ralphrc"}
 
-	for _, name := range configNames {
-		path := filepath.Join(cwd, name)
-		if _, err := os.Stat(path); err == nil {
-			_, _ = c.loadConfigFile(path, target)
+	path := filepath.Join(cwd, "ralph.toml")
+	if _, err := os.Stat(path); err == nil {
+		_, _ = c.loadConfigFile(path, target)
 
-			return path
-		}
+		return path
 	}
 
 	return ""

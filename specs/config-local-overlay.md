@@ -103,7 +103,7 @@ Expected merged result for `prompt-overrides.build`:
 
 1. If `--config` is set, use that file as base config.
 2. Else if `RALPH_CONFIG` is set, use that file as base config.
-3. Else discover the first existing file in current directory: `ralph.toml`, `.ralphrc.toml`, `.ralphrc`.
+3. Else discover `ralph.toml` in the current directory.
 
 ### Local overlay selection
 
