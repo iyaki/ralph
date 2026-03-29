@@ -2,11 +2,13 @@
 
 Thanks for your interest in contributing.
 
+This project follows a specs-first workflow with test-driven implementation. Please read this guide before opening a pull request.
+
 ## Prerequisites
 
 - Go 1.25 (see `go.mod`)
 - `make`
-- Tooling used by quality gates:
+- Quality toolchain:
   - `golangci-lint`
   - `govulncheck`
   - `gosec`
@@ -21,11 +23,39 @@ make build
 make test
 ```
 
+Use a dev container (recommended for a reproducible setup):
+
+- Open this repository in VS Code and run `Dev Containers: Reopen in Container`. Or use any other [compatible editor](https://containers.dev/supporting) with dev container support.
+- Reference docs: https://code.visualstudio.com/docs/devcontainers/containers
+- Project config: `.devcontainer/devcontainer.json`
+
 Run from source:
 
 ```bash
 make run ARGS='--help'
 ```
+
+Show all available targets:
+
+```bash
+make help
+```
+
+## Specs-First Workflow
+
+Ralph is built around intentional specs and deterministic behavior.
+
+1. Start with `specs/README.md` and read the relevant specs for your change.
+2. Treat specs as the source of intent, then verify actual behavior in code and tests.
+3. Keep implementation aligned with spec patterns and data shapes.
+4. For programming tasks, use TDD: write a failing test first, then implement the smallest passing change.
+5. Update specs only when behavior is intentionally changing.
+
+Practical tips:
+
+- In your PR, list the spec file(s) that informed your change.
+- If implementation and spec diverge, align intentionally (with a spec update when needed).
+- If your contribution is spec-only, update the spec first and stop there.
 
 ## Build and Run
 
@@ -41,6 +71,12 @@ Build directly with Go:
 go build -o bin/ralph ./cmd/ralph
 ```
 
+Run from source without building a binary:
+
+```bash
+make run ARGS='--help'
+```
+
 Cross-compile examples:
 
 ```bash
@@ -54,10 +90,41 @@ GOOS=darwin GOARCH=amd64 go build -o bin/ralph-darwin ./cmd/ralph
 GOOS=windows GOARCH=amd64 go build -o bin/ralph.exe ./cmd/ralph
 ```
 
-Run from source without building a binary:
+## Testing and Quality Gates
+
+Focused checks while iterating:
 
 ```bash
-make run ARGS='--help'
+make lint
+make test
+make test-e2e
+make test-race
+make coverage
+make security
+make arch
+```
+
+One-command gate:
+
+```bash
+make quality
+```
+
+Notes:
+
+- Coverage minimum is 90%.
+- `make quality` includes mutation testing (`make mutation`), which can be slow. Use it in final validation stages.
+
+## Local Hooks (Recommended)
+
+This repository includes `lefthook` configuration in `lefthook.yml`.
+
+Pre-commit currently runs formatting plus Go quality checks on `*.go` files.
+
+If you use `lefthook`, install it and run once:
+
+```bash
+lefthook install
 ```
 
 ## Project Structure
@@ -84,85 +151,76 @@ make run ARGS='--help'
 
 Each agent implementation is in its own file:
 
-- `internal/agent/agent.go`: Agent interface definition and factory function
-- `internal/agent/opencode.go`: Opencode CLI agent implementation
-- `internal/agent/claude.go`: Claude Code CLI agent implementation
-- `internal/agent/cursor.go`: Cursor CLI agent implementation
+- `internal/agent/agent.go`: agent interface and factory
+- `internal/agent/opencode.go`: OpenCode CLI integration
+- `internal/agent/claude.go`: Claude CLI integration
+- `internal/agent/cursor.go`: Cursor CLI integration
 
-This modular design makes it easy to add support for additional AI CLI tools in the future.
+## Adding Support for a New Agent
 
-## Dependency Management
+Use the agent workflow skills:
 
-Add a dependency and clean up module files:
+- `.agents/skills/agent-spec-creation/SKILL.md`
+- `.agents/skills/agent-implementation/SKILL.md`
+
+Recommended flow:
+
+1. Create or update specs first:
+   - Use `agent-spec-creation`.
+   - Rely on `spec-creator` for spec structure/quality.
+
+2. Study the target CLI first:
+
+   ```bash
+   <agent-cli> --help
+   <agent-cli> <subcommand> --help
+   ```
+
+3. Implement integration:
+   - Use `agent-implementation` after specs are ready.
+   - Add `internal/agent/<new-agent>.go`.
+   - Implement the `Agent` interface in `internal/agent/agent.go`.
+   - Wire the new agent in the factory.
+   - Keep behavior deterministic and avoid logging sensitive prompt/match text.
+   - Reuse shared helpers instead of duplicating execution logic.
+
+4. Add tests in the same change.
+
+At minimum, cover:
+
+- Factory returns the new implementation when selected.
+- Invalid/unsupported names return expected errors.
+- Command/argument composition in normal execution.
+- Failure paths (missing binary, non-zero exit, malformed output when relevant).
+
+Useful targeted command while iterating:
 
 ```bash
-go get package-name
-go mod tidy
+go test -v ./internal/agent/...
 ```
 
-## Development Workflow
-
-1. Create a branch from `main`.
-2. Make focused changes.
-3. Run checks locally before opening a PR.
-
-Recommended local checks:
-
-```bash
-make lint
-make test
-make test-race
-make coverage
-make security
-make arch
-```
-
-Test command shortcuts:
+Final validation sequence:
 
 ```bash
 make test
 make test-e2e
-go test -v ./...
-go test -v ./test/e2e
-```
-
-Use mutation testing only in final validation phases:
-
-```bash
-make mutation
-```
-
-For one-command verification:
-
-```bash
 make quality
 ```
 
-## Spec-Driven Workflow (Specs-First + TDD)
+## Dependency Management
 
-Ralph uses a spec-driven workflow so contributors can align on intent before implementation details.
+Add dependencies and clean up modules:
 
-1. Start with `specs/README.md` and read the relevant specs for your change.
-2. Treat specs as the source of intent, then verify current behavior in the codebase and tests.
-3. Keep changes aligned with documented patterns and data shapes from the specs.
-4. For code changes, follow test-driven development: write a failing test first, then implement the smallest change to make it pass.
-5. Only update specs when behavior is intentionally changing and that change is approved by maintainers.
-
-Practical tips:
-
-- In your PR description, list which spec(s) informed your implementation.
-- If implementation and spec disagree, prefer opening a small clarification/update to the spec before broad refactors.
-- If your contribution is spec-only, write/update the spec first and stop there (no implementation in the same step).
+```bash
+go get <module>
+go mod tidy
+```
 
 ## Pull Requests
 
-- Open a PR using the provided template.
-- Include the problem statement, approach, and test evidence.
-- Update docs/specs/changelog when behavior changes.
-- Keep PRs small and focused.
+Please keep PRs focused and easy to review.
 
-## Community Standards
-
-- Read and follow `CODE_OF_CONDUCT.md`.
-- For vulnerabilities, use private reporting in `SECURITY.md`.
-- For usage help and triage expectations, see `SUPPORT.md`.
+- Include problem statement, approach, and test evidence.
+- Reference the relevant spec files.
+- Update docs/specs when behavior changes.
+- Prefer small, single-purpose PRs.
