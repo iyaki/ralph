@@ -10,6 +10,11 @@ on:
         description: "Release tag (for example: v1.2.3)"
         required: true
         type: string
+      create_tag:
+        description: "Create the tag if it does not exist"
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -23,7 +28,7 @@ jobs:
     name: Resolve release ref
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
       ref: ${{ steps.resolve.outputs.ref }}
@@ -54,13 +59,38 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "ref=refs/tags/$TAG" >> "$GITHUB_OUTPUT"
 
-      - name: Validate tag exists for manual release
+      - name: Validate or create tag for manual release
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
+          CREATE_TAG: ${{ github.event.inputs.create_tag }}
           TAG: ${{ steps.resolve.outputs.tag }}
+          DISPATCH_REF: ${{ github.ref }}
+          REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          git ls-remote --tags --exit-code "https://github.com/${{ github.repository }}" "refs/tags/${TAG}" >/dev/null
+          REMOTE_URL="https://x-access-token:${GITHUB_TOKEN}@github.com/${REPOSITORY}.git"
+
+          if git ls-remote --tags --exit-code "$REMOTE_URL" "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists"
+            exit 0
+          fi
+
+          if [ "$CREATE_TAG" != "true" ]; then
+            echo "Tag ${TAG} does not exist and create_tag=false"
+            exit 1
+          fi
+
+          mkdir release-tag-work
+          git init release-tag-work
+          git -C release-tag-work remote add origin "$REMOTE_URL"
+
+          git -C release-tag-work fetch --depth=1 origin "$DISPATCH_REF"
+
+          TARGET_SHA="$(git -C release-tag-work rev-parse FETCH_HEAD)"
+          git -C release-tag-work tag "$TAG" "$TARGET_SHA"
+          git -C release-tag-work push origin "refs/tags/${TAG}"
+          echo "Created tag ${TAG} at ${TARGET_SHA} from ${DISPATCH_REF}"
 
   build:
     name: Build ${{ matrix.goos }}-${{ matrix.goarch }}
