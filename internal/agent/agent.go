@@ -1,7 +1,10 @@
 // Package agent provides integrations for supported AI agent CLIs.
 package agent
 
-import "io"
+import (
+	"fmt"
+	"io"
+)
 
 // Agent represents an AI agent CLI that can execute prompts.
 type Agent interface {
@@ -16,18 +19,17 @@ type Agent interface {
 }
 
 // GetAgent returns the appropriate agent based on configuration.
-func GetAgent(agentName, model, agentMode string, env []string) Agent {
+func GetAgent(agentName, model, agentMode string, env []string) (Agent, error) {
 	effectiveEnv := cloneStringSlice(env)
 
 	switch agentName {
 	case "claude":
-		return &ClaudeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
+		return &ClaudeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}, nil
 	case "cursor":
-		return &CursorAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
+		return &CursorAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}, nil
 	case "opencode":
-		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
+		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}, nil
 	default:
-		// Default to opencode for backward compatibility
-		return &OpencodeAgent{Model: model, AgentMode: agentMode, Env: effectiveEnv}
+		return nil, fmt.Errorf("unknown agent %q (supported: opencode, claude, cursor)", agentName)
 	}
 }

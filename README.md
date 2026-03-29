@@ -15,7 +15,6 @@ A cross-platform AI agentic loop runner for spec-driven development workflows.
 - `cursor`
 - **Codex, Copilot, Gemini, and more agents, coming soon**
 
-Agent selection fallback is deterministic: unknown agent names resolve to `opencode`.
 
 <details>
 <summary><strong>Adding support for new agents</strong></summary>

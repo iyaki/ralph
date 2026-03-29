@@ -118,16 +118,28 @@ func TestGetAgentReturnsExpectedType(t *testing.T) {
 		{name: "claude", agentName: "claude", expected: "claude"},
 		{name: "cursor", agentName: "cursor", expected: "cursor"},
 		{name: "opencode", agentName: "opencode", expected: "opencode"},
-		{name: "default fallback", agentName: "unknown", expected: "opencode"},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			a := agent.GetAgent(tc.agentName, "model-x", "reviewer", nil)
+			a, err := agent.GetAgent(tc.agentName, "model-x", "reviewer", nil)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 			if a.Name() != tc.expected {
 				t.Fatalf("expected %q, got %q", tc.expected, a.Name())
 			}
 		})
+	}
+}
+
+func TestGetAgentReturnsErrorForUnknownConfiguredAgent(t *testing.T) {
+	_, err := agent.GetAgent("unknown", "model-x", "reviewer", nil)
+	if err == nil {
+		t.Fatal("expected error for unknown agent")
+	}
+	if !strings.Contains(err.Error(), "unknown agent") {
+		t.Fatalf("expected unknown agent error, got %v", err)
 	}
 }
 
@@ -149,7 +161,10 @@ func TestGetAgentCapturesEnvironmentSnapshot(t *testing.T) {
 			t.Setenv("PATH", tmp)
 
 			env := []string{"SNAPSHOT=original"}
-			a := agent.GetAgent(tc.agentName, "", "", env)
+			a, err := agent.GetAgent(tc.agentName, "", "", env)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 			env[0] = "SNAPSHOT=mutated"
 
 			result, err := a.Execute("prompt", &bytes.Buffer{})

@@ -39,19 +39,17 @@ func TestE2EAgentSelection(t *testing.T) {
 		})
 	})
 
-	t.Run("UnknownAgentFallsBackToOpencode", func(t *testing.T) {
+	t.Run("UnknownAgentReturnsError", func(t *testing.T) {
 		runTestCase(t, TestCase{
-			Name: "unknown agent falls back to opencode",
+			Name: "unknown agent returns error",
 			Args: []string{
 				"--agent", "unknown-agent",
 				"--max-iterations", "1",
 				"--prompt", "hello",
 			},
-			ExpectedExitCode: 0,
-			ExpectedStdoutContains: []string{
-				"Using agent: opencode",
-				"[ralph-test-agent] Args:",
-				"run",
+			ExpectedExitCode: 1,
+			ExpectedStderrContains: []string{
+				"unknown agent \"unknown-agent\"",
 			},
 		})
 	})

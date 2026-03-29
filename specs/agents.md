@@ -11,7 +11,7 @@ Status: Implemented
 
 ### Goals
 
-- Specify the agent selection and default behavior.
+- Specify the agent selection behavior.
 - Describe availability checks and error handling.
 
 ### Non-Goals
@@ -102,7 +102,12 @@ specs/
 
 1. Read `AgentName` from config (see configuration spec).
 2. Map `AgentName` to a concrete agent implementation.
-3. If `AgentName` is unknown, default to `opencode`.
+
+### Select agent (unknown configured agent)
+
+1. Read `AgentName` from config/flags/environment (see configuration spec).
+2. Attempt to map `AgentName` to a concrete agent implementation.
+3. If `AgentName` is unknown, return an error and stop before agent execution.
 
 ### Execute agent (happy path)
 

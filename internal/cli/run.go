@@ -232,7 +232,10 @@ func RunLoop(cfg *config.Config, promptText, promptName string, output io.Writer
 	}
 
 	// Get the configured agent
-	agentInstance := agent.GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode, effectiveEnv)
+	agentInstance, err := agent.GetAgent(cfg.AgentName, cfg.Model, cfg.AgentMode, effectiveEnv)
+	if err != nil {
+		return err
+	}
 
 	// Check if agent is available
 	if !agentInstance.IsAvailable() {
