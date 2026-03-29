@@ -17,6 +17,13 @@ A cross-platform AI agentic loop runner for spec-driven development workflows.
 
 Agent selection fallback is deterministic: unknown agent names resolve to `opencode`.
 
+### Adding Support for New Agents
+
+Agent support Pull Requests are always welcomed. To add or update agent integrations, follow the workflow in [`CONTRIBUTING.md` ("Adding Support for a New Agent")](CONTRIBUTING.md#adding-support-for-a-new-agent):
+
+- `agent-spec-creation` for spec definition
+- `agent-implementation` for TDD-based code changes
+
 ## Installation
 
 ### Prerequisites
