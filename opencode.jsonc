@@ -1,0 +1,82 @@
+{
+	"$schema": "https://opencode.ai/config.json",
+	"compaction": {
+		"auto": false,
+		"prune": true,
+		"reserved": 0
+	},
+	"permission": {
+		"bash": {
+			"git commit*-n*": "deny",
+			"git commit*--no-verify*": "deny"
+		},
+		"edit": {
+			".go-arch-lint": "ask",
+			".golangci.yml": "ask",
+			"lefthook.yml": "ask",
+			".gremlings": "ask",
+			"opencode.jsonc": "ask",
+			"logs/*": "deny",
+			"/tmp/*": "allow"
+		}
+	},
+	"agent": {
+		"ralph": {
+			"description": "Hands-off agent for usage with Ralph Loops",
+			"mode": "primary",
+			"model": "github-copilot/gpt-5.3-codex",
+			"reasoningEffort": "xhigh",
+			// "textVerbosity": "low",
+			"tools": {
+				"web-search_*": false
+			},
+			"permission": {
+				"edit": {
+					".go-arch-lint": "deny",
+					".golangci.yml": "deny",
+					".gremlings": "deny",
+					"lefthook.yml": "deny",
+					"opencode.jsonc": "deny",
+					"logs/*": "deny"
+				}
+			}
+		}
+	},
+	"mcp": {
+		"tech-docs": {
+			"type": "remote",
+			"url": "https://mcp.context7.com/mcp",
+			"enabled": true
+		},
+		"web-search": {
+			"type": "local",
+			"command": [ "npx", "-y", "open-websearch@latest" ],
+			"environment": {
+				"MODE": "stdio",
+				"DEFAULT_SEARCH_ENGINE": "duckduckgo"
+			},
+			"enabled": true
+		},
+		"code-examples": {
+			"type": "remote",
+			"url": "https://mcp.grep.app",
+			"enabled": true
+		},
+		"repository-context": {
+			"type": "remote",
+			"url": "https://gitmcp.io/docs",
+			"enabled": true
+		},
+	},
+	"plugin": [
+		"envsitter-guard@latest",
+		"@slkiser/opencode-quota"
+	],
+	// "experimental": {
+	// 	"quotaToast": {
+	// 		"enabledProviders": [
+	// 			"copilot",
+	// 		]
+	// 	}
+	// }
+}

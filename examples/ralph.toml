@@ -1,0 +1,30 @@
+# Ralph Configuration File (TOML format)
+# This file demonstrates all available configuration options
+
+# AI Agent Configuration
+# - opencode (default): Uses the opencode CLI tool
+# - claude: Uses the Claude Code CLI tool
+agent = "opencode"
+model = "gpt-4"
+# Optional agent mode/sub-agent (if supported by the CLI)
+# agent-mode = "reviewer"
+
+# Iteration Settings
+max-iterations = 25
+
+# Directory Settings
+specs-dir = "specs"
+specs-index-file = "README.md"
+implementation-plan-name = "IMPLEMENTATION_PLAN.md"
+prompts-dir = ".ralph/prompts"
+
+# Logging Configuration
+log-file = "ralph.log"
+no-log = false
+log-truncate = false
+
+# Child agent environment overrides (optional)
+# CLI --env flags override these values per run.
+[env]
+OPENAI_API_KEY = "<redacted>"
+HTTP_PROXY = "http://127.0.0.1:8080"

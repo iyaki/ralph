@@ -1,0 +1,29 @@
+assert_lefthook_installed: true
+
+no_tty: true
+
+output:
+  - failure
+
+pre-commit:
+  parallel: true
+  skip:
+    - merge
+    - rebase
+  setup:
+    # Format files
+    - run: make format
+      stage_fixed: true
+  jobs:
+    - name: test-coverage
+      run: make test-coverage
+      glob: "*.go"
+    - name: golangci-lint
+      run: make lint
+      glob: "*.go"
+    - name: security-checks
+      run: make security
+      glob: "*.go"
+    - name: go-arch-lint
+      run: make arch
+      glob: "*.go"
