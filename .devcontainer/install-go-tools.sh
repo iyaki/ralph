@@ -10,9 +10,7 @@ fi
 export GOBIN="${GOBIN:-$(go env GOPATH)/bin}"
 mkdir -p "$GOBIN"
 
-# golangci-lint is installed by https://github.com/devcontainers/features/tree/main/src/go
-# curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b "$GOBIN" v2.10.1
-
+bicurl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b "$GOBIN" v2.10.1
 go install golang.org/x/vuln/cmd/govulncheck@latest
 go install github.com/securego/gosec/v2/cmd/gosec@latest
 go install github.com/fe3dback/go-arch-lint@latest

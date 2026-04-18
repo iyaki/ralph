@@ -66,9 +66,9 @@
 		"XDG_STATE_HOME": "/home/codespace/.local/state"
 	},
 
-	"containerEnv": {
-		"GOTOOLCHAIN": "go1.25.7+auto"
-	},
+	// "containerEnv": {
+	// 	"GOTOOLCHAIN": "go1.25.7+auto"
+	// },
 
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:": {
@@ -77,10 +77,10 @@
 			"installOhMyZshConfig": false,
 			"username": "automatic"
 		},
-		"ghcr.io/devcontainers/features/go:": {
-			"version": "1.25",
-			"golangciLintVersion": "latest"
-		},
+		// "ghcr.io/devcontainers/features/go:": {
+		// 	"version": "1.25",
+		// 	"golangciLintVersion": "latest"
+		// },
 		"ghcr.io/devcontainers-extra/features/shfmt:1": {},
 		"ghcr.io/devcontainers-extra/features/npm-packages:1": {
 			"packages": "repomix"

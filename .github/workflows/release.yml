@@ -131,7 +131,7 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
-          GOTOOLCHAIN: go1.25.7+auto
+          # GOTOOLCHAIN: go1.25.7+auto
         run: |
           set -euo pipefail
           TAG="${{ github.event_name == 'workflow_dispatch' && github.event.inputs.tag || github.ref_name }}"

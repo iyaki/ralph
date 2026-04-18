@@ -1,6 +1,6 @@
 # Makefile for Ralph Go CLI
 
-.PHONY: all build clean install test test-e2e test-coverage deps help quality format lint security arch run analyze
+.PHONY: all build clean install test test-e2e test-coverage deps help quality format lint security arch run
 
 BINARY_NAME=ralph
 GO=go
