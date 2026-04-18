@@ -23,7 +23,7 @@ func TestE2EInitCommand(t *testing.T) {
 				"prompt file not found for 'init'",
 			},
 			ForbiddenOutput: []string{
-				"Initialized Ralph configuration",
+				"Initialized Ralphex configuration",
 				"ralph init requires an interactive terminal",
 			},
 		})

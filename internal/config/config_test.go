@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralphex/internal/config"
 )
 
 func clearConfigEnv(t *testing.T) {

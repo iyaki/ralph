@@ -1,8 +1,8 @@
-# Ralph Wiggum Agentic Loop Runner
+# Ralphex
 
-A cross-platform AI agentic loop runner for spec-driven development workflows.
+A Ralph-Wiggum inspired spec-driven agent runner.
 
-## What Ralph Does
+## What Ralphex Does
 
 - Runs iterative prompt loops against supported AI CLIs until a completion signal is produced.
 - Loads prompts from built-ins, prompt files, stdin, or inline text.
@@ -35,11 +35,11 @@ Agent support Pull Requests are always welcomed. To add or update agent integrat
 
 ### Pre-built Binaries
 
-Install the latest pre-built binary from [GitHub Releases](https://github.com/iyaki/ralph/releases):
+Install the latest pre-built binary from [GitHub Releases](https://github.com/iyaki/ralphex/releases):
 
 ```bash
 # 1) Download the archive for your OS/architecture from:
-#    https://github.com/iyaki/ralph/releases/latest
+#    https://github.com/iyaki/ralphex/releases/latest
 
 # 2) Extract and install the `ralph` binary
 tar -xzf ralph_<version>_<os>_<arch>.tar.gz
@@ -48,7 +48,7 @@ sudo install -m 0755 ralph /usr/local/bin/ralph
 
 ### Dev Containers
 
-Install Ralph in a [devcontainer](https://containers.dev/) using the feature `ghcr.io/iyaki/devcontainer-features/ralph:1`:
+Install Ralphex in a [devcontainer](https://containers.dev/) using the feature `ghcr.io/iyaki/devcontainer-features/ralph:1`:
 
 ```json
 {
@@ -59,6 +59,8 @@ Install Ralph in a [devcontainer](https://containers.dev/) using the feature `gh
 ```
 
 Add this to your `.devcontainer/devcontainer.json`, then rebuild the container.
+
+The repository is `iyaki/ralphex`, but the CLI command remains `ralph`.
 
 ### From Source
 
@@ -125,7 +127,7 @@ If you don't know where to start implementing backpressure, [lefthook](https://g
 
 ## Command Reference
 
-Ralph exposes the root command and a `run` subcommand with shared behavior.
+Ralphex exposes the root command and a `run` subcommand with shared behavior.
 
 ```bash
 ralph [subcommand] [options] [prompt] [scope]
@@ -166,7 +168,7 @@ ralph --help
 
 ## Prompt Sources
 
-Ralph resolves prompt content in this precedence order:
+Ralphex resolves prompt content in this precedence order:
 
 - `--prompt` inline text (highest for prompt content)
 - `--prompt-file <path>` (or `-` to read from stdin)
@@ -181,7 +183,7 @@ Front matter is stripped from the prompt body before sending text to the agent p
 
 ## Configuration
 
-Ralph supports flags, environment variables, and TOML config files.
+Ralphex supports flags, environment variables, and TOML config files.
 
 ### General Precedence
 
@@ -338,12 +340,12 @@ agent-mode: planner
 
 ## Spec Creator Skill
 
-This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for use in the first phase of the Ralph Wiggum methodology (see [Ralph Methodology section](#about-the-ralph-wiggum-methodology)).
+This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for use in the first phase of the Ralph Wiggum methodology (see [Ralph Wiggum Methodology section](#about-the-ralph-wiggum-methodology)).
 
 To install it using Vercel's skills CLI, run:
 
 ```sh
-npx skills add https://github.com/iyaki/ralph/ --skill spec-creator
+npx skills add https://github.com/iyaki/ralphex/ --skill spec-creator
 ```
 
 ## Contributing

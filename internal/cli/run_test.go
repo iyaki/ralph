@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iyaki/ralph/internal/cli"
+	"github.com/iyaki/ralphex/internal/cli"
 )
 
 func TestNewRunCommandBasicProperties(t *testing.T) {

@@ -1,4 +1,4 @@
-// Package logger manages file-based logging for Ralph runs.
+// Package logger manages file-based logging for Ralphex runs.
 package logger
 
 import (
@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralphex/internal/config"
 )
 
 const (
@@ -56,7 +56,7 @@ func NewLogger(cfg *config.Config) (*Logger, error) {
 
 	logger.file = file
 
-	_, _ = fmt.Fprintf(file, "===== Ralph run started at %s =====\n", time.Now().Format("2006-01-02 15:04:05 -0700"))
+	_, _ = fmt.Fprintf(file, "===== Ralphex run started at %s =====\n", time.Now().Format("2006-01-02 15:04:05 -0700"))
 
 	if gitBranch := getGitBranch(); gitBranch != "" {
 		_, _ = fmt.Fprintf(file, "Git branch: %s\n", gitBranch)

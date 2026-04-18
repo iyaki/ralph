@@ -3,7 +3,7 @@ package prompt_test
 import (
 	"testing"
 
-	"github.com/iyaki/ralph/internal/prompt"
+	"github.com/iyaki/ralphex/internal/prompt"
 )
 
 func TestParseFrontMatter_HappyPaths(t *testing.T) {

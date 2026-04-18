@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iyaki/ralph/internal/agent"
+	"github.com/iyaki/ralphex/internal/agent"
 )
 
 type synchronizedBuffer struct {

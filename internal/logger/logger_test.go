@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iyaki/ralph/internal/config"
-	"github.com/iyaki/ralph/internal/logger"
+	"github.com/iyaki/ralphex/internal/config"
+	"github.com/iyaki/ralphex/internal/logger"
 )
 
 func TestNewLoggerDisabledByConfig(t *testing.T) {
@@ -59,7 +59,7 @@ func TestNewLoggerCreatesAndAppendsFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read log file: %v", err)
 	}
-	if !strings.Contains(string(content), "Ralph run started") {
+	if !strings.Contains(string(content), "Ralphex run started") {
 		t.Fatalf("expected log header in file, got %q", string(content))
 	}
 	if !strings.Contains(string(content), "Git branch:") {

@@ -1,30 +1,30 @@
 {
-  "version": 1,
-  "skills": {
-    "code-search": {
-      "source": "iyaki/opencode-base-template",
-      "sourceType": "github",
-      "computedHash": "731193d39a9977a3b65af35c126ab701101f728a4e086d69c70cf947db1badcf"
-    },
-    "shell-command": {
-      "source": "iyaki/opencode-base-template",
-      "sourceType": "github",
-      "computedHash": "8d55f17079e56f91df0af691bd5f6712f5fc53fef2f6a8d7fd6143ea39645b21"
-    },
-    "skill-creator": {
-      "source": "anthropics/skills",
-      "sourceType": "github",
-      "computedHash": "b122f4d1e91aa1d83027e050b5b37c3156203ee85458d7b1360bc48167c9e02a"
-    },
-    "spec-creator": {
-      "source": "iyaki/ralph",
-      "sourceType": "github",
-      "computedHash": "f9bb9884230313ba4a62ecc4d6a299b85c9df4584c40b80504f6f43d90defff8"
-    },
-    "test-driven-development": {
-      "source": "obra/superpowers",
-      "sourceType": "github",
-      "computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
-    }
-  }
+	"version": 1,
+	"skills": {
+		"code-search": {
+			"source": "iyaki/opencode-base-template",
+			"sourceType": "github",
+			"computedHash": "731193d39a9977a3b65af35c126ab701101f728a4e086d69c70cf947db1badcf"
+		},
+		"shell-command": {
+			"source": "iyaki/opencode-base-template",
+			"sourceType": "github",
+			"computedHash": "8d55f17079e56f91df0af691bd5f6712f5fc53fef2f6a8d7fd6143ea39645b21"
+		},
+		"skill-creator": {
+			"source": "anthropics/skills",
+			"sourceType": "github",
+			"computedHash": "b122f4d1e91aa1d83027e050b5b37c3156203ee85458d7b1360bc48167c9e02a"
+		},
+		"spec-creator": {
+			"source": "iyaki/ralphex",
+			"sourceType": "github",
+			"computedHash": "f9bb9884230313ba4a62ecc4d6a299b85c9df4584c40b80504f6f43d90defff8"
+		},
+		"test-driven-development": {
+			"source": "obra/superpowers",
+			"sourceType": "github",
+			"computedHash": "126f1ebf6ccd414f42544f6e83d8cc5adb089e1108eaffb7c400701e37eecd9f"
+		}
+	}
 }

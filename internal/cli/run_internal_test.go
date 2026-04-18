@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralphex/internal/config"
 )
 
 func TestReadBoolFlagOverrideReturnsZeroValueWhenUnchanged(t *testing.T) {

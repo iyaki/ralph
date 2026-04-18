@@ -1,25 +1,26 @@
-// Package cli provides CLI commands and execution flow for Ralph.
+// Package cli provides CLI commands and execution flow for Ralphex.
 package cli
 
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralphex/internal/config"
 )
 
 const maxPositionalArgs = 2
 
-// NewRalphCommand creates the root command for Ralph.
+// NewRalphCommand creates the root command for Ralphex.
 func NewRalphCommand() *cobra.Command {
 	var cfg config.Config
 
 	cmd := &cobra.Command{
 		Use:   "ralph [options] [prompt] [scope]",
 		Short: "POSIX-compliant AI Agentic Loop runner for spec-driven development",
-		Long: `Ralph is a POSIX-compliant AI Agentic Loop shell runner aimed for spec-driven development workflows.
+		Long: `Ralphex is a POSIX-compliant AI agentic loop shell runner.
+It is a Ralph-Wiggum inspired spec-driven agent runner.
 It loads prompts from files (with optional inline overrides) and comes with build/plan presets.
 
-For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralph.`,
+For extended documentation, examples, and configuration options, visit https://github.com/iyaki/ralphex.`,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Example: `  ralph build

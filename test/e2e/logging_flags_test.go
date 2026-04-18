@@ -149,7 +149,7 @@ func loggingTruncateCase() TestCase {
 		ExpectedExitCode: 0,
 		ExpectedFiles:    []string{"ralph.log"},
 		ExpectedFileContent: map[string][]string{
-			"ralph.log": {"===== Ralph run started at"},
+			"ralph.log": {"===== Ralphex run started at"},
 		},
 		ForbiddenFileContent: map[string][]string{
 			"ralph.log": {"OLD LOG CONTENT"},
@@ -200,7 +200,7 @@ func TestE2ELoggingStdoutParity(t *testing.T) {
 		ExpectedExitCode: 0,
 		ExpectedFiles:    []string{"ralph.log"},
 		ExpectedStdoutContains: []string{
-			"Starting Ralph - Max iterations",
+			"Starting Ralphex - Max iterations",
 			"Using agent: opencode",
 			"<promise>COMPLETE</promise>",
 		},

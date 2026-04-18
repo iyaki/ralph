@@ -28,6 +28,9 @@ components:
   test:
     in:
       - test/**
+  root-test:
+    in:
+      - "*_test.go"
 
 commonComponents:
   - config
@@ -68,5 +71,8 @@ deps:
       - config
     anyVendorDeps: true
   test:
+    anyProjectDeps: true
+    anyVendorDeps: true
+  root-test:
     anyProjectDeps: true
     anyVendorDeps: true

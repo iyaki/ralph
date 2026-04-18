@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/iyaki/ralph/internal/config"
+	"github.com/iyaki/ralphex/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +69,7 @@ func NewInitCommand() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Initialize Ralph configuration",
+		Short: "Initialize Ralphex configuration",
 		Long:  `Interactive command to generate a ralph.toml configuration file.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			session := &InitSession{
@@ -120,7 +120,7 @@ func NewInitCommand() *cobra.Command {
 				return fmt.Errorf("failed to write configuration: %w", err)
 			}
 
-			_, _ = fmt.Fprintf(session.Writer, "Initialized Ralph configuration at %s\n", session.OutputPath)
+			_, _ = fmt.Fprintf(session.Writer, "Initialized Ralphex configuration at %s\n", session.OutputPath)
 
 			return nil
 		},

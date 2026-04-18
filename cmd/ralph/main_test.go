@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -60,4 +61,47 @@ func TestMainProcessHelper(t *testing.T) {
 	}
 	os.Args = append([]string{"ralph-test"}, args...)
 	main()
+}
+
+func TestReadmeDocumentsRalphexRepoAndRalphCli(t *testing.T) {
+	content, err := os.ReadFile(filepath.Join("..", "..", "README.md"))
+	if err != nil {
+		t.Fatalf("failed to read README: %v", err)
+	}
+
+	readme := string(content)
+	if !strings.Contains(readme, "https://github.com/iyaki/ralphex/releases") {
+		t.Fatalf("expected README to point releases to iyaki/ralphex")
+	}
+	if !strings.Contains(readme, "https://github.com/iyaki/ralphex/releases/latest") {
+		t.Fatalf("expected README to point latest release URL to iyaki/ralphex")
+	}
+	if !strings.Contains(readme, "npx skills add https://github.com/iyaki/ralphex/ --skill spec-creator") {
+		t.Fatalf("expected README to point skill install to iyaki/ralphex")
+	}
+	if !strings.Contains(readme, "The repository is `iyaki/ralphex`, but the CLI command remains `ralph`.") {
+		t.Fatalf("expected README to explain the repo and CLI naming split")
+	}
+}
+
+func TestGoModulePathUsesRalphex(t *testing.T) {
+	content, err := os.ReadFile(filepath.Join("..", "..", "go.mod"))
+	if err != nil {
+		t.Fatalf("failed to read go.mod: %v", err)
+	}
+
+	if !strings.Contains(string(content), "module github.com/iyaki/ralphex") {
+		t.Fatalf("expected go.mod to use module github.com/iyaki/ralphex")
+	}
+}
+
+func TestSkillsLockPointsToRalphexRepo(t *testing.T) {
+	content, err := os.ReadFile(filepath.Join("..", "..", "skills-lock.json"))
+	if err != nil {
+		t.Fatalf("failed to read skills-lock.json: %v", err)
+	}
+
+	if !strings.Contains(string(content), `"source": "iyaki/ralphex"`) {
+		t.Fatalf("expected skills-lock.json to point spec-creator to iyaki/ralphex")
+	}
 }
