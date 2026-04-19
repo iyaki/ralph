@@ -5,7 +5,7 @@ Ralphex is a specs-first CLI for running iterative coding loops against external
 It wraps a supported agent CLI in a repeatable loop: resolve a prompt, run the agent, and repeat until the agent emits `<promise>COMPLETE</promise>` or max iterations is reached. Each pass works against the updated repository, which makes it a good fit for specs, implementation plans, and repository-local prompts.
 
 > [!NOTE]
-> The repository is named `ralphex`, but the executable is `ralph`.
+> The repository is `iyaki/ralphex`, but the CLI command remains `ralph`.
 
 > [!IMPORTANT]
 > Ralphex does not bundle an agent runtime. Install and authenticate a supported agent CLI separately, then make sure its binary is available on your `PATH`.
@@ -49,7 +49,7 @@ Requirements:
 - A supported agent CLI in `PATH`
 - Go `1.25` if you are building from source
 
-Prebuilt binaries are published on [GitHub Releases](https://github.com/iyaki/ralphex/releases).
+Prebuilt binaries are published on [GitHub Releases](https://github.com/iyaki/ralphex/releases). The latest release page is https://github.com/iyaki/ralphex/releases/latest.
 
 Devcontainer feature:
 
