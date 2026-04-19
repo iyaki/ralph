@@ -1,7 +1,7 @@
 # Implementation Plan (agent-env-overrides)
 
 **Status:** Complete (Phases 9-12 complete)
-**Last Updated:** 2026-03-27
+**Last Updated:** 2026-04-19
 **Primary Specs:** `specs/agent-env-overrides.md` (scope), `specs/configuration.md`, `specs/agents.md`, `specs/e2e-testing.md`
 
 ## Quick Reference
@@ -296,6 +296,11 @@
 - 2026-03-27: `make test` - pass; full repository test suite (`go test -v ./...`) succeeded.
 - 2026-03-27: `make test-e2e` - pass; end-to-end suite (`go test -v ./test/e2e`) succeeded.
 - 2026-03-27: `make quality` - pass; combined gates (test, lint, race, coverage, mutation, security, arch) all succeeded.
+- 2026-04-19: `make test` - failed in `cmd/ralph` due README mismatch with canonical latest release URL and repo/CLI naming-note expectation.
+- 2026-04-19: `go test ./cmd/ralph -run TestReadmeDocumentsRalphexRepoAndRalphCli -count=1` - pass after README wording/link updates.
+- 2026-04-19: `make test` - pass; full repository test suite succeeded after README alignment.
+- 2026-04-19: `make quality` - pass; lint, test, race, coverage, mutation, security, and architecture checks succeeded.
+- 2026-04-19: `git commit -m "docs: align README with canonical ralphex repo links"` - committed README regression fix as `059a39b`.
 
 ## Summary
 
@@ -324,6 +329,7 @@
 - `test/e2e/agent_env_overrides_test.go` now covers the full env-override verification matrix (flag-only, config-only, combined precedence, repeated key last-wins, invalid entry fail-fast/no-secret-leak).
 - `test/e2e/agents/ralph-test-agent/main.go` now supports deterministic opt-in env echo via `RALPH_TEST_AGENT_ECHO_ENV_KEYS` to assert child-process environment values in e2e tests.
 - `specs/agent-env-overrides.md` is now marked Implemented, and `README.md`, `specs/configuration.md`, and `examples/ralph.toml` now document `--env` and `[env]` precedence and redacted usage examples.
+- `README.md` now includes the canonical repository wording (`iyaki/ralphex` with `ralph` CLI naming) and an explicit latest-release URL reference expected by `cmd/ralph` regression tests.
 
 ## Manual Deployment Tasks
 
