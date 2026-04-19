@@ -179,8 +179,8 @@ specs/
 
 ## Verifications
 
-- Running `./ralph --help` returns without error.
-- Running `./ralph plan` renders a plan prompt (no config file).
+- Running `./bin/ralph --help` returns without error.
+- Running `./bin/ralph plan` renders a plan prompt (no config file).
 - Running with missing prompt file returns a non-zero exit.
 - Running with `DEBUG=1` exits after first iteration and prints prompt.
 

@@ -1,6 +1,6 @@
 # Configuration
 
-Status: Implemented
+Status: Partially Implemented
 
 ## Overview
 

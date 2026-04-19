@@ -79,17 +79,17 @@ internal/
 
 | Store | Format     | Location                   | Notes                                                      |
 | ----- | ---------- | -------------------------- | ---------------------------------------------------------- |
-| Logs  | Plain text | `./ralph.log` when enabled | Header includes timestamp and git metadata when available. |
+| Logs  | Plain text | `./ralph.log` when enabled | Header includes timestamp and git metadata; unresolved git values are recorded as `N/A`. |
 
 ## Workflows
 
 ### Initialize logging (enabled)
 
 1. Evaluate config and env to determine logging enabled/disabled.
-2. Determine log file path; if empty, create a temp file.
+2. Determine log file path from resolved config; if the logger is invoked with an empty path, create a temp file.
 3. Create log directory if it does not exist.
 4. Open file in append or truncate mode.
-5. Write header with timestamp and git branch/commit.
+5. Write header with timestamp and git branch/commit (or `N/A` when git metadata cannot be resolved).
 
 ### Initialize logging (disabled)
 
@@ -142,7 +142,7 @@ internal/
 - With default configuration, no log file is created.
 - With `RALPH_LOG_ENABLED=0`, no log file is created.
 - With `RALPH_LOG_APPEND=0`, log file is truncated on start.
-- Log header includes timestamp and git branch/commit when available.
+- Log header includes timestamp and git branch/commit metadata; unresolved git values are recorded as `N/A`.
 
 ## Appendices
 

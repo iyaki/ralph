@@ -1,19 +1,34 @@
 # Ralphex
 
-A Ralph-Wiggum inspired spec-driven agent runner.
+Ralphex is a specs-first CLI for running iterative coding loops against external agent CLIs such as OpenCode, Claude Code, and Cursor. It gives you built-in `plan` and `build` prompts, deterministic configuration precedence, and a simple command model that works well in repository-driven workflows.
 
-## What Ralphex Does
+It wraps a supported agent CLI in a repeatable loop: resolve a prompt, run the agent, and repeat until the agent emits `<promise>COMPLETE</promise>` or max iterations is reached. Each pass works against the updated repository, which makes it a good fit for specs, implementation plans, and repository-local prompts.
 
-- Runs iterative prompt loops against supported AI CLIs until a completion signal is produced.
-- Loads prompts from built-ins, prompt files, stdin, or inline text.
-- Applies deterministic configuration precedence across flags, environment variables, config files, local overlays, and prompt front matter.
+> [!NOTE]
+> The repository is named `ralphex`, but the executable is `ralph`.
+
+> [!IMPORTANT]
+> Ralphex does not bundle an agent runtime. Install and authenticate a supported agent CLI separately, then make sure its binary is available on your `PATH`.
+
+## Why Ralphex
+
+- Runs a repeatable prompt loop until the agent signals completion or max iterations is reached.
+- Supports built-in `build` and `plan` prompts plus inline, stdin, and file-based prompts.
+- Applies predictable precedence across flags, environment variables, config files, and prompt front matter.
+- Keeps repository-specific prompts and local overrides easy to manage.
+- Fits the Ralph Wiggum style of specs-first development.
 
 ## Supported Agents
 
-- `opencode` (default)
-- `claude`
-- `cursor`
-- **Codex, Copilot, Gemini, and more agents, coming soon**
+| Agent | Binary |
+| --- | --- |
+| OpenCode | `opencode` |
+| Claude Code | `claude` |
+| Cursor | `cursor` |
+
+**Codex, Copilot, Gemini, and more agents, coming soon**
+
+`model` and `agent-mode` are forwarded when the selected agent CLI supports them.
 
 <details>
 <summary><strong>Adding support for new agents</strong></summary>
@@ -27,320 +42,267 @@ Agent support Pull Requests are always welcomed. To add or update agent integrat
 
 </details>
 
-## Installation
+## Install
 
-### Prerequisites
+Requirements:
 
-- A supported agent CLI available in `PATH` (`opencode`, `claude`, or `cursor`)
+- A supported agent CLI in `PATH`
+- Go `1.25` if you are building from source
 
-### Pre-built Binaries
+Prebuilt binaries are published on [GitHub Releases](https://github.com/iyaki/ralphex/releases).
 
-Install the latest pre-built binary from [GitHub Releases](https://github.com/iyaki/ralphex/releases):
+Devcontainer feature:
 
-```bash
-# 1) Download the archive for your OS/architecture from:
-#    https://github.com/iyaki/ralphex/releases/latest
+`ghcr.io/iyaki/devcontainer-features/ralph:1`
 
-# 2) Extract and install the `ralph` binary
-tar -xzf ralph_<version>_<os>_<arch>.tar.gz
-sudo install -m 0755 ralph /usr/local/bin/ralph
-```
-
-### Dev Containers
-
-Install Ralphex in a [devcontainer](https://containers.dev/) using the feature `ghcr.io/iyaki/devcontainer-features/ralph:1`:
-
-```json
-{
-	"features": {
-		"ghcr.io/iyaki/devcontainer-features/ralph:1": {}
-	}
-}
-```
-
-Add this to your `.devcontainer/devcontainer.json`, then rebuild the container.
-
-The repository is `iyaki/ralphex`, but the CLI command remains `ralph`.
-
-### From Source
-
-Requires Go `1.25` (see `go.mod`).
+Build from source:
 
 ```bash
 make build
+./bin/ralph --help
 ```
 
-Binary output path defaults to `bin/ralph`.
+Run directly from source without building:
 
-### Install System-Wide
+```bash
+make run ARGS='--help'
+```
+
+Install system-wide after building:
 
 ```bash
 make install
 ```
 
-Or manually:
-
-```bash
-sudo install -m 0755 bin/ralph /usr/local/bin/ralph
-```
-
-### Initialize Config File
-
-```bash
-ralph init
-```
+For a reproducible local environment, open the repository with the included dev container in `.devcontainer/devcontainer.json`.
 
 ## Quick Start
 
 If you are already doing spec-driven development:
 
-1. Run `ralph plan my-feature` to generate an implementation plan.
-2. Run `ralph` (defaults to `run build`) to start implementing the feature.
+```bash
+# Create a starter config
+ralph init
 
-## About the Ralph Wiggum Methodology
+# Generate or refresh the implementation plan for a scope
+ralph plan authentication
 
-This implementation is based on the [Ralph Wiggum methodology](https://ghuntley.com/ralph/) pioneered by [Geoffrey Huntley](https://ghuntley.com/).
+# Run the default build loop
+ralph
 
-**Core Principles:**
+# Run the same default loop through the explicit entrypoint and prompt name
+ralph run build
 
-- **Spec-driven development** - Requirements defined upfront in markdown specs
-- **Monolithic operation** - One agent, one task, one loop iteration at a time
-- **Fresh context** - Each iteration starts with a clean context window
-- **Backpressure** - Tests and validation provide immediate feedback (Architectural constraints of [Harness engineering](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering.html))
-- **Let Ralph Ralph** - Trust the agent to self-correct through iteration
-- **Disposable plans** - Regenerate implementation plans when they go stale
-- **Simple loops** - Minimal Bash loops feeding prompts to AI agents
+# Use a different agent for one run
+ralph --agent claude --model claude-sonnet-4 build
+```
 
-The methodology works in three phases:
-
-1. Define requirements through human and LLM conversations to create specs
-2. Gap analysis to generate/update implementation plans
-3. Build loops that implement one task at a time, commit, update the plan and repeat until completion
-
-For a comprehensive guide, see the [Ralph Playbook](https://github.com/ClaytonFarr/ralph-playbook).
-
-This tool implements what has worked well for me, inspired by how Geoffrey worked on [Loom](https://github.com/ghuntley/loom).
-
-This CLI tool alone is not enough to achieve good results. The quality of the prompts and specs, and the backpressure you set, will greatly influence the outcomes.
-
-If you don't know where to start implementing backpressure, [lefthook](https://github.com/evilmartians/lefthook) is a great tool for setting pre-commit hooks.
-
-## Command Reference
-
-Ralphex exposes the root command and a `run` subcommand with shared behavior.
+Common prompt entrypoints:
 
 ```bash
-ralph [subcommand] [options] [prompt] [scope]
+# Inline prompt text
+ralph --prompt "Review the repository and summarize the highest-risk area"
+
+# Prompt from stdin
+printf 'Prompt from stdin' | ralph -
+
+# Prompt from a file with an explicit prompt name
+ralph --prompt-file ./prompts/review.md review
+
+# Per-run child agent environment override
+ralph --env HTTP_PROXY=http://127.0.0.1:8080 build
 ```
 
-<details>
-<summary><strong>Show command examples</strong></summary>
+## Command Model
 
-Examples:
+| Command | Behavior |
+| --- | --- |
+| `ralph` | Equivalent to `ralph run build` |
+| `ralph run [prompt] [scope]` | Explicit loop entrypoint |
+| `ralph <prompt> [scope]` | Alias to `ralph run <prompt> [scope]` when `<prompt>` is not a subcommand |
+| `ralph init` | Generate a starter config file |
+| `ralph run init` | Run a prompt named `init` |
+
+Useful examples:
 
 ```bash
-# Run with default build prompt
-ralph # Equivalent to `ralph run build`
+# Built-in planning prompt
+ralph plan payment-service
 
-# Run with plan prompt
-ralph plan my-feature
+# Explicit run command
+ralph run build
 
-# Use custom max iterations
-ralph --max-iterations 10 build
+# Inline prompt text
+ralph --prompt "Review the repository and summarize the highest-risk area"
 
-# Use inline prompt
-ralph --prompt "Custom prompt text"
+# Prompt from stdin
+printf 'Prompt from stdin' | ralph -
 
-# Read prompt from stdin
-echo "prompt from stdin" | ralph -
+# Prompt from a file with an explicit prompt name
+ralph --prompt-file ./prompts/review.md review
 
-# Use a specific agent and agent mode
-ralph --agent claude --agent-mode planner
-
-# Override child agent environment variables
-ralph --env OPENAI_API_KEY=<redacted> --env HTTP_PROXY=http://127.0.0.1:8080 build
-
-# Show help
-ralph --help
+# Per-run child agent environment override
+ralph --env HTTP_PROXY=http://127.0.0.1:8080 build
 ```
 
-</details>
+### `ralph init`
 
-## Prompt Sources
-
-Ralphex resolves prompt content in this precedence order:
-
-- `--prompt` inline text (highest for prompt content)
-- `--prompt-file <path>` (or `-` to read from stdin)
-- named prompt resolution (for example `build`, `plan`) from prompt directories
-
-For markdown prompt files, YAML front matter supports runtime overrides for:
-
-- `model`
-- `agent-mode`
-
-Front matter is stripped from the prompt body before sending text to the agent process.
-
-## Configuration
-
-Ralphex supports flags, environment variables, and TOML config files.
-
-### General Precedence
-
-`flags > env vars > config file values > defaults`
-
-### `model` / `agent-mode` Effective Precedence
-
-1. `--model` / `--agent-mode`
-2. `RALPH_MODEL` / `RALPH_AGENT_MODE`
-3. prompt file front matter (`model`, `agent-mode`)
-4. `[prompt-overrides.<prompt>]` from config
-5. global `model` / `agent-mode` in config
-6. defaults (empty)
-
-### Agent Process Environment Precedence
-
-1. inherited process environment (`os.Environ()`)
-2. config `[env]`
-3. repeated `--env KEY=VALUE` flags (highest)
-
-Notes:
-
-- `--env` splits on the first `=`.
-- Empty values are valid (`KEY=`).
-- Duplicate keys resolve by command-line order (last value wins).
-
-### Config File Selection and Local Overlay
-
-Base config selection order:
-
-1. `--config <path>`
-2. `RALPH_CONFIG=<path>`
-3. auto-discovery of `ralph.toml` in the current directory.
-
-If a base config is selected and a sibling `ralph-local.toml` exists, it is merged over the base config.
-
-## Flags, Env Vars, and TOML Keys
-
-<details>
-<summary><strong>Show full settings reference table</strong></summary>
-
-| Setting                  | Flag                               | Env var                          | TOML key                   | Default                               |
-| ------------------------ | ---------------------------------- | -------------------------------- | -------------------------- | ------------------------------------- |
-| Config path              | `--config`, `-c`                   | `RALPH_CONFIG`                   | n/a                        | Auto-discover `ralph.toml` in cwd     |
-| Max iterations           | `--max-iterations`, `-m`           | `RALPH_MAX_ITERATIONS`           | `max-iterations`           | `25`                                  |
-| Prompt file path         | `--prompt-file`, `-p`              | n/a                              | `prompt-file`              | unset                                 |
-| Specs dir                | `--specs-dir`, `-s`                | `RALPH_SPECS_DIR`                | `specs-dir`                | `specs`                               |
-| Specs index file         | `--specs-index`, `-i`              | `RALPH_SPECS_INDEX_FILE`         | `specs-index-file`         | `README.md`                           |
-| Disable specs index      | `--no-specs-index`                 | n/a                              | `no-specs-index`           | `false`                               |
-| Implementation plan name | `--implementation-plan-name`, `-n` | `RALPH_IMPLEMENTATION_PLAN_NAME` | `implementation-plan-name` | `IMPLEMENTATION_PLAN.md`              |
-| Inline custom prompt     | `--prompt`                         | `RALPH_CUSTOM_PROMPT`            | `custom-prompt`            | unset                                 |
-| Log file path            | `--log-file`, `-l`                 | `RALPH_LOG_FILE`                 | `log-file`                 | `<cwd>/ralph.log`                     |
-| Disable logging          | `--no-log`                         | `RALPH_LOG_ENABLED=0`            | `no-log`                   | disabled by default (`no-log = true`) |
-| Truncate log file        | `--log-truncate`                   | `RALPH_LOG_APPEND=0`             | `log-truncate`             | append mode (`log-truncate = false`)  |
-| Prompt templates dir     | none                               | `RALPH_PROMPTS_DIR`              | `prompts-dir`              | `$HOME/.ralph`                        |
-| Agent                    | `--agent`, `-a`                    | `RALPH_AGENT`                    | `agent`                    | `opencode`                            |
-| Model                    | `--model`                          | `RALPH_MODEL`                    | `model`                    | unset                                 |
-| Agent mode               | `--agent-mode`                     | `RALPH_AGENT_MODE`               | `agent-mode`               | unset                                 |
-| Agent env overrides      | `--env KEY=VALUE` (repeatable)     | n/a                              | `[env]`                    | inherited process env only            |
-
-</details>
-
-## Configuration Examples
-
-<details>
-<summary><strong>Repository defaults</strong></summary>
-
-Repository baseline:
-
-```toml
-# ralph.toml
-agent = "opencode"
-model = "gpt-5"
-agent-mode = "builder"
-
-max-iterations = 30
-specs-dir = "specs"
-specs-index-file = "README.md"
-implementation-plan-name = "IMPLEMENTATION_PLAN.md"
-
-prompts-dir = ".ralph/prompts"
-
-log-file = "logs/ralph.log"
-no-log = true
-log-truncate = false
-```
-
-</details>
-
-<details>
-<summary><strong>Per-prompt overrides</strong></summary>
-
-Per-prompt overrides:
-
-```toml
-# ralph.toml
-model = "gpt-5"
-
-[prompt-overrides.plan]
-agent-mode = "planner"
-
-[prompt-overrides.custom-prompt-name]
-model = "gpt-5.3-codex"
-agent-mode = "reviewer"
-```
-
-</details>
-
-<details>
-<summary><strong>Local overlay (keep untracked)</strong></summary>
-
-Local overlay (keep untracked):
-
-```toml
-# ralph-local.toml
-[prompt-overrides.build]
-agent-mode = "architect"
-```
-
-</details>
-
-<details>
-<summary><strong>Child agent env overrides</strong></summary>
-
-Child agent env overrides:
-
-```toml
-# ralph.toml or ralph-local.toml
-[env]
-OPENAI_API_KEY = "<redacted>"
-ANTHROPIC_API_KEY = "<redacted>"
-HTTP_PROXY = "http://127.0.0.1:8080"
-```
+`ralph init` currently writes a starter config with repository-friendly defaults. It requires an interactive terminal, writes to `./ralph.toml` by default, and fails if the target already exists unless `--force` is set.
 
 ```bash
-ralph --config ./ralph.toml --env OPENAI_API_KEY=<redacted> --env HTTP_PROXY=http://127.0.0.1:8080 build
+ralph init
+ralph init --output ./team/ralph.toml
+ralph init --force
 ```
 
-</details>
+The generated starter config enables logging to `./ralph.log` and sets `prompts-dir = ".ralph/prompts"` so prompt files can live inside the repository.
 
-<details>
-<summary><strong>Prompt front matter override</strong></summary>
+## Prompt Resolution
 
-Prompt front matter override:
+Prompt content is resolved in this order:
+
+1. `--prompt`
+2. stdin via `ralph -` or `--prompt-file -`
+3. `--prompt-file <path>`
+4. `<prompts-dir>/<prompt>.md`, searched upward from the current directory when `prompts-dir` is relative
+5. Built-in `build` and `plan` prompts
+
+If `prompts-dir` is an absolute path, Ralphex checks that exact path instead of walking parent directories.
+
+Markdown prompt files can include YAML front matter for `model` and `agent-mode` overrides:
 
 ```md
 ---
 model: claude-sonnet-4
 agent-mode: planner
 ---
+
+Review the repository, compare it against the specs, and update the plan.
 ```
 
-</details>
+Front matter is stripped before the prompt body is sent to the agent.
+
+For `model` and `agent-mode`, effective precedence is:
+
+```text
+flags > environment variables > prompt front matter > [prompt-overrides.<prompt>] > global config
+```
+
+## Configuration
+
+Ralphex resolves settings with this precedence:
+
+```text
+flags > environment variables > config file > defaults
+```
+
+### Config Files and Local Overlays
+
+Base config selection happens in this order:
+
+1. `--config <path>`
+2. `RALPH_CONFIG`
+3. `./ralph.toml` in the current directory
+
+If a base config file is selected, a sibling `ralph-local.toml` is merged over it before environment variables and flags are applied. This lets you commit shared defaults in `ralph.toml` and keep machine-specific overrides untracked in `ralph-local.toml`.
+
+For example, `--config ./team/ralph.toml` loads `./team/ralph-local.toml` if it exists. It does not look for `./ralph-local.toml` in the current working directory.
+
+`[env]` entries and `[prompt-overrides.<prompt>]` entries merge by key across `ralph.toml` and `ralph-local.toml`. Parse errors in either file stop the run before the agent starts.
+
+> [!TIP]
+> Keep shared team defaults in `ralph.toml`, add `ralph-local.toml` to `.gitignore`, and use the local file for personal overrides and secrets.
+
+Example `ralph.toml`:
+
+```toml
+agent = "opencode"
+model = "gpt-5"
+max-iterations = 30
+
+specs-dir = "specs"
+specs-index-file = "README.md"
+implementation-plan-name = "IMPLEMENTATION_PLAN.md"
+prompts-dir = ".ralph/prompts"
+
+no-log = false
+log-file = "./ralph.log"
+
+[prompt-overrides.plan]
+agent-mode = "planner"
+
+[env]
+HTTP_PROXY = "http://127.0.0.1:8080"
+```
+
+### Environment Variables
+
+| Variable | Purpose |
+| --- | --- |
+| `RALPH_CONFIG` | Select the base config file path |
+| `RALPH_MAX_ITERATIONS` | Override `max-iterations` |
+| `RALPH_SPECS_DIR` | Override `specs-dir` |
+| `RALPH_SPECS_INDEX_FILE` | Override `specs-index-file` |
+| `RALPH_IMPLEMENTATION_PLAN_NAME` | Override `implementation-plan-name` |
+| `RALPH_CUSTOM_PROMPT` | Provide inline prompt text, similar to `--prompt` |
+| `RALPH_LOG_FILE` | Override the log file path |
+| `RALPH_LOG_ENABLED` | Boolean: `1` or `true` enables logging, `0` or `false` disables it |
+| `RALPH_LOG_APPEND` | Boolean: `1` or `true` appends, `0` or `false` truncates on start |
+| `RALPH_PROMPTS_DIR` | Override `prompts-dir` |
+| `RALPH_AGENT` | Select the agent: `opencode`, `claude`, or `cursor` |
+| `RALPH_MODEL` | Override `model` |
+| `RALPH_AGENT_MODE` | Override `agent-mode` |
+
+If `prompts-dir` is unset everywhere, the runtime default is `$HOME/.ralph`. The starter config written by `ralph init` pins `prompts-dir` to `.ralph/prompts` so prompt files live in the repository.
+
+### Child Agent Environment
+
+Ralphex's own `RALPH_*` settings are separate from the environment passed to the child agent. Use `[env]` in config for shared values and repeatable `--env KEY=VALUE` flags for per-run overrides.
+
+Child agent environment precedence is:
+
+```text
+inherited environment < [env] in config < repeated --env flags
+```
+
+Later `--env` flags win for the same key. Each flag entry must use `KEY=VALUE`, and keys must match `[A-Za-z_][A-Za-z0-9_]*`.
+
+### Logging
+
+With no config file, logging is disabled by default. When logging is enabled and no explicit path is configured, the effective default log file is `./ralph.log` in the current working directory.
+
+Logs mirror stdout and are written with `0600` permissions. Each run starts with a header that includes a timestamp plus git branch and commit metadata; unresolved git values are recorded as `N/A`.
+
+```bash
+# Enable logs for one run even if config disables them
+ralph --no-log=false --log-file ./ralph.log build
+
+# Start from an empty log file
+ralph --no-log=false --log-file ./ralph.log --log-truncate build
+
+# Same behavior through environment variables
+RALPH_LOG_ENABLED=1 RALPH_LOG_APPEND=0 ralph build
+```
+
+> [!CAUTION]
+> Prompt text and agent output are written to stdout and, when logging is enabled, to the configured log file. Treat prompt files, config overrides, and logs as sensitive.
+
+## Workflow
+
+Ralphex is designed around a specs-first loop inspired by Geoffrey Huntley's [Ralph methodology](https://ghuntley.com/ralph/).
+
+Typical flow:
+
+1. Define or refine requirements in `specs/`.
+2. Run `ralph plan <scope>` to generate or update `IMPLEMENTATION_PLAN.md`.
+3. Run `ralph` or `ralph build` to implement the next task.
+4. Repeat until the agent returns the completion signal.
+
+The built-in prompts use a `<COMPLETION_SIGNAL>` placeholder, which Ralphex replaces with `<promise>COMPLETE</promise>` before sending the prompt to the agent.
 
 ## Spec Creator Skill
 
-This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for use in the first phase of the Ralph Wiggum methodology (see [Ralph Wiggum Methodology section](#about-the-ralph-wiggum-methodology)).
+This repo includes the `spec-creator` [skill](https://agentskills.io/home) (see [.agents/skills/spec-creator/SKILL.md](.agents/skills/spec-creator/SKILL.md)) for the first phase of Geoffrey Huntley's Ralph Wiggum methodology.
 
 To install it using Vercel's skills CLI, run:
 
@@ -354,4 +316,4 @@ npx skills add https://github.com/iyaki/ralphex/ --skill spec-creator
 
 ## License
 
-[MIT License](LICENSE.md)
+[MIT License](LICENSE)

@@ -40,9 +40,10 @@ internal/
   cli/
 test/
   e2e/
-    fixtures/
     agents/
-    testdata/
+      ralph-test-agent/
+    harness_test.go
+    types_test.go
 ```
 
 ### Component diagram (ASCII)
@@ -110,7 +111,7 @@ test/
 ### Persistence Notes
 
 - e2e artifacts are temporary and must be created under OS temp directories.
-- On failure, harness may preserve artifacts for inspection under a known `test/e2e/.artifacts` location.
+- The harness currently cleans up temporary binaries and workspaces after the suite; there is no checked-in `.artifacts` directory.
 - No artifact is committed to git.
 
 ## Workflows

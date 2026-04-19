@@ -11,7 +11,7 @@ Status: Implemented
 
 ### Goals
 
-- Publish release binaries for supported platforms from signed Git tags.
+- Publish release binaries for supported platforms from semantic version tags.
 - Attach all binaries and a checksum manifest to the GitHub Release.
 - Support both automatic tag-based releases and manual release runs.
 
@@ -102,7 +102,7 @@ Status: Implemented
 ### Manual release (workflow_dispatch)
 
 1. Trigger `Release` workflow from GitHub Actions UI.
-2. Provide the `tag` input.
+2. Provide the `tag` input and optionally keep `create_tag=true` to create the tag if it does not already exist.
 3. Workflow checks out that tag, builds artifacts, and publishes release assets.
 
 ## APIs
@@ -115,6 +115,7 @@ Status: Implemented
 - Workflow trigger patterns:
   - `push.tags: ["v*"]`
   - `workflow_dispatch.inputs.tag` (required).
+  - `workflow_dispatch.inputs.create_tag` (optional boolean, defaults to `true`).
 - Build environment:
   - `CGO_ENABLED=0`
   - `GOOS` / `GOARCH` from matrix.

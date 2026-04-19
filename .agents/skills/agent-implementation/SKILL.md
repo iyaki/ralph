@@ -65,8 +65,8 @@ Run in this order unless the user requests otherwise:
 
 ```bash
 go test -v ./internal/agent/...
-make test
-make test-e2e
+make test        # full Go suite, includes test/e2e
+make test-e2e    # end-to-end suite only
 make quality
 ```
 

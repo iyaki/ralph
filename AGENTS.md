@@ -14,10 +14,10 @@
 - Follow Test Driven Development practices: write failing tests before implementation.
 - Local suite: `make quality`.
 - Targeted runs:
-  - `make lint|test|test-e2e|test-race|coverage|coverage|mutation|security|arch`.
+  - `make lint|test|test-e2e|test-race|coverage|mutation|security|arch`.
 - Coverage gate: min 90%.
-- Run core tests with `make test`.
-- Run end-to-end tests with `make test-e2e`.
+- Run the full Go test suite with `make test` (includes `test/e2e`).
+- Run only the end-to-end tests with `make test-e2e`.
 - Execute mutation testing with `make mutation` ONLY in final stages of the task development. **NEVER** execute mutation testing during the Test Driven Development process.
 
 ## Build and Run

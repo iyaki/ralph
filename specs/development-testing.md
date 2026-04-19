@@ -73,7 +73,10 @@ internal/
   - Source entry point: `cmd/ralph/main.go`.
 
 - TestSuite
-  - Scope: `./...` (all packages).
+  - Scope: `./...` (all packages, including `test/e2e`).
+ 
+- E2ESuite
+  - Scope: `./test/e2e` only.
   - Coverage threshold: 90% minimum.
 
 ### Relationships
@@ -90,16 +93,16 @@ internal/
 ### Build (Makefile)
 
 1. Run `make build`.
-2. `go build -o ralph ./cmd/ralph` produces the binary.
+2. `go build -o bin/ralph ./cmd/ralph` produces the binary.
 
 ### Build (direct)
 
-1. Run `go build -o ralph ./cmd/ralph`.
+1. Run `go build -o bin/ralph ./cmd/ralph`.
 
-### Test (unit)
+### Test (full suite)
 
 1. Run `make test`.
-2. Executes `go test -v ./...`.
+2. Executes `go test -v ./...` (including `./test/e2e`).
 
 ### Test (end-to-end)
 
@@ -109,13 +112,13 @@ internal/
 ### Test (coverage gate)
 
 1. Run `make test-coverage`.
-2. Generates `coverage.out` with `-covermode=atomic`.
+2. Uses a temporary coverprofile with `-covermode=atomic`.
 3. Fails if total coverage is below 90%.
 
 ### Local run
 
 1. Build the binary.
-2. Execute `./ralph` with desired arguments.
+2. Execute `./bin/ralph` with desired arguments.
 
 ### Debug mode
 
@@ -145,11 +148,11 @@ internal/
 
 ## Verifications
 
-- `make build` produces a `ralph` binary.
-- `make test` completes successfully.
-- `make test-e2e` executes the e2e suite successfully.
-- `make test-coverage` fails when coverage is below 90%.
-- `DEBUG=1 ./ralph plan` exits after one iteration.
+- `make build` produces `bin/ralph`.
+- `make test` completes successfully and covers the full Go suite.
+- `make test-e2e` executes only the e2e suite successfully.
+- `make coverage` (or `make test-coverage`) fails when coverage is below 90%.
+- `DEBUG=1 ./bin/ralph plan` exits after one iteration.
 
 ## Appendices
 

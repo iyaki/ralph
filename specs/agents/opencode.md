@@ -49,7 +49,7 @@ internal/
 
 ### Data flow summary
 
-1. Ralph selects `opencode` when `AgentName` is `opencode` or unknown.
+1. Ralph selects `opencode` when `AgentName` is `opencode`.
 2. The agent builds CLI args based on `Model` and `AgentMode`.
 3. The agent executes `opencode run ... <prompt>` and returns output.
 
