@@ -13,7 +13,7 @@
 | Prompt resolution and prompt-level overrides | `specs/prompts.md`, `specs/config-by-prompt.md` | `internal/prompt/prompts.go` ✅, `internal/prompt/frontmatter.go` ✅, `internal/cli/run.go` ✅ | None | Prompt markdown files (`<prompts-dir>/*.md`) ✅ | Implemented; front matter parsing/stripping and precedence are in place |
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
-| Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` (partial), `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Partial; currently writes starter config only, not full interactive questionnaire flow |
+| Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` (partial), `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Partial; ordered interactive questionnaire and validation retries are implemented, but existing-config defaults, overwrite confirmation, preview confirmation, and robust TTY checks are still pending |
 | End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists, but explicit spec-required matrix governance is missing |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
 | Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
@@ -316,7 +316,7 @@
 ### Phase 6: Init Command Interactive Workflow
 
 **Goal:** Move `ralph init` from starter-file bootstrap to the full interactive questionnaire behavior described in spec.
-**Status:** Partial (6.1 complete, 6.2 pending)
+**Status:** Partial (6.1 complete, 6.2 in progress)
 **Paths:**
 
 - `internal/cli/init.go`
@@ -359,7 +359,8 @@
 - [ ] Implement overwrite confirmation flow when file exists and `--force` is not set.
 - [ ] Add final preview/confirmation step before write.
 - [ ] Expand TTY check to robustly validate interactive input/output expectations.
-- [ ] Add tests for invalid answer retry paths and declined-overwrite no-op behavior.
+- [x] Add tests for invalid answer retry paths.
+- [ ] Add tests for declined-overwrite no-op behavior.
 
 **Definition of Done:**
 
@@ -564,6 +565,12 @@
 - 2026-04-20: `go test ./internal/config -run 'TestLoadConfigRejectsConfigFileKey|TestLoadConfigRejectsConfigFileKeyInDefaultConfig|TestLoadConfigRejectsConfigFileKeyInOverlay' -count=1` - passed after adding fail-fast validation for unsupported `config-file` keys in base/default/overlay config files.
 - 2026-04-20: `go test ./test/e2e -run 'TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails|TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails' -count=1` - passed with deterministic non-zero exits and no agent execution when unsupported `config-file` keys are present.
 - 2026-04-20: `go test ./internal/config -run 'TestLoadConfig.*' -count=1 && go test ./internal/cli -run 'TestConfigPrecedence.*' -count=1 && go test ./test/e2e -run 'TestE2EConfigPrecedence|TestE2EConfigLocalOverlay' -count=1` - passed full Phase 2 Definition of Done validation after implementing unsupported `config-file` fail-fast behavior.
+- 2026-04-20: go test ./internal/cli -run 'TestInitCommand(AsksQuestionsInSpecifiedOrder|RePromptsForInvalidAnswers)$' -count=1 - failed before implementation (questionnaire prompts/validation retries were not present).
+- 2026-04-20: go test ./internal/cli -run 'TestInit' -count=1 - passed after implementing ordered init questionnaire, conditional logging questions, and retry-on-invalid-input behavior.
+- 2026-04-20: go test ./test/e2e -run TestE2EInitCommand -count=1 - passed; non-TTY guard and run-subcommand collision behavior remained stable.
+- 2026-04-20: make lint - passed (0 issues).
+- 2026-04-20: make test-coverage - passed (overall coverage gate >= 90%).
+- 2026-04-20: make security && make arch - passed (no gosec findings; architecture lint clean).
 
 ## Summary
 
@@ -579,7 +586,7 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Implement full interactive `init` flow (Phase 6), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Complete remaining `init` behaviors (existing-config defaults, overwrite confirmation, final preview, robust TTY checks), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
@@ -592,6 +599,7 @@
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
 - Logging defaults, secure file permissions, and stdout-log parity are already implemented and covered by tests.
+- `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior and conditional logging follow-up prompts.
 - E2E harness already compiles one fixture agent and symlinks all supported agent names to it.
 - Release workflow already builds cross-platform artifacts and publishes checksums.
 - README regression checks already guard canonical `iyaki/ralphex` links and CLI naming text.
