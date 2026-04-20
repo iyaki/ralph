@@ -58,6 +58,7 @@ const (
 	questionKeyEnableLogging          = "enable-logging"
 	questionKeyLogFile                = "log-file"
 	questionKeyLogTruncate            = "log-truncate"
+	questionKeyWriteConfiguration     = "write-configuration"
 )
 
 var supportedInitAgents = []string{"opencode", "claude", "cursor"}
@@ -156,6 +157,14 @@ func executeInitCommand(cmd *cobra.Command, outputPath string, force bool) error
 
 	if err := runInitQuestionnaire(session); err != nil {
 		return err
+	}
+
+	shouldWrite, err := confirmInitWrite(session)
+	if err != nil {
+		return err
+	}
+	if !shouldWrite {
+		return nil
 	}
 
 	if err := writeInitConfig(session); err != nil {
@@ -317,6 +326,82 @@ func confirmExistingConfigOverwrite(session *InitSession) (bool, error) {
 	confirmed, _ := parseConfirmAnswer(answer)
 
 	return confirmed, nil
+}
+
+func confirmInitWrite(session *InitSession) (bool, error) {
+	if err := printInitPreview(session); err != nil {
+		return false, err
+	}
+
+	answer, err := promptForAnswer(session, newConfirmQuestion(
+		questionKeyWriteConfiguration,
+		"Write configuration now?",
+		confirmYes,
+	))
+	if err != nil {
+		return false, err
+	}
+
+	confirmed, _ := parseConfirmAnswer(answer)
+	session.Confirmed = confirmed
+
+	if !confirmed {
+		_, _ = fmt.Fprintln(session.Writer, "Initialization cancelled; configuration was not written.")
+	}
+
+	return confirmed, nil
+}
+
+func printInitPreview(session *InitSession) error {
+	if _, err := fmt.Fprintln(session.Writer, "Configuration preview:"); err != nil {
+		return err
+	}
+
+	for _, line := range buildInitPreviewLines(session) {
+		if _, err := fmt.Fprintf(session.Writer, "  %s\n", line); err != nil {
+			return err
+		}
+	}
+
+	if _, err := fmt.Fprintln(session.Writer); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func buildInitPreviewLines(session *InitSession) []string {
+	answers := session.Answers
+
+	lines := []string{
+		fmt.Sprintf("output path: %s", session.OutputPath),
+		fmt.Sprintf("agent: %s", answers.AgentName),
+	}
+
+	if model := strings.TrimSpace(answers.Model); model != "" {
+		lines = append(lines, fmt.Sprintf("model: %s", model))
+	}
+	if agentMode := strings.TrimSpace(answers.AgentMode); agentMode != "" {
+		lines = append(lines, fmt.Sprintf("agent-mode: %s", agentMode))
+	}
+
+	lines = append(lines,
+		fmt.Sprintf("max-iterations: %d", answers.MaxIterations),
+		fmt.Sprintf("specs-dir: %s", answers.SpecsDir),
+		fmt.Sprintf("specs-index-file: %s", answers.SpecsIndexFile),
+		fmt.Sprintf("implementation-plan-name: %s", answers.ImplementationPlanName),
+		fmt.Sprintf("prompts-dir: %s", answers.PromptsDir),
+	)
+
+	if answers.NoLog {
+		return append(lines, "logging-enabled: no")
+	}
+
+	return append(lines,
+		"logging-enabled: yes",
+		fmt.Sprintf("log-file: %s", answers.LogFile),
+		fmt.Sprintf("log-truncate: %s", boolToConfirmValue(answers.LogTruncate)),
+	)
 }
 
 func defaultInitAnswers() *InitAnswers {

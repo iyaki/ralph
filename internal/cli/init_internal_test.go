@@ -34,7 +34,7 @@ func setupInteractiveInitCommand(t *testing.T, tmp string) (*cobra.Command, *byt
 }
 
 func defaultInitAnswersInput() string {
-	return strings.Repeat("\n", 9)
+	return strings.Repeat("\n", 10)
 }
 
 func invalidAnswersWithRetriesInput() string {
@@ -53,6 +53,7 @@ func invalidAnswersWithRetriesInput() string {
 		"",
 		"maybe",
 		"no",
+		"",
 	}, "\n") + "\n"
 }
 
@@ -144,7 +145,35 @@ func TestInitCommandAsksQuestionsInSpecifiedOrder(t *testing.T) {
 		"Implementation plan file",
 		"Prompts directory",
 		"Enable logging?",
+		"Write configuration now?",
 	})
+}
+
+func TestInitCommandPreviewDeclinedSkipsWrite(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "ralph.toml")
+	cmd, out := setupInteractiveInitCommand(t, tmp)
+	cmd.SetIn(strings.NewReader(strings.Repeat("\n", 9) + "no\n"))
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected init to exit cleanly when preview confirmation is declined, got %v", err)
+	}
+
+	if _, err := os.Stat(configPath); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected no config file to be written, got stat err=%v", err)
+	}
+
+	output := out.String()
+	assertOutputContainsAll(t, output, []string{
+		"Configuration preview:",
+		"agent: opencode",
+		"Write configuration now?",
+		"Initialization cancelled; configuration was not written.",
+	})
+
+	if strings.Contains(output, "Initialized Ralphex configuration") {
+		t.Fatalf("expected no success output when preview confirmation is declined, got %q", output)
+	}
 }
 
 func TestInitCommandRePromptsForInvalidAnswers(t *testing.T) {
@@ -274,6 +303,7 @@ func seededInitPromptDefaults() []string {
 		"Enable logging? [yes]:",
 		"Log file path [./logs/custom.log]:",
 		"Truncate log file on each run? [yes]:",
+		"Write configuration now? [yes]:",
 	}
 }
 
@@ -297,7 +327,7 @@ func TestInitCommandSeedsQuestionDefaultsFromExistingConfig(t *testing.T) {
 	}
 
 	cmd, out := setupInteractiveInitCommand(t, tmp)
-	cmd.SetIn(strings.NewReader("yes\n" + strings.Repeat("\n", 11)))
+	cmd.SetIn(strings.NewReader("yes\n" + strings.Repeat("\n", 12)))
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected init to succeed when using existing defaults, got %v", err)
