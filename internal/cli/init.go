@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/iyaki/ralphex/internal/config"
 	"github.com/spf13/cobra"
 )
@@ -201,6 +202,8 @@ func prepareInitSession(session *InitSession, force bool) (bool, error) {
 	}
 
 	session.ExistingConfigFound = true
+	seedInitDefaultsFromExistingConfig(session)
+
 	if force {
 		return true, nil
 	}
@@ -216,6 +219,70 @@ func prepareInitSession(session *InitSession, force bool) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func seedInitDefaultsFromExistingConfig(session *InitSession) {
+	existingConfig, meta, ok := loadExistingInitConfig(session.OutputPath)
+	if !ok {
+		return
+	}
+
+	seedInitAgentDefault(session.Answers, existingConfig.AgentName)
+	seedInitMaxIterationsDefault(session.Answers, existingConfig.MaxIterations)
+	seedInitStringDefaults(session.Answers, existingConfig)
+	seedInitBoolDefaults(session.Answers, existingConfig, meta)
+}
+
+func loadExistingInitConfig(path string) (*config.Config, toml.MetaData, bool) {
+	existingConfig := &config.Config{}
+	meta, err := toml.DecodeFile(path, existingConfig)
+	if err != nil {
+		return nil, toml.MetaData{}, false
+	}
+
+	return existingConfig, meta, true
+}
+
+func seedInitAgentDefault(answers *InitAnswers, agentName string) {
+	if validateInitAgent(agentName) == nil {
+		answers.AgentName = agentName
+	}
+}
+
+func seedInitMaxIterationsDefault(answers *InitAnswers, maxIterations int) {
+	if maxIterations > 0 {
+		answers.MaxIterations = maxIterations
+	}
+}
+
+func seedInitStringDefaults(answers *InitAnswers, existingConfig *config.Config) {
+	for _, field := range []struct {
+		value string
+		apply func(string)
+	}{
+		{existingConfig.Model, func(value string) { answers.Model = value }},
+		{existingConfig.AgentMode, func(value string) { answers.AgentMode = value }},
+		{existingConfig.SpecsDir, func(value string) { answers.SpecsDir = value }},
+		{existingConfig.SpecsIndexFile, func(value string) { answers.SpecsIndexFile = value }},
+		{existingConfig.ImplementationPlanName, func(value string) { answers.ImplementationPlanName = value }},
+		{existingConfig.PromptsDir, func(value string) { answers.PromptsDir = value }},
+		{existingConfig.LogFile, func(value string) { answers.LogFile = value }},
+	} {
+		if strings.TrimSpace(field.value) == "" {
+			continue
+		}
+
+		field.apply(field.value)
+	}
+}
+
+func seedInitBoolDefaults(answers *InitAnswers, existingConfig *config.Config, meta toml.MetaData) {
+	if meta.IsDefined("no-log") {
+		answers.NoLog = existingConfig.NoLog
+	}
+	if meta.IsDefined("log-truncate") {
+		answers.LogTruncate = existingConfig.LogTruncate
+	}
 }
 
 func initConfigExists(path string) (bool, error) {

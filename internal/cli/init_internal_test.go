@@ -236,13 +236,75 @@ func TestInitCommandConfirmedOverwriteRewritesExistingFile(t *testing.T) {
 	if strings.Contains(updatedText, "legacy-marker") {
 		t.Fatalf("expected overwritten config to drop legacy content, got %q", updatedText)
 	}
-	if !strings.Contains(updatedText, `agent = "opencode"`) {
-		t.Fatalf("expected overwritten config to include questionnaire defaults, got %q", updatedText)
+	if !strings.Contains(updatedText, `agent = "claude"`) {
+		t.Fatalf("expected overwritten config to seed defaults from existing valid values, got %q", updatedText)
 	}
 
 	if !strings.Contains(out.String(), "Initialized Ralphex configuration") {
 		t.Fatalf("expected success output after confirmed overwrite, got %q", out.String())
 	}
+}
+
+func seededInitConfigLines() []string {
+	return []string{
+		`agent = "claude"`,
+		`model = "gpt-4o-mini"`,
+		`agent-mode = "planner"`,
+		"max-iterations = 7",
+		`specs-dir = "docs/specs"`,
+		`specs-index-file = "INDEX.md"`,
+		`implementation-plan-name = "PLAN.md"`,
+		`prompts-dir = ".ralph/custom-prompts"`,
+		"no-log = false",
+		`log-file = "./logs/custom.log"`,
+		"log-truncate = true",
+	}
+}
+
+func seededInitPromptDefaults() []string {
+	return []string{
+		"AI agent (opencode/claude/cursor) [claude]:",
+		"Model (optional) [gpt-4o-mini]:",
+		"Agent mode/sub-agent (optional) [planner]:",
+		"Maximum iterations [7]:",
+		"Specs directory [docs/specs]:",
+		"Specs index file [INDEX.md]:",
+		"Implementation plan file [PLAN.md]:",
+		"Prompts directory [.ralph/custom-prompts]:",
+		"Enable logging? [yes]:",
+		"Log file path [./logs/custom.log]:",
+		"Truncate log file on each run? [yes]:",
+	}
+}
+
+func assertOutputContainsAll(t *testing.T, output string, expectedFragments []string) {
+	t.Helper()
+
+	for _, expected := range expectedFragments {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("expected output to include %q, got %q", expected, output)
+		}
+	}
+}
+
+func TestInitCommandSeedsQuestionDefaultsFromExistingConfig(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "ralph.toml")
+	existingConfig := strings.Join(seededInitConfigLines(), "\n") + "\n"
+
+	if err := os.WriteFile(configPath, []byte(existingConfig), 0600); err != nil {
+		t.Fatalf("expected setup to write existing config, got %v", err)
+	}
+
+	cmd, out := setupInteractiveInitCommand(t, tmp)
+	cmd.SetIn(strings.NewReader("yes\n" + strings.Repeat("\n", 11)))
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected init to succeed when using existing defaults, got %v", err)
+	}
+
+	assertOutputContainsAll(t, out.String(), seededInitPromptDefaults())
+	assertFileContainsAll(t, configPath, seededInitConfigLines())
 }
 
 func TestReadAnswerEOFBehaviors(t *testing.T) {
