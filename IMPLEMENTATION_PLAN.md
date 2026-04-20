@@ -1,6 +1,6 @@
 # Implementation Plan (Whole system)
 
-**Status:** Core runtime is stable; 7/9 phases are complete and 2/9 are partial (remaining slow-complete e2e scenario, docs status alignment).
+**Status:** Core runtime is stable; 8/9 phases are complete and 1/9 is partial (remaining docs status alignment).
 **Last Updated:** 2026-04-20
 **Primary Specs:** `specs/core-architecture.md`, `specs/configuration.md`, `specs/prompts.md`, `specs/agents.md`, `specs/init-command.md`, `specs/e2e-testing.md`, `specs/release-workflow.md`
 
@@ -14,7 +14,7 @@
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
 | Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` ✅, `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Implemented in runtime; ordered questionnaire, retries, overwrite/preview confirmations, existing-config defaults, and robust stdin/stdout TTY validation are now in place |
-| End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists, coverage matrix completeness is now test-enforced, and one required scenario remains |
+| End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` ✅, `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Implemented; broad scenario coverage exists, coverage matrix completeness is test-enforced, and required `return_error`/`slow_complete` agent-mode scenarios are covered |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
 | Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
 
@@ -376,7 +376,7 @@
 ### Phase 7: End-to-End Coverage Matrix and Governance
 
 **Goal:** Close the gap between existing broad e2e scenarios and the spec requirement for explicit full-surface traceability.
-**Status:** Partial (7.1 complete, 7.2 in progress)
+**Status:** Complete (7.1 and 7.2 verified in code)
 **Paths:**
 
 - `test/e2e/harness_test.go`
@@ -419,7 +419,7 @@
 - [x] Add CI enforcement for matrix completeness (fail when a required mapping is missing/stale).
 - [x] Add e2e invalid-config parse failure scenario (`ralph.toml` malformed).
 - [x] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=return_error` path.
-- [ ] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=slow_complete` deterministic delay path.
+- [x] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=slow_complete` deterministic delay path.
 - [x] Add e2e scenarios for file-sourced `prompt-file` and `no-specs-index` once Phase 2 parity gaps are fixed.
 
 **Definition of Done:**
@@ -600,6 +600,10 @@
 - 2026-04-20: `go test ./test/e2e -run TestE2EReturnErrorPath -count=1` - passed after adding the `RALPH_TEST_AGENT_MODE=return_error` scenario to validate deterministic warning+max-iteration failure behavior without completion output.
 - 2026-04-20: `go test ./test/e2e -run 'TestE2EReturnErrorPath|TestCoverageMatrixCompleteness' -count=1` - passed; coverage matrix completeness enforcement remains green after adding the new scenario mapping.
 - 2026-04-20: `go test ./test/e2e -count=1` - passed full e2e suite after adding return-error scenario coverage and matrix updates.
+- 2026-04-20: `go test ./test/e2e -run TestE2ESlowCompletePath -count=1` - failed as expected before implementation because deterministic delay assertions were not available in the shared e2e test case schema.
+- 2026-04-20: `go test ./test/e2e -run TestE2ESlowCompletePath -count=1` - passed after adding `slow_complete` scenario coverage and minimum-duration assertions in the harness.
+- 2026-04-20: `go test ./test/e2e -run TestCoverageMatrixCompleteness -count=1` - failed as expected before implementation because `COVERAGE_MATRIX.md` did not yet map `TestE2ESlowCompletePath`.
+- 2026-04-20: `go test ./test/e2e -run 'TestE2ESlowCompletePath|TestCoverageMatrixCompleteness' -count=1 && go test ./test/e2e -count=1` - passed; slow-complete scenario coverage and full e2e suite remain deterministic and green.
 
 ## Summary
 
@@ -611,11 +615,11 @@
 | Phase 4 | Agent adapters and child process environment | Complete |
 | Phase 5 | Logging and file-safety guarantees | Complete |
 | Phase 6 | Init command interactive workflow | Complete |
-| Phase 7 | End-to-end coverage matrix and governance | Partial |
+| Phase 7 | End-to-end coverage matrix and governance | Complete |
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Finish Phase 7 governance by adding the `slow_complete` scenario, then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Flip partial spec statuses to implemented and keep docs/plan synchronized with runtime behavior (Phase 9).
 
 ## Known Existing Work
 
@@ -633,7 +637,7 @@
 - E2E coverage matrix artifact now exists at `test/e2e/COVERAGE_MATRIX.md` and maps supported option/config/output behaviors to concrete e2e tests.
 - E2E suite now enforces coverage matrix completeness via `TestCoverageMatrixCompleteness`, which fails on missing or stale `COVERAGE_MATRIX.md` test mappings.
 - E2E config precedence coverage now includes malformed base `ralph.toml` parse failures, validated to fail before any agent execution.
-- E2E scenario coverage now includes `RALPH_TEST_AGENT_MODE=return_error` via `TestE2EReturnErrorPath`, and the matrix marks that path complete.
+- E2E scenario coverage now includes both `RALPH_TEST_AGENT_MODE=return_error` (`TestE2EReturnErrorPath`) and `RALPH_TEST_AGENT_MODE=slow_complete` (`TestE2ESlowCompletePath`), and the matrix marks both paths complete.
 - Release workflow already builds cross-platform artifacts and publishes checksums.
 - README regression checks already guard canonical `iyaki/ralphex` links and CLI naming text.
 
