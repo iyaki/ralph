@@ -34,6 +34,7 @@ Test identifiers use Go `TestName[/Subtest]` notation.
 | Surface | Expected behavior | E2E tests |
 | --- | --- | --- |
 | `--config`, `RALPH_CONFIG`, default `ralph.toml` | Base config source precedence is deterministic | `TestE2EConfigPrecedence_ConfigFlagOverride`, `TestE2EConfigPrecedence_RalphConfigEnvOverride`, `TestE2EConfigPrecedence_ConfigFileWins` |
+| invalid base config parse | Malformed `ralph.toml` fails before agent execution | `TestE2EConfigPrecedence_InvalidBaseConfigFailsBeforeAgentExecution` |
 | `ralph-local.toml` sibling overlay | Local overlay is discovered relative to selected base config and deep merged | `TestE2EConfigLocalOverlay_ConfigFlagUsesSiblingOverlay`, `TestE2EConfigLocalOverlay_RalphConfigEnvUsesSiblingOverlay`, `TestE2EConfigLocalOverlay_DefaultDiscoveryUsesSiblingOverlay`, `TestE2EConfigLocalOverlay_PromptOverridesDeepMerge` |
 | invalid overlay parse | Malformed `ralph-local.toml` fails before agent execution | `TestE2EConfigLocalOverlay_InvalidOverlayFailsBeforeAgentExecution` |
 | unsupported `config-file` key | `config-file` key in base or overlay config fails fast | `TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails`, `TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails` |
@@ -62,6 +63,5 @@ Test identifiers use Go `TestName[/Subtest]` notation.
 
 | Required behavior | Status |
 | --- | --- |
-| Malformed base `ralph.toml` parse failure scenario | Pending (`7.2` checklist item: invalid-config parse failure) |
 | `RALPH_TEST_AGENT_MODE=return_error` scenario | Pending (`7.2` checklist item: return_error path) |
 | `RALPH_TEST_AGENT_MODE=slow_complete` deterministic delay scenario | Pending (`7.2` checklist item: slow_complete path) |

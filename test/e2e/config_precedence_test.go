@@ -182,3 +182,23 @@ func TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails(t *testing.T) {
 	}
 	runTestCase(t, tc)
 }
+
+// TestE2EConfigPrecedence_InvalidBaseConfigFailsBeforeAgentExecution verifies
+// malformed base ralph.toml parsing fails before agent execution.
+func TestE2EConfigPrecedence_InvalidBaseConfigFailsBeforeAgentExecution(t *testing.T) {
+	tc := TestCase{
+		Name: "ConfigPrecedence_InvalidBaseConfigFailsBeforeAgentExecution",
+		Args: []string{"build"},
+		Files: map[string]string{
+			"ralph.toml": `max-iterations = "broken`,
+		},
+		ExpectedExitCode: 1,
+		ExpectedStderrContains: []string{
+			"failed to load config file",
+		},
+		ForbiddenOutput: []string{
+			"[ralph-test-agent] Starting",
+		},
+	}
+	runTestCase(t, tc)
+}
