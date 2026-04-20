@@ -14,7 +14,7 @@
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
 | Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` ✅, `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Implemented in runtime; ordered questionnaire, retries, overwrite/preview confirmations, existing-config defaults, and robust stdin/stdout TTY validation are now in place |
-| End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists, but explicit spec-required matrix governance is missing |
+| End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists and a maintained coverage matrix artifact now exists, but CI completeness enforcement and three required scenarios remain |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
 | Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
 
@@ -376,12 +376,13 @@
 ### Phase 7: End-to-End Coverage Matrix and Governance
 
 **Goal:** Close the gap between existing broad e2e scenarios and the spec requirement for explicit full-surface traceability.
-**Status:** Partial (7.1 complete, 7.2 pending)
+**Status:** Partial (7.1 complete, 7.2 in progress)
 **Paths:**
 
 - `test/e2e/harness_test.go`
 - `test/e2e/types_test.go`
 - `test/e2e/*.go`
+- `test/e2e/COVERAGE_MATRIX.md`
 - `test/e2e/agents/ralph-test-agent/main.go`
 - `specs/e2e-testing.md`
 
@@ -414,7 +415,7 @@
 
 **Checklist:**
 
-- [ ] Add a maintained coverage matrix artifact mapping every supported option/config/output behavior to concrete e2e test names.
+- [x] Add a maintained coverage matrix artifact mapping every supported option/config/output behavior to concrete e2e test names.
 - [ ] Add CI enforcement for matrix completeness (fail when a required mapping is missing/stale).
 - [ ] Add e2e invalid-config parse failure scenario (`ralph.toml` malformed).
 - [ ] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=return_error` path.
@@ -589,6 +590,7 @@
 - 2026-04-20: `go test ./internal/cli -run TestIsInteractiveTerminalRejectsDevNullStreams -count=1` - failed as expected before implementation because `isInteractiveTerminal` accepted `/dev/null` streams as interactive.
 - 2026-04-20: `go test ./internal/cli -run 'TestInit|TestIsInteractiveTerminalRejectsDevNullStreams' -count=1` - passed after requiring both stdin/stdout character-device checks and terminal FD checks.
 - 2026-04-20: `go test ./test/e2e -run TestE2EInitCommand -count=1` - passed; init non-TTY guard and `run init` routing behavior remained stable after TTY hardening.
+- 2026-04-20: `go test ./test/e2e -count=1` - passed after adding `test/e2e/COVERAGE_MATRIX.md` to map supported option/config/output behavior to concrete e2e tests.
 
 ## Summary
 
@@ -604,7 +606,7 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Finish Phase 7 governance by enforcing matrix completeness in CI and adding malformed-config/`return_error`/`slow_complete` scenarios, then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
@@ -619,6 +621,7 @@
 - Logging defaults, secure file permissions, and stdout-log parity are already implemented and covered by tests.
 - `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior, conditional logging follow-up prompts, overwrite confirmation/no-op behavior, existing-config default seeding for supported fields, a final preview confirmation, and robust stdin/stdout TTY validation before writing config.
 - E2E harness already compiles one fixture agent and symlinks all supported agent names to it.
+- E2E coverage matrix artifact now exists at `test/e2e/COVERAGE_MATRIX.md` and maps supported option/config/output behaviors to concrete e2e tests.
 - Release workflow already builds cross-platform artifacts and publishes checksums.
 - README regression checks already guard canonical `iyaki/ralphex` links and CLI naming text.
 
