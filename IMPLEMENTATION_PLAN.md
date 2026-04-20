@@ -9,7 +9,7 @@
 | System/Subsystem | Specs | Modules/Packages | Web Packages | Migrations/Artifacts | Current State |
 | --- | --- | --- | --- | --- | --- |
 | CLI routing and loop control | `specs/core-architecture.md`, `specs/run-command.md` | `cmd/ralph/main.go` ✅, `internal/cli/cmd.go` ✅, `internal/cli/run.go` ✅ | None | CLI entrypoint + `run` command behavior ✅ | Implemented; default/alias/subcommand routing works and loop completion is enforced |
-| Configuration and overlays | `specs/configuration.md`, `specs/config-local-overlay.md`, `specs/agent-env-overrides.md` | `internal/config/config.go` ✅, `internal/cli/run.go` ✅, `internal/config/config_local_test.go` ✅ | None | `ralph.toml` ✅, `ralph-local.toml` overlay ✅ | Mostly implemented; gaps remain for file-sourced `prompt-file`, `no-specs-index`, and `config-file` schema parity |
+| Configuration and overlays | `specs/configuration.md`, `specs/config-local-overlay.md`, `specs/agent-env-overrides.md` | `internal/config/config.go` ✅, `internal/cli/run.go` ✅, `internal/config/config_local_test.go` ✅ | None | `ralph.toml` ✅, `ralph-local.toml` overlay ✅ | Mostly implemented; file-sourced `prompt-file` and `no-specs-index` parity are now implemented, with `config-file` schema/runtime parity still pending |
 | Prompt resolution and prompt-level overrides | `specs/prompts.md`, `specs/config-by-prompt.md` | `internal/prompt/prompts.go` ✅, `internal/prompt/frontmatter.go` ✅, `internal/cli/run.go` ✅ | None | Prompt markdown files (`<prompts-dir>/*.md`) ✅ | Implemented; front matter parsing/stripping and precedence are in place |
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
@@ -80,7 +80,7 @@
 ### Phase 2: Configuration Resolution and Overlay Semantics
 
 **Goal:** Keep config precedence deterministic while closing schema/runtime parity gaps in file-backed fields.
-**Status:** Partial (2.1 complete, 2.2 pending)
+**Status:** Partial (2.1 complete, 2.2 mostly complete)
 **Paths:**
 
 - `internal/config/config.go`
@@ -120,10 +120,10 @@
 
 **Checklist:**
 
-- [ ] Wire config-file `prompt-file` into effective runtime config resolution (`Config.PromptFile` is tagged but not applied in `applyConfigValues`).
-- [ ] Wire config-file `no-specs-index` into effective runtime config resolution (`Config.NoSpecsIndex` is tagged but not applied in `applyConfigValues`).
+- [x] Wire config-file `prompt-file` into effective runtime config resolution (`Config.PromptFile` is now applied in `applyConfigValues`).
+- [x] Wire config-file `no-specs-index` into effective runtime config resolution (`Config.NoSpecsIndex` is now applied in `applyConfigValues`).
 - [ ] Decide and implement behavior for TOML `config-file` key (`Config.ConfigFile`) or remove it from spec/docs to avoid dead schema.
-- [ ] Add unit/e2e coverage for file-sourced `prompt-file` and `no-specs-index` precedence.
+- [x] Add unit/e2e coverage for file-sourced `prompt-file` and `no-specs-index` precedence.
 
 **Definition of Done:**
 
@@ -556,6 +556,10 @@
 - 2026-04-20: `grep pattern="config-file" include="*.go" path="/workspaces/ralph"` - verified TOML field exists (`Config.ConfigFile`) but is not resolved as an effective runtime key; tests run: none; bug fixes discovered: schema parity gap identified; files touched: `internal/config/config.go`.
 - 2026-04-20: `grep pattern="ExecuteCommand\(|internal/executor|executor\." include="*.go" path="/workspaces/ralph"` - verified `internal/executor` is currently test-only/unused by runtime path while agent runner has duplicate streaming helper pattern; tests run: none; bug fixes discovered: none (captured as consistency risk); files touched: `internal/executor/executor.go`, `internal/agent/runner.go`.
 - 2026-04-20: read pass over `.github/workflows/release.yml`, `.github/workflows/quality.yml`, `.github/workflows/security.yml`, `Makefile`, and `cmd/ralph/main_test.go` - verified release and quality automation wiring and README regression checks are present; tests run: none; bug fixes discovered: none; files touched: workflow files, `Makefile`, `cmd/ralph/main_test.go`.
+- 2026-04-20: `go test ./internal/config -run 'TestLoadConfig(PromptFileFromConfigFile|PromptFileFlagWinsOverConfigFile|NoSpecsIndexFromConfigFile|NoSpecsIndexFlagWinsOverConfigFile)$' -count=1` - failed as expected before implementation (`PromptFile` and `NoSpecsIndex` from config file were not applied).
+- 2026-04-20: `go test ./internal/config -count=1` - passed after wiring file-sourced `prompt-file`/`no-specs-index` precedence and adding overlay merge support for `prompt-file`.
+- 2026-04-20: `go test ./internal/cli -run 'TestConfigPrecedence_.*' -count=1` - passed; prompt/front matter precedence behavior remained stable after config precedence changes.
+- 2026-04-20: `go test ./test/e2e -run 'TestE2EConfigPrecedence|TestE2EConfigLocalOverlay' -count=1` - passed including new e2e coverage for config-file `prompt-file` and `no-specs-index` behavior.
 
 ## Summary
 
@@ -571,13 +575,14 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Complete Phase 2 config-key parity (`prompt-file`, `no-specs-index`, `config-file` behavior), implement full interactive `init` flow (Phase 6), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Decide and implement Phase 2 `config-file` key behavior (or remove dead schema/docs), implement full interactive `init` flow (Phase 6), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
 - Root and `run` command paths already converge through `runCommandLogic`, preserving deterministic routing.
 - Built-in `build` and `plan` prompts already include planning/build-mode instructions with completion-signal placeholders.
 - Prompt front matter parsing/stripping and precedence merge with `[prompt-overrides]` already exist.
+- File-sourced `prompt-file` and `no-specs-index` config precedence now resolve correctly and are covered by unit/e2e tests.
 - Child-process env overrides via `[env]` and repeatable `--env` are already implemented with validation and deterministic merge order.
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
