@@ -1,6 +1,6 @@
 # Implementation Plan (Whole system)
 
-**Status:** Core runtime is stable; 8/9 phases are complete and 1/9 is partial (remaining docs status alignment).
+**Status:** Core runtime is stable; 8/9 phases are complete and 1/9 is partial (remaining init-doc status alignment).
 **Last Updated:** 2026-04-20
 **Primary Specs:** `specs/core-architecture.md`, `specs/configuration.md`, `specs/prompts.md`, `specs/agents.md`, `specs/init-command.md`, `specs/e2e-testing.md`, `specs/release-workflow.md`
 
@@ -16,7 +16,7 @@
 | Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` ✅, `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Implemented in runtime; ordered questionnaire, retries, overwrite/preview confirmations, existing-config defaults, and robust stdin/stdout TTY validation are now in place |
 | End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` ✅, `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Implemented; broad scenario coverage exists, coverage matrix completeness is test-enforced, and required `return_error`/`slow_complete` agent-mode scenarios are covered |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
-| Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
+| Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, configuration spec status is synchronized, and init spec-status synchronization remains pending |
 
 ## Phased Plan
 
@@ -489,7 +489,7 @@
 ### Phase 9: Documentation and Spec Status Alignment
 
 **Goal:** Keep docs/spec statuses synchronized with actual runtime behavior and avoid stale implementation-plan scope.
-**Status:** Partial (9.1 complete, 9.2 pending)
+**Status:** Partial (9.1 complete, 9.2 in progress)
 **Paths:**
 
 - `README.md`
@@ -526,11 +526,11 @@
 - `specs/init-command.md`
 - `IMPLEMENTATION_PLAN.md`
 
-**Reference pattern:** `specs/configuration.md` and `specs/init-command.md` status headers (`Partially Implemented`)
+**Reference pattern:** `specs/init-command.md` status header (`Partially Implemented`) and `specs/configuration.md` key semantics for unsupported TOML `config-file`
 
 **Checklist:**
 
-- [ ] After completed Phase 2 parity fixes, update `specs/configuration.md` status and verification bullets to fully implemented behavior.
+- [x] After completed Phase 2 parity fixes, update `specs/configuration.md` status and verification bullets to fully implemented behavior.
 - [ ] After Phase 6 interactive init work, update `specs/init-command.md` status and remove the temporary "current implementation note" caveat.
 - [ ] Keep this plan synchronized after each merged feature to prevent drift between specs and code.
 
@@ -604,6 +604,9 @@
 - 2026-04-20: `go test ./test/e2e -run TestE2ESlowCompletePath -count=1` - passed after adding `slow_complete` scenario coverage and minimum-duration assertions in the harness.
 - 2026-04-20: `go test ./test/e2e -run TestCoverageMatrixCompleteness -count=1` - failed as expected before implementation because `COVERAGE_MATRIX.md` did not yet map `TestE2ESlowCompletePath`.
 - 2026-04-20: `go test ./test/e2e -run 'TestE2ESlowCompletePath|TestCoverageMatrixCompleteness' -count=1 && go test ./test/e2e -count=1` - passed; slow-complete scenario coverage and full e2e suite remain deterministic and green.
+- 2026-04-20: `go test ./internal/config -run 'TestLoadConfig.*' -count=1` - passed; config runtime behavior remains green while synchronizing `specs/configuration.md` status and key semantics.
+- 2026-04-20: `go test ./cmd/ralph -run TestReadmeDocumentsRalphexRepoAndRalphCli -count=1` - passed; docs regression guard remains green after spec synchronization updates.
+- 2026-04-20: `grep -n '^Status: Partially Implemented' specs/*.md` - confirmed only `specs/init-command.md` remains partial after completing the configuration-spec synchronization task.
 
 ## Summary
 
@@ -617,9 +620,9 @@
 | Phase 6 | Init command interactive workflow | Complete |
 | Phase 7 | End-to-end coverage matrix and governance | Complete |
 | Phase 8 | Quality, security, and release automation | Complete |
-| Phase 9 | Documentation and spec status alignment | Partial |
+| Phase 9 | Documentation and spec status alignment | Partial (configuration sync complete; init sync pending) |
 
-**Remaining effort:** Flip partial spec statuses to implemented and keep docs/plan synchronized with runtime behavior (Phase 9).
+**Remaining effort:** Complete `specs/init-command.md` status synchronization and keep docs/plan synchronized with runtime behavior (Phase 9).
 
 ## Known Existing Work
 
@@ -628,6 +631,7 @@
 - Prompt front matter parsing/stripping and precedence merge with `[prompt-overrides]` already exist.
 - File-sourced `prompt-file` and `no-specs-index` config precedence now resolve correctly and are covered by unit/e2e tests.
 - TOML `config-file` is treated as an unsupported key and now fails fast in base/default/overlay config resolution paths.
+- `specs/configuration.md` now marks implemented status and documents `RALPH_CONFIG` selection plus unsupported TOML `config-file` behavior.
 - Child-process env overrides via `[env]` and repeatable `--env` are already implemented with validation and deterministic merge order.
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
