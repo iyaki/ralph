@@ -104,3 +104,40 @@ func TestE2EConfigPrecedence_ConfigFlagOverride(t *testing.T) {
 	}
 	runTestCase(t, tc)
 }
+
+// TestE2EConfigPrecedence_PromptFileFromConfigFile verifies that prompt-file from
+// config file is used when no prompt-file flag is provided.
+func TestE2EConfigPrecedence_PromptFileFromConfigFile(t *testing.T) {
+	tc := TestCase{
+		Name: "ConfigPrecedence_PromptFileFromConfigFile",
+		Args: []string{"build"},
+		Files: map[string]string{
+			"ralph.toml":      `prompt-file = "from-config.md"`,
+			"from-config.md":  "# Prompt from config\nUse this prompt.",
+			"specs/README.md": "# Specs Index\n",
+		},
+		ExpectedExitCode: 0,
+		ExpectedStdoutContains: []string{
+			"USING PROMPT FILE: from-config.md",
+		},
+	}
+	runTestCase(t, tc)
+}
+
+// TestE2EConfigPrecedence_NoSpecsIndexFromConfigFile verifies that no-specs-index
+// from config file disables specs index inclusion in the generated build prompt.
+func TestE2EConfigPrecedence_NoSpecsIndexFromConfigFile(t *testing.T) {
+	tc := TestCase{
+		Name: "ConfigPrecedence_NoSpecsIndexFromConfigFile",
+		Args: []string{"build"},
+		Files: map[string]string{
+			"ralph.toml":      `no-specs-index = true`,
+			"specs/README.md": "# Specs Index\n",
+		},
+		ExpectedExitCode: 0,
+		ForbiddenOutput: []string{
+			"specs/README.md",
+		},
+	}
+	runTestCase(t, tc)
+}

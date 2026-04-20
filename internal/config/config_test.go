@@ -156,6 +156,74 @@ agent-mode = "file-mode"
 	}
 }
 
+func TestLoadConfigPromptFileFromConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`prompt-file = "prompt.md"`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.PromptFile != "prompt.md" {
+		t.Fatalf("expected prompt file from config file, got %q", c.PromptFile)
+	}
+}
+
+func TestLoadConfigPromptFileFlagWinsOverConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`prompt-file = "from-config.md"`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile, PromptFile: "from-flag.md"}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if c.PromptFile != "from-flag.md" {
+		t.Fatalf("expected prompt file from flag, got %q", c.PromptFile)
+	}
+}
+
+func TestLoadConfigNoSpecsIndexFromConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`no-specs-index = true`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !c.NoSpecsIndex {
+		t.Fatalf("expected no-specs-index=true from config file")
+	}
+}
+
+func TestLoadConfigNoSpecsIndexFlagWinsOverConfigFile(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`no-specs-index = false`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile, NoSpecsIndex: true}
+	if err := c.LoadConfig(); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if !c.NoSpecsIndex {
+		t.Fatalf("expected no-specs-index=true from flag")
+	}
+}
+
 func TestLoadConfigMissingConfigFile(t *testing.T) {
 	c := &config.Config{ConfigFile: filepath.Join(t.TempDir(), "does-not-exist.toml")}
 	if err := c.LoadConfig(); err == nil {

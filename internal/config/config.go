@@ -160,8 +160,10 @@ func readEnv() envValues {
 
 func (c *Config) applyConfigValues(fileCfg *Config, env envValues) {
 	c.MaxIterations = resolveInt(c.MaxIterations, env.maxIterations, fileCfg.MaxIterations, defaultMaxIterations)
+	c.PromptFile = resolveString(c.PromptFile, "", fileCfg.PromptFile, "")
 	c.SpecsDir = resolveString(c.SpecsDir, env.specsDir, fileCfg.SpecsDir, defaultSpecsDir)
 	c.SpecsIndexFile = resolveString(c.SpecsIndexFile, env.specsIndexFile, fileCfg.SpecsIndexFile, defaultSpecsIndexFile)
+	c.NoSpecsIndex = resolveBool(c.NoSpecsIndex, fileCfg.NoSpecsIndex)
 	c.ImplementationPlanName = resolveString(
 		c.ImplementationPlanName,
 		env.implementationPlanName,
@@ -216,6 +218,14 @@ func resolveString(flagValue, envValue, fileValue, defaultValue string) string {
 	}
 
 	return defaultValue
+}
+
+func resolveBool(flagValue bool, fileValue bool) bool {
+	if flagValue {
+		return true
+	}
+
+	return fileValue
 }
 
 func resolveNoLog(flagValue bool, envValue string, fileValue bool) bool {
@@ -285,6 +295,15 @@ func mergeScalars(base *Config, overlay *Config, meta toml.MetaData) {
 }
 
 func mergeStringScalars(base *Config, overlay *Config, meta toml.MetaData) {
+	mergeFileAndSpecScalars(base, overlay, meta)
+	mergePromptAndLogScalars(base, overlay, meta)
+	mergeAgentScalars(base, overlay, meta)
+}
+
+func mergeFileAndSpecScalars(base *Config, overlay *Config, meta toml.MetaData) {
+	if meta.IsDefined("prompt-file") {
+		base.PromptFile = overlay.PromptFile
+	}
 	if meta.IsDefined("specs-dir") {
 		base.SpecsDir = overlay.SpecsDir
 	}
@@ -294,6 +313,9 @@ func mergeStringScalars(base *Config, overlay *Config, meta toml.MetaData) {
 	if meta.IsDefined("implementation-plan-name") {
 		base.ImplementationPlanName = overlay.ImplementationPlanName
 	}
+}
+
+func mergePromptAndLogScalars(base *Config, overlay *Config, meta toml.MetaData) {
 	if meta.IsDefined("log-file") {
 		base.LogFile = overlay.LogFile
 	}
@@ -303,6 +325,9 @@ func mergeStringScalars(base *Config, overlay *Config, meta toml.MetaData) {
 	if meta.IsDefined("prompts-dir") {
 		base.PromptsDir = overlay.PromptsDir
 	}
+}
+
+func mergeAgentScalars(base *Config, overlay *Config, meta toml.MetaData) {
 	if meta.IsDefined("agent") {
 		base.AgentName = overlay.AgentName
 	}
