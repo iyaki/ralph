@@ -53,6 +53,7 @@ const (
 	questionKeySpecsIndexFile         = "specs-index-file"
 	questionKeyImplementationPlanName = "implementation-plan-name"
 	questionKeyPromptsDir             = "prompts-dir"
+	questionKeyOverwriteExisting      = "overwrite-existing"
 	questionKeyEnableLogging          = "enable-logging"
 	questionKeyLogFile                = "log-file"
 	questionKeyLogTruncate            = "log-truncate"
@@ -128,47 +129,7 @@ func NewInitCommand() *cobra.Command {
 		Short: "Initialize Ralphex configuration",
 		Long:  `Interactive command to generate a ralph.toml configuration file.`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			session := &InitSession{
-				OutputPath: output,
-				Answers:    defaultInitAnswers(),
-				Reader:     bufio.NewReader(cmd.InOrStdin()),
-				Writer:     cmd.OutOrStdout(),
-			}
-
-			// TTY detection
-			session.IsTTY = isInteractiveTerminal()
-
-			if !session.IsTTY {
-				return fmt.Errorf("ralph init requires an interactive terminal")
-			}
-
-			// Default output path
-			if session.OutputPath == "" {
-				cwd, _ := getWorkingDir()
-				session.OutputPath = filepath.Join(cwd, "ralph.toml")
-			}
-
-			// Check for existing config
-			if _, err := os.Stat(session.OutputPath); err == nil {
-				session.ExistingConfigFound = true
-				if !force {
-					return fmt.Errorf("configuration file already exists at %s (use --force to overwrite)", session.OutputPath)
-				}
-			}
-
-			if err := runInitQuestionnaire(session); err != nil {
-				return err
-			}
-
-			cfg := buildConfigFromAnswers(session.Answers)
-
-			if err := config.WriteConfig(session.OutputPath, cfg); err != nil {
-				return fmt.Errorf("failed to write configuration: %w", err)
-			}
-
-			_, _ = fmt.Fprintf(session.Writer, "Initialized Ralphex configuration at %s\n", session.OutputPath)
-
-			return nil
+			return executeInitCommand(cmd, output, force)
 		},
 	}
 
@@ -176,6 +137,119 @@ func NewInitCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Target file path (default: ./ralph.toml)")
 
 	return cmd
+}
+
+func executeInitCommand(cmd *cobra.Command, outputPath string, force bool) error {
+	session, err := newInitSession(cmd, outputPath)
+	if err != nil {
+		return err
+	}
+
+	shouldContinue, err := prepareInitSession(session, force)
+	if err != nil {
+		return err
+	}
+	if !shouldContinue {
+		return nil
+	}
+
+	if err := runInitQuestionnaire(session); err != nil {
+		return err
+	}
+
+	if err := writeInitConfig(session); err != nil {
+		return err
+	}
+
+	_, _ = fmt.Fprintf(session.Writer, "Initialized Ralphex configuration at %s\n", session.OutputPath)
+
+	return nil
+}
+
+func newInitSession(cmd *cobra.Command, outputPath string) (*InitSession, error) {
+	session := &InitSession{
+		OutputPath: outputPath,
+		Answers:    defaultInitAnswers(),
+		Reader:     bufio.NewReader(cmd.InOrStdin()),
+		Writer:     cmd.OutOrStdout(),
+	}
+
+	session.IsTTY = isInteractiveTerminal()
+	if !session.IsTTY {
+		return nil, fmt.Errorf("ralph init requires an interactive terminal")
+	}
+
+	if session.OutputPath == "" {
+		cwd, err := getWorkingDir()
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve current working directory: %w", err)
+		}
+
+		session.OutputPath = filepath.Join(cwd, "ralph.toml")
+	}
+
+	return session, nil
+}
+
+func prepareInitSession(session *InitSession, force bool) (bool, error) {
+	existingConfig, err := initConfigExists(session.OutputPath)
+	if err != nil {
+		return false, err
+	}
+	if !existingConfig {
+		return true, nil
+	}
+
+	session.ExistingConfigFound = true
+	if force {
+		return true, nil
+	}
+
+	overwriteConfirmed, err := confirmExistingConfigOverwrite(session)
+	if err != nil {
+		return false, err
+	}
+	if !overwriteConfirmed {
+		_, _ = fmt.Fprintln(session.Writer, "Initialization cancelled; existing configuration was not changed.")
+
+		return false, nil
+	}
+
+	return true, nil
+}
+
+func initConfigExists(path string) (bool, error) {
+	if _, err := os.Stat(path); err == nil {
+		return true, nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return false, fmt.Errorf("failed to inspect existing configuration at %s: %w", path, err)
+	}
+
+	return false, nil
+}
+
+func writeInitConfig(session *InitSession) error {
+	cfg := buildConfigFromAnswers(session.Answers)
+	if err := config.WriteConfig(session.OutputPath, cfg); err != nil {
+		return fmt.Errorf("failed to write configuration: %w", err)
+	}
+
+	return nil
+}
+
+func confirmExistingConfigOverwrite(session *InitSession) (bool, error) {
+	answer, err := promptForAnswer(session, newConfirmQuestion(
+		questionKeyOverwriteExisting,
+		"Overwrite existing configuration?",
+		confirmNo,
+	))
+	if err != nil {
+		return false, err
+	}
+
+	confirmed, _ := parseConfirmAnswer(answer)
+
+	return confirmed, nil
 }
 
 func defaultInitAnswers() *InitAnswers {

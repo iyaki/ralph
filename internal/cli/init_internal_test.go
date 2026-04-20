@@ -174,6 +174,77 @@ func TestInitCommandRePromptsForInvalidAnswers(t *testing.T) {
 	})
 }
 
+func TestInitCommandDeclinedOverwriteLeavesExistingFileUnchanged(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "ralph.toml")
+	originalConfig := "agent = \"claude\"\nmax-iterations = 99\n"
+
+	if err := os.WriteFile(configPath, []byte(originalConfig), 0600); err != nil {
+		t.Fatalf("expected setup to write existing config, got %v", err)
+	}
+
+	cmd, out := setupInteractiveInitCommand(t, tmp)
+	cmd.SetIn(strings.NewReader("no\n"))
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected init to exit cleanly when overwrite is declined, got %v", err)
+	}
+
+	updatedContent, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("expected to read existing config after declined overwrite, got %v", err)
+	}
+
+	if string(updatedContent) != originalConfig {
+		t.Fatalf("expected existing config to remain unchanged, got %q", string(updatedContent))
+	}
+
+	output := out.String()
+	if !strings.Contains(output, "Overwrite existing configuration?") {
+		t.Fatalf("expected overwrite confirmation prompt, got %q", output)
+	}
+	if !strings.Contains(output, "Initialization cancelled; existing configuration was not changed.") {
+		t.Fatalf("expected declined overwrite cancellation message, got %q", output)
+	}
+	if strings.Contains(output, "Initialized Ralphex configuration") {
+		t.Fatalf("expected no success message when overwrite is declined, got %q", output)
+	}
+}
+
+func TestInitCommandConfirmedOverwriteRewritesExistingFile(t *testing.T) {
+	tmp := t.TempDir()
+	configPath := filepath.Join(tmp, "ralph.toml")
+	originalConfig := "agent = \"claude\"\nlegacy-marker = \"keep-out\"\n"
+
+	if err := os.WriteFile(configPath, []byte(originalConfig), 0600); err != nil {
+		t.Fatalf("expected setup to write existing config, got %v", err)
+	}
+
+	cmd, out := setupInteractiveInitCommand(t, tmp)
+	cmd.SetIn(strings.NewReader("yes\n" + defaultInitAnswersInput()))
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("expected init to succeed when overwrite is confirmed, got %v", err)
+	}
+
+	updatedContent, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("expected overwritten config to be readable, got %v", err)
+	}
+
+	updatedText := string(updatedContent)
+	if strings.Contains(updatedText, "legacy-marker") {
+		t.Fatalf("expected overwritten config to drop legacy content, got %q", updatedText)
+	}
+	if !strings.Contains(updatedText, `agent = "opencode"`) {
+		t.Fatalf("expected overwritten config to include questionnaire defaults, got %q", updatedText)
+	}
+
+	if !strings.Contains(out.String(), "Initialized Ralphex configuration") {
+		t.Fatalf("expected success output after confirmed overwrite, got %q", out.String())
+	}
+}
+
 func TestReadAnswerEOFBehaviors(t *testing.T) {
 	t.Run("returns EOF on empty input", func(t *testing.T) {
 		_, err := readAnswer(bufio.NewReader(strings.NewReader("")))
