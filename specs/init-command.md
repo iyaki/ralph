@@ -1,6 +1,6 @@
 # Init Command
 
-Status: Partially Implemented
+Status: Implemented
 
 ## Overview
 
@@ -25,8 +25,6 @@ Status: Partially Implemented
 
 - In scope: command UX, question flow, validation rules, TOML generation, and file write behavior.
 - Out of scope: runtime execution loop behavior, prompt resolution changes, and agent CLI internals.
-
-Current implementation note: `ralph init` currently stops after TTY and overwrite checks, then writes a starter `ralph.toml` with repository-friendly defaults. The interactive questionnaire below remains target behavior.
 
 ## Architecture
 
@@ -167,7 +165,7 @@ specs/
   - `--output`, `-o`: target file path (default: `./ralph.toml`)
   - `--force`: overwrite existing target file without overwrite prompt
 
-### Interactive question set (target behavior)
+### Interactive question set
 
 | Prompt                                    | Config key                 | Type    | Default                  | Validation                      |
 | ----------------------------------------- | -------------------------- | ------- | ------------------------ | ------------------------------- |
@@ -183,11 +181,11 @@ specs/
 | Log file path (when logging enabled)      | `log-file`                 | input   | `./ralph.log`            | Non-empty path                  |
 | Truncate log file on each run?            | `log-truncate`             | confirm | `no`                     | Boolean                         |
 
-### Generated TOML behavior (target interactive flow)
+### Generated TOML behavior
 
-- Always include required stable keys for deterministic output ordering.
-- Omit optional empty keys (`model`, `agent-mode`) when answers are blank.
-- Persist `no-log = true` when logging is disabled; otherwise `no-log = false` plus logging fields.
+- Answers are converted into config keys defined in [specs/configuration.md](configuration.md).
+- `no-log` is written from the logging confirmation answer (`Enable logging?` is the inverse of `no-log`).
+- Writes use atomic temp-file + rename semantics through `internal/config/writer.go`.
 
 ## Permissions
 
@@ -224,7 +222,7 @@ specs/
 
 ## Appendices
 
-### Example generated config (current partial implementation)
+### Example generated config (accept defaults)
 
 ```toml
 agent = "opencode"
@@ -233,7 +231,6 @@ specs-dir = "specs"
 specs-index-file = "README.md"
 implementation-plan-name = "IMPLEMENTATION_PLAN.md"
 prompts-dir = ".ralph/prompts"
-log-file = "./ralph.log"
-no-log = false
+no-log = true
 log-truncate = false
 ```
