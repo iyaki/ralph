@@ -74,24 +74,37 @@ func (c *Config) LoadConfig() error {
 		return err
 	}
 
-	// Check for local overlay
-	if configPath != "" {
-		configDir := filepath.Dir(configPath)
-		overlayPath := filepath.Join(configDir, "ralph-local.toml")
-
-		if _, err := os.Stat(overlayPath); err == nil {
-			overlayConfig := &Config{}
-			meta, err := c.loadConfigFile(overlayPath, overlayConfig)
-			if err != nil {
-				return fmt.Errorf("failed to load overlay config file %s: %w", overlayPath, err)
-			}
-			mergeConfig(configFromFile, overlayConfig, meta)
-		}
+	if err := c.applyLocalOverlay(configFromFile, configPath); err != nil {
+		return err
 	}
 
 	env := readEnv()
 	c.applyConfigValues(configFromFile, env)
 	c.configLoaded = true
+
+	return nil
+}
+
+func (c *Config) applyLocalOverlay(configFromFile *Config, configPath string) error {
+	if configPath == "" {
+		return nil
+	}
+
+	overlayPath := filepath.Join(filepath.Dir(configPath), "ralph-local.toml")
+	if _, err := os.Stat(overlayPath); err != nil {
+		return nil
+	}
+
+	overlayConfig := &Config{}
+	meta, err := c.loadConfigFile(overlayPath, overlayConfig)
+	if err != nil {
+		return fmt.Errorf("failed to load overlay config file %s: %w", overlayPath, err)
+	}
+	if err := validateConfigFileKeys(meta, overlayPath); err != nil {
+		return err
+	}
+
+	mergeConfig(configFromFile, overlayConfig, meta)
 
 	return nil
 }
@@ -110,35 +123,63 @@ func (c *Config) resolveFileConfig() (*Config, string, error) {
 		configPath = os.Getenv("RALPH_CONFIG")
 	}
 
-	if configPath != "" {
-		if !filepath.IsAbs(configPath) {
-			cwd, _ := os.Getwd()
-			configPath = filepath.Join(cwd, configPath)
+	if configPath == "" {
+		foundPath, err := loadDefaultConfig(c, configFromFile)
+		if err != nil {
+			return nil, "", err
 		}
 
-		if _, err := c.loadConfigFile(configPath, configFromFile); err != nil {
-			return nil, "", fmt.Errorf("failed to load config file %s: %w", configPath, err)
-		}
-
-		return configFromFile, configPath, nil
+		return configFromFile, foundPath, nil
 	}
 
-	foundPath := loadDefaultConfig(c, configFromFile)
+	resolvedPath := resolveConfigPath(configPath)
+	meta, err := c.loadConfigFile(resolvedPath, configFromFile)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to load config file %s: %w", resolvedPath, err)
+	}
 
-	return configFromFile, foundPath, nil
+	if err := validateConfigFileKeys(meta, resolvedPath); err != nil {
+		return nil, "", err
+	}
+
+	return configFromFile, resolvedPath, nil
 }
 
-func loadDefaultConfig(c *Config, target *Config) string {
+func resolveConfigPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+
+	cwd, _ := os.Getwd()
+
+	return filepath.Join(cwd, path)
+}
+
+func loadDefaultConfig(c *Config, target *Config) (string, error) {
 	cwd, _ := os.Getwd()
 
 	path := filepath.Join(cwd, "ralph.toml")
 	if _, err := os.Stat(path); err == nil {
-		_, _ = c.loadConfigFile(path, target)
+		meta, err := c.loadConfigFile(path, target)
+		if err != nil {
+			return "", fmt.Errorf("failed to load config file %s: %w", path, err)
+		}
+		if err := validateConfigFileKeys(meta, path); err != nil {
+			return "", err
+		}
 
-		return path
+		return path, nil
 	}
 
-	return ""
+	return "", nil
+}
+
+func validateConfigFileKeys(meta toml.MetaData, path string) error {
+	if meta.IsDefined("config-file") {
+		return fmt.Errorf("unsupported config key 'config-file' in %s", path)
+	}
+
+	return nil
 }
 
 func readEnv() envValues {

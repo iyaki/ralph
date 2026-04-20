@@ -141,3 +141,44 @@ func TestE2EConfigPrecedence_NoSpecsIndexFromConfigFile(t *testing.T) {
 	}
 	runTestCase(t, tc)
 }
+
+// TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails verifies that the
+// unsupported TOML key config-file causes a deterministic startup failure.
+func TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails(t *testing.T) {
+	tc := TestCase{
+		Name: "ConfigPrecedence_ConfigFileKeyInBaseConfigFails",
+		Args: []string{"build"},
+		Files: map[string]string{
+			"ralph.toml": `config-file = "./other.toml"`,
+		},
+		ExpectedExitCode: 1,
+		ExpectedStderrContains: []string{
+			"unsupported config key 'config-file'",
+		},
+		ForbiddenOutput: []string{
+			"[ralph-test-agent] Starting",
+		},
+	}
+	runTestCase(t, tc)
+}
+
+// TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails verifies that the
+// unsupported TOML key config-file in ralph-local.toml fails before agent execution.
+func TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails(t *testing.T) {
+	tc := TestCase{
+		Name: "ConfigPrecedence_ConfigFileKeyInOverlayFails",
+		Args: []string{"build"},
+		Files: map[string]string{
+			"ralph.toml":       `max-iterations = 5`,
+			"ralph-local.toml": `config-file = "./other.toml"`,
+		},
+		ExpectedExitCode: 1,
+		ExpectedStderrContains: []string{
+			"unsupported config key 'config-file'",
+		},
+		ForbiddenOutput: []string{
+			"[ralph-test-agent] Starting",
+		},
+	}
+	runTestCase(t, tc)
+}

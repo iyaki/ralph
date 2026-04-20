@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/iyaki/ralphex/internal/config"
@@ -221,6 +222,52 @@ func TestLoadConfigNoSpecsIndexFlagWinsOverConfigFile(t *testing.T) {
 
 	if !c.NoSpecsIndex {
 		t.Fatalf("expected no-specs-index=true from flag")
+	}
+}
+
+func TestLoadConfigRejectsConfigFileKey(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	if err := os.WriteFile(configFile, []byte(`config-file = "./other.toml"`), 0644); err != nil {
+		t.Fatalf("failed to write config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	err := c.LoadConfig()
+	if err == nil {
+		t.Fatal("expected error for unsupported config-file key")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported config key 'config-file'") {
+		t.Fatalf("expected unsupported key error, got %v", err)
+	}
+}
+
+func TestLoadConfigRejectsConfigFileKeyInDefaultConfig(t *testing.T) {
+	dir := t.TempDir()
+	wd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get cwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("failed to chdir: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(wd)
+	})
+
+	if err := os.WriteFile(filepath.Join(dir, "ralph.toml"), []byte(`config-file = "./other.toml"`), 0644); err != nil {
+		t.Fatalf("failed to write default config: %v", err)
+	}
+
+	c := &config.Config{}
+	err = c.LoadConfig()
+	if err == nil {
+		t.Fatal("expected error for unsupported config-file key in default config")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported config key 'config-file'") {
+		t.Fatalf("expected unsupported key error, got %v", err)
 	}
 }
 

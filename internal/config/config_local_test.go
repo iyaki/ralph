@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/iyaki/ralphex/internal/config"
@@ -194,6 +195,29 @@ func TestLoadConfigInvalidOverlay(t *testing.T) {
 	c := &config.Config{ConfigFile: configFile}
 	if err := c.LoadConfig(); err == nil {
 		t.Fatal("expected error for invalid overlay config")
+	}
+}
+
+func TestLoadConfigRejectsConfigFileKeyInOverlay(t *testing.T) {
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "ralph.toml")
+	overlayFile := filepath.Join(dir, "ralph-local.toml")
+
+	if err := os.WriteFile(configFile, []byte(`model="base"`), 0644); err != nil {
+		t.Fatalf("failed to write base config: %v", err)
+	}
+	if err := os.WriteFile(overlayFile, []byte(`config-file = "./other.toml"`), 0644); err != nil {
+		t.Fatalf("failed to write overlay config: %v", err)
+	}
+
+	c := &config.Config{ConfigFile: configFile}
+	err := c.LoadConfig()
+	if err == nil {
+		t.Fatal("expected error for unsupported config-file key in overlay")
+	}
+
+	if !strings.Contains(err.Error(), "unsupported config key 'config-file'") {
+		t.Fatalf("expected unsupported key error, got %v", err)
 	}
 }
 
