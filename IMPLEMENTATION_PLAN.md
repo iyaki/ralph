@@ -340,7 +340,7 @@
 - [x] `init` subcommand exists with `--output` and `--force` flags.
 - [x] Non-interactive invocation fails fast with a terminal requirement error.
 - [x] Starter `ralph.toml` is written atomically.
-- [x] Existing file path errors unless `--force` is set.
+- [x] Existing file path prompts for overwrite confirmation unless `--force` is set.
 
 #### 6.2 Missing interactive target behavior from spec
 
@@ -356,11 +356,11 @@
 
 - [ ] Implement ordered interactive questionnaire with validation/re-prompt loops.
 - [ ] Seed defaults from existing config file values when present.
-- [ ] Implement overwrite confirmation flow when file exists and `--force` is not set.
+- [x] Implement overwrite confirmation flow when file exists and `--force` is not set.
 - [ ] Add final preview/confirmation step before write.
 - [ ] Expand TTY check to robustly validate interactive input/output expectations.
 - [x] Add tests for invalid answer retry paths.
-- [ ] Add tests for declined-overwrite no-op behavior.
+- [x] Add tests for declined-overwrite no-op behavior.
 
 **Definition of Done:**
 
@@ -565,12 +565,17 @@
 - 2026-04-20: `go test ./internal/config -run 'TestLoadConfigRejectsConfigFileKey|TestLoadConfigRejectsConfigFileKeyInDefaultConfig|TestLoadConfigRejectsConfigFileKeyInOverlay' -count=1` - passed after adding fail-fast validation for unsupported `config-file` keys in base/default/overlay config files.
 - 2026-04-20: `go test ./test/e2e -run 'TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails|TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails' -count=1` - passed with deterministic non-zero exits and no agent execution when unsupported `config-file` keys are present.
 - 2026-04-20: `go test ./internal/config -run 'TestLoadConfig.*' -count=1 && go test ./internal/cli -run 'TestConfigPrecedence.*' -count=1 && go test ./test/e2e -run 'TestE2EConfigPrecedence|TestE2EConfigLocalOverlay' -count=1` - passed full Phase 2 Definition of Done validation after implementing unsupported `config-file` fail-fast behavior.
-- 2026-04-20: go test ./internal/cli -run 'TestInitCommand(AsksQuestionsInSpecifiedOrder|RePromptsForInvalidAnswers)$' -count=1 - failed before implementation (questionnaire prompts/validation retries were not present).
-- 2026-04-20: go test ./internal/cli -run 'TestInit' -count=1 - passed after implementing ordered init questionnaire, conditional logging questions, and retry-on-invalid-input behavior.
-- 2026-04-20: go test ./test/e2e -run TestE2EInitCommand -count=1 - passed; non-TTY guard and run-subcommand collision behavior remained stable.
-- 2026-04-20: make lint - passed (0 issues).
-- 2026-04-20: make test-coverage - passed (overall coverage gate >= 90%).
-- 2026-04-20: make security && make arch - passed (no gosec findings; architecture lint clean).
+- 2026-04-20: `go test ./internal/cli -run 'TestInitCommand(AsksQuestionsInSpecifiedOrder|RePromptsForInvalidAnswers)$' -count=1` - failed before implementation (questionnaire prompts/validation retries were not present).
+- 2026-04-20: `go test ./internal/cli -run 'TestInit' -count=1` - passed after implementing ordered init questionnaire, conditional logging questions, and retry-on-invalid-input behavior.
+- 2026-04-20: `go test ./test/e2e -run TestE2EInitCommand -count=1` - passed; non-TTY guard and run-subcommand collision behavior remained stable.
+- 2026-04-20: `make lint` - passed (0 issues).
+- 2026-04-20: `make test-coverage` - passed (overall coverage gate >= 90%).
+- 2026-04-20: `make security && make arch` - passed (no gosec findings; architecture lint clean).
+- 2026-04-20: `go test ./internal/cli -run 'TestInitCommand(DeclinedOverwriteLeavesExistingFileUnchanged|ConfirmedOverwriteRewritesExistingFile)$' -count=1` - failed as expected before implementation because init returned the existing-file `--force` error path.
+- 2026-04-20: `go test ./internal/cli -run 'TestInitCommand(DeclinedOverwriteLeavesExistingFileUnchanged|ConfirmedOverwriteRewritesExistingFile)$' -count=1` - passed after adding interactive overwrite confirmation and no-op-on-decline behavior.
+- 2026-04-20: `go test ./internal/cli -run 'TestInit' -count=1` - passed after refactoring `NewInitCommand` into helper functions to satisfy lint constraints.
+- 2026-04-20: `go test ./test/e2e -run TestE2EInitCommand -count=1` - passed; non-interactive and `run init` routing scenarios remained stable.
+- 2026-04-20: `make lint` - passed (0 issues) after init command refactor.
 
 ## Summary
 
@@ -586,7 +591,7 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Complete remaining `init` behaviors (existing-config defaults, overwrite confirmation, final preview, robust TTY checks), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Complete remaining `init` behaviors (existing-config defaults, final preview, robust TTY checks), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
@@ -599,7 +604,7 @@
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
 - Logging defaults, secure file permissions, and stdout-log parity are already implemented and covered by tests.
-- `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior and conditional logging follow-up prompts.
+- `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior, conditional logging follow-up prompts, and overwrite confirmation/no-op behavior for existing config files.
 - E2E harness already compiles one fixture agent and symlinks all supported agent names to it.
 - Release workflow already builds cross-platform artifacts and publishes checksums.
 - README regression checks already guard canonical `iyaki/ralphex` links and CLI naming text.
