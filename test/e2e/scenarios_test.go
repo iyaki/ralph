@@ -42,6 +42,29 @@ func TestE2EMaxIterations(t *testing.T) {
 	runTestCase(t, tc)
 }
 
+func TestE2EReturnErrorPath(t *testing.T) {
+	tc := TestCase{
+		Name: "Failure Path: Agent Return Error",
+		Args: []string{"--prompt", "Trigger return error path", "--max-iterations", "1"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "return_error",
+		},
+		ExpectedExitCode: 1,
+		ExpectedStdoutContains: []string{
+			"Simulated agent failure",
+			"Command execution warning:",
+		},
+		ExpectedStderrContains: []string{
+			"max iterations reached",
+		},
+		ForbiddenOutput: []string{
+			"<promise>COMPLETE</promise>",
+		},
+	}
+
+	runTestCase(t, tc)
+}
+
 func TestE2EMissingPromptFile(t *testing.T) {
 	tc := TestCase{
 		Name: "Failure Path: Missing Prompt File",
