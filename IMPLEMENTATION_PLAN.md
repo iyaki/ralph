@@ -13,7 +13,7 @@
 | Prompt resolution and prompt-level overrides | `specs/prompts.md`, `specs/config-by-prompt.md` | `internal/prompt/prompts.go` ✅, `internal/prompt/frontmatter.go` ✅, `internal/cli/run.go` ✅ | None | Prompt markdown files (`<prompts-dir>/*.md`) ✅ | Implemented; front matter parsing/stripping and precedence are in place |
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
-| Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` (partial), `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Partial; ordered interactive questionnaire and validation retries are implemented, but existing-config defaults, overwrite confirmation, preview confirmation, and robust TTY checks are still pending |
+| Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` (partial), `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Partial; ordered interactive questionnaire, validation retries, overwrite confirmation, and existing-config defaults are implemented, but preview confirmation and robust TTY checks are still pending |
 | End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists, but explicit spec-required matrix governance is missing |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
 | Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
@@ -355,7 +355,7 @@
 **Checklist:**
 
 - [ ] Implement ordered interactive questionnaire with validation/re-prompt loops.
-- [ ] Seed defaults from existing config file values when present.
+- [x] Seed defaults from existing config file values when present.
 - [x] Implement overwrite confirmation flow when file exists and `--force` is not set.
 - [ ] Add final preview/confirmation step before write.
 - [ ] Expand TTY check to robustly validate interactive input/output expectations.
@@ -576,6 +576,11 @@
 - 2026-04-20: `go test ./internal/cli -run 'TestInit' -count=1` - passed after refactoring `NewInitCommand` into helper functions to satisfy lint constraints.
 - 2026-04-20: `go test ./test/e2e -run TestE2EInitCommand -count=1` - passed; non-interactive and `run init` routing scenarios remained stable.
 - 2026-04-20: `make lint` - passed (0 issues) after init command refactor.
+- 2026-04-20: `go test ./internal/cli -run TestInitCommandSeedsQuestionDefaultsFromExistingConfig -count=1` - failed as expected before implementation (questionnaire kept hardcoded defaults instead of reading existing `ralph.toml` values).
+- 2026-04-20: `go test ./internal/cli -run TestInitCommandSeedsQuestionDefaultsFromExistingConfig -count=1` - passed after adding existing-config default seeding for supported questionnaire fields.
+- 2026-04-20: `go test ./internal/cli -run 'TestInit' -count=1` - passed after integrating existing-config default seeding and helper refactors.
+- 2026-04-20: `go test ./test/e2e -run TestE2EInitCommand -count=1` - passed; init non-TTY and `run init` routing behavior remained stable after default seeding changes.
+- 2026-04-20: `make lint` - passed (0 issues) after seeding implementation and test helper extraction.
 
 ## Summary
 
@@ -591,7 +596,7 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Complete remaining `init` behaviors (existing-config defaults, final preview, robust TTY checks), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Complete remaining `init` behaviors (final preview, robust TTY checks), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
@@ -604,7 +609,7 @@
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
 - Logging defaults, secure file permissions, and stdout-log parity are already implemented and covered by tests.
-- `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior, conditional logging follow-up prompts, and overwrite confirmation/no-op behavior for existing config files.
+- `ralph init` now runs an ordered interactive questionnaire with per-question validation/re-prompt behavior, conditional logging follow-up prompts, overwrite confirmation/no-op behavior, and existing-config default seeding for supported fields.
 - E2E harness already compiles one fixture agent and symlinks all supported agent names to it.
 - Release workflow already builds cross-platform artifacts and publishes checksums.
 - README regression checks already guard canonical `iyaki/ralphex` links and CLI naming text.
