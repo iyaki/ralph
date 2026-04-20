@@ -22,6 +22,10 @@ type TestCase struct {
 	// ExpectedExitCode is the expected integer exit code of the process.
 	ExpectedExitCode int
 
+	// MinimumDurationMs is the minimum expected runtime in milliseconds.
+	// Use this for deterministic delay scenarios.
+	MinimumDurationMs int64
+
 	// ExpectedStdoutContains is a list of substrings that must appear in stdout.
 	ExpectedStdoutContains []string
 

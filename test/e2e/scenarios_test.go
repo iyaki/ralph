@@ -65,6 +65,24 @@ func TestE2EReturnErrorPath(t *testing.T) {
 	runTestCase(t, tc)
 }
 
+func TestE2ESlowCompletePath(t *testing.T) {
+	tc := TestCase{
+		Name: "Happy Path: Slow Complete With Deterministic Delay",
+		Args: []string{"--prompt", "Trigger slow complete path"},
+		Env: map[string]string{
+			"RALPH_TEST_AGENT_MODE": "slow_complete",
+		},
+		ExpectedExitCode: 0,
+		ExpectedStdoutContains: []string{
+			"Thinking...",
+			"<promise>COMPLETE</promise>",
+		},
+		MinimumDurationMs: 80,
+	}
+
+	runTestCase(t, tc)
+}
+
 func TestE2EMissingPromptFile(t *testing.T) {
 	tc := TestCase{
 		Name: "Failure Path: Missing Prompt File",

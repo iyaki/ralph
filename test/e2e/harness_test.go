@@ -158,9 +158,22 @@ func verifyResult(t *testing.T, workDir string, tc TestCase, res RunResult) {
 	}
 
 	verifyForbidden(t, tc, res)
+	verifyDuration(t, tc, res)
 	verifyFiles(t, workDir, tc)
 
 	t.Logf("Test duration: %dms", res.DurationMs)
+}
+
+func verifyDuration(t *testing.T, tc TestCase, res RunResult) {
+	t.Helper()
+
+	if tc.MinimumDurationMs <= 0 {
+		return
+	}
+
+	if res.DurationMs < tc.MinimumDurationMs {
+		t.Errorf("duration too short: got %dms, want at least %dms", res.DurationMs, tc.MinimumDurationMs)
+	}
 }
 
 func verifyForbidden(t *testing.T, tc TestCase, res RunResult) {
