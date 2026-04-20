@@ -448,3 +448,35 @@ func TestBoolToConfirmValue(t *testing.T) {
 		t.Fatalf("expected %q, got %q", confirmNo, got)
 	}
 }
+
+func TestIsInteractiveTerminalRejectsDevNullStreams(t *testing.T) {
+	stdinFile, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatalf("failed to open %s for stdin: %v", os.DevNull, err)
+	}
+	t.Cleanup(func() {
+		_ = stdinFile.Close()
+	})
+
+	stdoutFile, err := os.OpenFile(os.DevNull, os.O_WRONLY, 0)
+	if err != nil {
+		t.Fatalf("failed to open %s for stdout: %v", os.DevNull, err)
+	}
+	t.Cleanup(func() {
+		_ = stdoutFile.Close()
+	})
+
+	originalStdin := os.Stdin
+	originalStdout := os.Stdout
+	t.Cleanup(func() {
+		os.Stdin = originalStdin
+		os.Stdout = originalStdout
+	})
+
+	os.Stdin = stdinFile
+	os.Stdout = stdoutFile
+
+	if isInteractiveTerminal() {
+		t.Fatal("expected non-interactive terminal check for /dev/null streams")
+	}
+}

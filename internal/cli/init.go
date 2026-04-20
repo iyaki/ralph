@@ -13,15 +13,25 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/iyaki/ralphex/internal/config"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var isInteractiveTerminal = func() bool {
-	fileInfo, err := os.Stdout.Stat()
+	stdinInfo, err := os.Stdin.Stat()
 	if err != nil {
 		return false
 	}
 
-	return (fileInfo.Mode() & os.ModeCharDevice) != 0
+	stdoutInfo, err := os.Stdout.Stat()
+	if err != nil {
+		return false
+	}
+
+	if (stdinInfo.Mode()&os.ModeCharDevice) == 0 || (stdoutInfo.Mode()&os.ModeCharDevice) == 0 {
+		return false
+	}
+
+	return term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd()))
 }
 
 var getWorkingDir = os.Getwd
