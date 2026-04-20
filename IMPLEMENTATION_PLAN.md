@@ -1,6 +1,6 @@
 # Implementation Plan (Whole system)
 
-**Status:** Core runtime is stable; 5/9 phases are complete and 4/9 are partial (configuration parity, init UX, e2e matrix governance, docs status alignment).
+**Status:** Core runtime is stable; 6/9 phases are complete and 3/9 are partial (init UX, e2e matrix governance, docs status alignment).
 **Last Updated:** 2026-04-20
 **Primary Specs:** `specs/core-architecture.md`, `specs/configuration.md`, `specs/prompts.md`, `specs/agents.md`, `specs/init-command.md`, `specs/e2e-testing.md`, `specs/release-workflow.md`
 
@@ -9,14 +9,14 @@
 | System/Subsystem | Specs | Modules/Packages | Web Packages | Migrations/Artifacts | Current State |
 | --- | --- | --- | --- | --- | --- |
 | CLI routing and loop control | `specs/core-architecture.md`, `specs/run-command.md` | `cmd/ralph/main.go` ✅, `internal/cli/cmd.go` ✅, `internal/cli/run.go` ✅ | None | CLI entrypoint + `run` command behavior ✅ | Implemented; default/alias/subcommand routing works and loop completion is enforced |
-| Configuration and overlays | `specs/configuration.md`, `specs/config-local-overlay.md`, `specs/agent-env-overrides.md` | `internal/config/config.go` ✅, `internal/cli/run.go` ✅, `internal/config/config_local_test.go` ✅ | None | `ralph.toml` ✅, `ralph-local.toml` overlay ✅ | Mostly implemented; file-sourced `prompt-file` and `no-specs-index` parity are now implemented, with `config-file` schema/runtime parity still pending |
+| Configuration and overlays | `specs/configuration.md`, `specs/config-local-overlay.md`, `specs/agent-env-overrides.md` | `internal/config/config.go` ✅, `internal/cli/run.go` ✅, `internal/config/config_local_test.go` ✅ | None | `ralph.toml` ✅, `ralph-local.toml` overlay ✅ | Implemented in runtime; `prompt-file` and `no-specs-index` file precedence are wired and TOML `config-file` now fails fast as unsupported |
 | Prompt resolution and prompt-level overrides | `specs/prompts.md`, `specs/config-by-prompt.md` | `internal/prompt/prompts.go` ✅, `internal/prompt/frontmatter.go` ✅, `internal/cli/run.go` ✅ | None | Prompt markdown files (`<prompts-dir>/*.md`) ✅ | Implemented; front matter parsing/stripping and precedence are in place |
 | Agent adapters and subprocess env wiring | `specs/agents.md`, `specs/agents/opencode.md`, `specs/agents/claude.md`, `specs/agents/cursor.md`, `specs/agent-env-overrides.md` | `internal/agent/agent.go` ✅, `internal/agent/runner.go` ✅, `internal/agent/opencode.go` ✅, `internal/agent/claude.go` ✅, `internal/agent/cursor.go` ✅ | None | e2e fixture symlinks for `opencode`/`claude`/`cursor` ✅ | Implemented; deterministic `cmd.Env` is passed and unknown agents fail fast |
 | Logging | `specs/logging.md` | `internal/logger/logger.go` ✅, `internal/cli/run.go` ✅ | None | `ralph.log` creation/truncate/append semantics ✅ | Implemented; disabled-by-default logging with secure file permissions and git metadata headers |
 | Init command bootstrap UX | `specs/init-command.md` | `internal/cli/init.go` (partial), `internal/config/writer.go` ✅ | None | Generated `ralph.toml` ✅ | Partial; currently writes starter config only, not full interactive questionnaire flow |
 | End-to-end suite and deterministic harness | `specs/e2e-testing.md` | `test/e2e/harness_test.go` ✅, `test/e2e/*.go` (partial coverage matrix), `test/e2e/agents/ralph-test-agent/main.go` ✅ | None | Test-only agent fixture binary ✅ | Partial; broad scenario coverage exists, but explicit spec-required matrix governance is missing |
 | Quality, security, and release automation | `specs/development-testing.md`, `specs/release-workflow.md` | `Makefile` ✅, `.github/workflows/quality.yml` ✅, `.github/workflows/security.yml` ✅, `.github/workflows/release.yml` ✅ | None | Release binaries + `checksums.txt` ✅ | Implemented in automation; manual repo/org setup still required for production |
-| Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but two spec statuses intentionally remain partial pending code gaps |
+| Documentation and examples | `specs/README.md`, `specs/configuration.md`, `specs/init-command.md` | `README.md` ✅, `examples/ralph.toml` ✅, `IMPLEMENTATION_PLAN.md` (updated) ✅ | None | README regression checks in `cmd/ralph/main_test.go` ✅ | Partial; docs are mostly aligned, but spec-status synchronization remains pending for configuration/init specs |
 
 ## Phased Plan
 
@@ -80,7 +80,7 @@
 ### Phase 2: Configuration Resolution and Overlay Semantics
 
 **Goal:** Keep config precedence deterministic while closing schema/runtime parity gaps in file-backed fields.
-**Status:** Partial (2.1 complete, 2.2 mostly complete)
+**Status:** Complete (2.1 and 2.2 verified in code)
 **Paths:**
 
 - `internal/config/config.go`
@@ -122,7 +122,7 @@
 
 - [x] Wire config-file `prompt-file` into effective runtime config resolution (`Config.PromptFile` is now applied in `applyConfigValues`).
 - [x] Wire config-file `no-specs-index` into effective runtime config resolution (`Config.NoSpecsIndex` is now applied in `applyConfigValues`).
-- [ ] Decide and implement behavior for TOML `config-file` key (`Config.ConfigFile`) or remove it from spec/docs to avoid dead schema.
+- [x] Implement deterministic behavior for TOML `config-file` key by rejecting it as unsupported in base/overlay configs with fail-fast startup errors.
 - [x] Add unit/e2e coverage for file-sourced `prompt-file` and `no-specs-index` precedence.
 
 **Definition of Done:**
@@ -417,7 +417,7 @@
 - [ ] Add e2e invalid-config parse failure scenario (`ralph.toml` malformed).
 - [ ] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=return_error` path.
 - [ ] Add e2e scenario validating `RALPH_TEST_AGENT_MODE=slow_complete` deterministic delay path.
-- [ ] Add e2e scenarios for file-sourced `prompt-file` and `no-specs-index` once Phase 2 parity gaps are fixed.
+- [x] Add e2e scenarios for file-sourced `prompt-file` and `no-specs-index` once Phase 2 parity gaps are fixed.
 
 **Definition of Done:**
 
@@ -527,7 +527,7 @@
 
 **Checklist:**
 
-- [ ] After Phase 2 parity fixes, update `specs/configuration.md` status and verification bullets to fully implemented behavior.
+- [ ] After completed Phase 2 parity fixes, update `specs/configuration.md` status and verification bullets to fully implemented behavior.
 - [ ] After Phase 6 interactive init work, update `specs/init-command.md` status and remove the temporary "current implementation note" caveat.
 - [ ] Keep this plan synchronized after each merged feature to prevent drift between specs and code.
 
@@ -560,13 +560,17 @@
 - 2026-04-20: `go test ./internal/config -count=1` - passed after wiring file-sourced `prompt-file`/`no-specs-index` precedence and adding overlay merge support for `prompt-file`.
 - 2026-04-20: `go test ./internal/cli -run 'TestConfigPrecedence_.*' -count=1` - passed; prompt/front matter precedence behavior remained stable after config precedence changes.
 - 2026-04-20: `go test ./test/e2e -run 'TestE2EConfigPrecedence|TestE2EConfigLocalOverlay' -count=1` - passed including new e2e coverage for config-file `prompt-file` and `no-specs-index` behavior.
+- 2026-04-20: `go test ./internal/config -run 'TestLoadConfigRejectsConfigFileKey|TestLoadConfigRejectsConfigFileKeyInDefaultConfig' -count=1` - failed as expected before implementation because unsupported TOML `config-file` entries were accepted.
+- 2026-04-20: `go test ./internal/config -run 'TestLoadConfigRejectsConfigFileKey|TestLoadConfigRejectsConfigFileKeyInDefaultConfig|TestLoadConfigRejectsConfigFileKeyInOverlay' -count=1` - passed after adding fail-fast validation for unsupported `config-file` keys in base/default/overlay config files.
+- 2026-04-20: `go test ./test/e2e -run 'TestE2EConfigPrecedence_ConfigFileKeyInBaseConfigFails|TestE2EConfigPrecedence_ConfigFileKeyInOverlayFails' -count=1` - passed with deterministic non-zero exits and no agent execution when unsupported `config-file` keys are present.
+- 2026-04-20: `go test ./internal/config -run 'TestLoadConfig.*' -count=1 && go test ./internal/cli -run 'TestConfigPrecedence.*' -count=1 && go test ./test/e2e -run 'TestE2EConfigPrecedence|TestE2EConfigLocalOverlay' -count=1` - passed full Phase 2 Definition of Done validation after implementing unsupported `config-file` fail-fast behavior.
 
 ## Summary
 
 | Phase | Goal | Status |
 | --- | --- | --- |
 | Phase 1 | Command routing and loop lifecycle | Complete |
-| Phase 2 | Configuration resolution and overlay semantics | Partial |
+| Phase 2 | Configuration resolution and overlay semantics | Complete |
 | Phase 3 | Prompt resolution and prompt-level overrides | Complete |
 | Phase 4 | Agent adapters and child process environment | Complete |
 | Phase 5 | Logging and file-safety guarantees | Complete |
@@ -575,7 +579,7 @@
 | Phase 8 | Quality, security, and release automation | Complete |
 | Phase 9 | Documentation and spec status alignment | Partial |
 
-**Remaining effort:** Decide and implement Phase 2 `config-file` key behavior (or remove dead schema/docs), implement full interactive `init` flow (Phase 6), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
+**Remaining effort:** Implement full interactive `init` flow (Phase 6), satisfy explicit e2e traceability/governance requirements (Phase 7), then flip partial spec statuses to implemented and keep this plan synchronized (Phase 9).
 
 ## Known Existing Work
 
@@ -583,6 +587,7 @@
 - Built-in `build` and `plan` prompts already include planning/build-mode instructions with completion-signal placeholders.
 - Prompt front matter parsing/stripping and precedence merge with `[prompt-overrides]` already exist.
 - File-sourced `prompt-file` and `no-specs-index` config precedence now resolve correctly and are covered by unit/e2e tests.
+- TOML `config-file` is treated as an unsupported key and now fails fast in base/default/overlay config resolution paths.
 - Child-process env overrides via `[env]` and repeatable `--env` are already implemented with validation and deterministic merge order.
 - All supported agents (`opencode`, `claude`, `cursor`) already use a shared subprocess runner with explicit `cmd.Env`.
 - Unknown agent names already fail fast before loop execution.
