@@ -1,6 +1,6 @@
 # Configuration
 
-Status: Partially Implemented
+Status: Implemented
 
 ## Overview
 
@@ -71,7 +71,8 @@ internal/
 
 - Config
   - Fields: `ConfigFile`, `MaxIterations`, `PromptFile`, `SpecsDir`, `SpecsIndexFile`, `NoSpecsIndex`, `ImplementationPlanName`, `LogFile`, `NoLog`, `LogTruncate`, `CustomPrompt`, `PromptsDir`, `AgentName`, `Model`, `AgentMode`, `Env`.
-  - Each field may be set by flag, env var, or config file key.
+  - `ConfigFile` is selected by CLI/env (`--config`, `RALPH_CONFIG`) and is not a supported TOML key.
+  - Remaining fields may be set by flag, env var, and/or config file key as documented below.
 
 ### Relationships
 
@@ -83,7 +84,7 @@ internal/
 
 | Store  | Format | Location     | Notes                                     |
 | ------ | ------ | ------------ | ----------------------------------------- |
-| Config | TOML   | `ralph.toml` | Loaded from current directory if present. |
+| Config | TOML   | `ralph.toml` | Loaded from `--config`, `RALPH_CONFIG`, or current-directory default discovery. |
 
 ## Workflows
 
@@ -96,8 +97,10 @@ internal/
 ### Config file resolution
 
 1. If `--config` is provided, that file is used.
-2. Otherwise, the loader checks for `ralph.toml` (current directory only).
-3. If present, the file is parsed as TOML.
+2. Otherwise, if `RALPH_CONFIG` is set, that file is used.
+3. Otherwise, the loader checks for `ralph.toml` (current directory only).
+4. If present, the file is parsed as TOML.
+5. If base or overlay config defines `config-file`, loading fails fast as unsupported.
 
 ### Command routing interaction
 
@@ -151,6 +154,7 @@ internal/
 
 | Env var                          | Field                    | Notes                           |
 | -------------------------------- | ------------------------ | ------------------------------- |
+| `RALPH_CONFIG`                   | `ConfigFile`             | Config file path override       |
 | `RALPH_MAX_ITERATIONS`           | `MaxIterations`          | Integer                         |
 | `RALPH_SPECS_DIR`                | `SpecsDir`               | String path                     |
 | `RALPH_SPECS_INDEX_FILE`         | `SpecsIndexFile`         | String file name                |
@@ -172,7 +176,6 @@ Notes:
 
 | Key                        | Field                    | Example                                               |
 | -------------------------- | ------------------------ | ----------------------------------------------------- |
-| `config-file`              | `ConfigFile`             | `config-file = "./ralph.toml"`                        |
 | `max-iterations`           | `MaxIterations`          | `max-iterations = 30`                                 |
 | `prompt-file`              | `PromptFile`             | `prompt-file = "./prompts/plan.md"`                   |
 | `specs-dir`                | `SpecsDir`               | `specs-dir = "specs"`                                 |
@@ -188,6 +191,10 @@ Notes:
 | `model`                    | `Model`                  | `model = "gpt-4"`                                     |
 | `agent-mode`               | `AgentMode`              | `agent-mode = "planner"`                              |
 | `[env]`                    | `Env`                    | `[env] OPENAI_API_KEY = "<redacted>"`                 |
+
+Notes:
+
+- `config-file` is an unsupported TOML key in both base and local overlay config files and causes a fail-fast startup error.
 
 ### Defaults
 
@@ -231,12 +238,14 @@ Notes:
 - `ralph --max-iterations 1 build` uses `1`.
 - `RALPH_MAX_ITERATIONS=2 ralph build` uses `2`.
 - `ralph --config ./ralph.toml` loads TOML values.
+- `RALPH_CONFIG=./custom.toml ralph build` loads TOML values from `./custom.toml`.
 - Default values apply when no flags, env vars, or config files are provided.
 - `ralph run build --max-iterations 1` uses `1`.
 - `RALPH_MAX_ITERATIONS=2 ralph run build` uses `2`.
 - `ralph` applies the same config precedence as `ralph run build`.
 - `ralph --env FOO=bar build` passes `FOO=bar` to the child agent process.
 - `ralph --config ./ralph.toml --env FOO=flag build` resolves `FOO` as flag value over config `[env]`.
+- Config files that include `config-file = "..."` fail before agent execution starts.
 
 ## Appendices
 
